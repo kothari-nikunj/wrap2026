@@ -10,7 +10,11 @@
 <meta property="og:url" content="https://wrap2026.com">
 <meta property="og:title" content="Wrapped 2026 · Your year in texts and calls">
 <meta property="og:description" content="Who you text most, how fast you reply, and your texting personality. Runs on your Mac. Nothing leaves your computer.">
+<meta property="og:image" content="https://wrap2026.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://wrap2026.com/og.png">
 <meta name="twitter:creator" content="@nikunj">
 <meta name="theme-color" content="#EEE8FF">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
@@ -25,7 +29,7 @@
   --paper-2:#E3DAFF;
   --sent:#2F4BFF;
   --recv:#DCD3F5;
-  --peach:#FFB38A;
+  --pink:#FF5FA2;
   --white:#FFFFFF;
   --display:'Anybody',system-ui,sans-serif;
   --body:'Onest',system-ui,sans-serif;
@@ -51,38 +55,25 @@ a{color:inherit}
 /* hero */
 .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,5vw,80px);padding:clamp(28px,6vw,72px) 0 clamp(56px,8vw,120px);align-items:start}
 .hero h1{font-family:var(--display);line-height:.82;letter-spacing:-.035em}
-.hero h1 .w{display:block;font-weight:800;font-stretch:62%;font-size:clamp(64px,10.5vw,148px)}
-.hero h1 .y{display:block;font-weight:900;font-stretch:150%;font-size:clamp(84px,15vw,212px);color:var(--sent);margin-left:-.04em}
+.hero h1 .w{display:block;white-space:nowrap;font-weight:800;font-stretch:62%;font-size:clamp(56px,8.6vw,124px)}
+.hero h1 .y{display:block;font-weight:900;font-stretch:150%;font-size:clamp(64px,11.4vw,168px);color:var(--sent);margin-left:-.04em;animation:stretch 1.6s cubic-bezier(.2,.8,.2,1) both .1s}
+@keyframes stretch{from{font-stretch:50%;opacity:0}25%{opacity:1}to{font-stretch:150%}}
 .lede{font-size:clamp(19px,1.7vw,22px);line-height:1.45;max-width:30ch;margin:28px 0 32px;color:var(--ink)}
 .cmd{background:var(--ink);color:var(--paper);border-radius:18px;padding:18px 18px 18px 22px;display:flex;align-items:center;gap:14px;max-width:560px}
-.cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
 .cmd code::-webkit-scrollbar{display:none}
-.cmd code .p{color:var(--peach);user-select:none}
+.cmd code .p{color:var(--pink);user-select:none}
 .copy{font:600 14px var(--body);background:var(--paper);color:var(--ink);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;flex-shrink:0;min-width:74px}
 .copy:hover{background:var(--white)}
-.copy.done{background:var(--peach)}
+.copy.done{background:var(--pink)}
 .hint{font-size:15px;color:var(--ink-2);margin-top:14px;max-width:52ch}
 .hint a{font-weight:600;color:var(--ink)}
 .send-mac{display:none;margin-top:14px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
 
-/* the thread */
-.thread{display:flex;flex-direction:column;gap:6px;padding-top:clamp(0px,2vw,24px)}
-.stamp{align-self:center;font-size:12px;color:var(--ink-2);margin:4px 0 8px;font-weight:500}
-.b{max-width:86%;padding:10px 15px;border-radius:22px;font-size:16px;line-height:1.35;position:relative;opacity:0;transform:translateY(10px) scale(.96);transform-origin:bottom left;animation:pop .42s cubic-bezier(.2,.9,.25,1.2) forwards;animation-delay:calc(var(--i) * 520ms + 300ms)}
-.b.r{align-self:flex-start;background:var(--recv);color:var(--ink);border-bottom-left-radius:6px}
-.b.s{align-self:flex-end;background:var(--sent);color:var(--white);border-bottom-right-radius:6px;transform-origin:bottom right}
-.b.big{padding:16px 20px 18px;border-radius:26px;border-bottom-left-radius:6px}
-.b.big .n{display:block;font-family:var(--display);font-weight:800;font-stretch:130%;font-size:clamp(44px,4.6vw,64px);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.b.big .l{display:block;font-size:15px;color:var(--ink-2);margin-top:6px}
-.b.late{background:var(--peach)}
-.b.diag .n{font-stretch:75%;font-size:clamp(36px,3.6vw,48px);line-height:1}
-.gap{height:10px}
-.typing{align-self:flex-start;background:var(--recv);border-radius:22px;border-bottom-left-radius:6px;padding:14px 16px;display:flex;gap:5px;opacity:0;animation:pop .3s ease forwards;animation-delay:calc(var(--i) * 520ms + 300ms)}
-.typing i{width:8px;height:8px;border-radius:50%;background:var(--ink-2);opacity:.5;animation:blink 1.2s infinite}
-.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
-.sample{font-size:12px;color:var(--ink-2);margin-top:14px;align-self:flex-start}
-@keyframes pop{to{opacity:1;transform:none}}
-@keyframes blink{0%,60%,100%{opacity:.35}30%{opacity:1}}
+/* live demo */
+.demo{justify-self:end;width:min(100%,380px)}
+.demo iframe{display:block;width:100%;aspect-ratio:9/16;border:0;border-radius:34px;background:var(--sent);box-shadow:0 40px 80px -40px rgba(36,16,56,.6),0 0 0 1px rgba(36,16,56,.06)}
+.demo figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;text-align:center}
 
 /* sections */
 section{padding:clamp(64px,9vw,128px) 0}
@@ -105,37 +96,14 @@ h2{font-family:var(--display);font-weight:800;font-stretch:72%;font-size:clamp(4
 .steps li::before{content:counter(s);font-family:var(--display);font-weight:800;font-stretch:120%;font-size:18px;width:36px;height:36px;border-radius:50%;background:#3A2A58;color:var(--paper);display:grid;place-items:center;grid-row:span 2}
 .steps h3{font-size:18px;font-weight:600;line-height:36px}
 .steps p{color:#B9ADD6;font-size:16px}
+.steps li>*{grid-column:2}
 .steps .cmd{background:#130A22;margin-top:10px;max-width:none}
 kbd{font-family:var(--body);font-weight:600;color:var(--paper)}
 
 /* slides strip */
 .strip{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:48px var(--gutter) 24px;margin-top:8px;scrollbar-width:thin;scrollbar-color:var(--ink-2) transparent}
-.slide{flex:0 0 auto;width:min(300px,76vw);aspect-ratio:9/16;border-radius:28px;padding:26px 24px;scroll-snap-align:start;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.slide .k{font-size:14px;font-weight:600;opacity:.75}
-.slide .n{font-family:var(--display);font-weight:900;font-stretch:120%;font-size:76px;line-height:.85;letter-spacing:-.04em;margin-top:auto;font-variant-numeric:tabular-nums}
-.slide .t{font-size:16px;line-height:1.35;margin-top:12px;max-width:22ch}
-.slide .foot{font-family:var(--display);font-weight:700;font-stretch:120%;font-size:12px;margin-top:22px;opacity:.6}
-.s-cobalt{background:var(--sent);color:var(--white)}
-.s-peach{background:var(--peach);color:var(--ink)}
-.s-ink{background:var(--ink);color:var(--paper)}
-.s-lav{background:var(--recv);color:var(--ink)}
-.s-white{background:var(--white);color:var(--ink)}
-.slide .name{font-family:var(--display);font-weight:800;font-stretch:65%;font-size:64px;line-height:.88;letter-spacing:-.03em;margin-top:auto}
-.slide .diag{font-family:var(--display);font-weight:900;font-stretch:58%;font-size:72px;line-height:.84;letter-spacing:-.03em;margin-top:auto;text-transform:lowercase}
-.slide ol{list-style:none;margin-top:auto;display:flex;flex-direction:column;gap:8px}
-.slide ol li{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(36,16,56,.15);padding-bottom:8px;font-weight:500}
-.slide ol li span:last-child{font-family:var(--display);font-weight:800;font-stretch:120%;font-variant-numeric:tabular-nums}
-.slide ol li:first-child{font-size:22px;font-weight:600}
-.grid365{margin-top:auto;display:grid;grid-template-columns:repeat(26,1fr);gap:2px}
-.grid365 i{aspect-ratio:1;border-radius:2px;background:rgba(238,232,255,.12)}
-.grid365 i.a{background:rgba(238,232,255,.35)}.grid365 i.b{background:rgba(238,232,255,.65)}.grid365 i.c{background:var(--peach)}
-.split{margin-top:auto;display:flex;flex-direction:column;gap:10px}
-.split .bub{padding:10px 14px;border-radius:20px;font-weight:500;font-size:15px;max-width:90%}
-.split .r{background:rgba(255,255,255,.18);align-self:flex-start;border-bottom-left-radius:6px}
-.split .s{background:var(--white);color:var(--sent);align-self:flex-end;border-bottom-right-radius:6px}
-.bar2{height:14px;border-radius:999px;background:rgba(36,16,56,.15);overflow:hidden;margin-top:14px}
-.bar2 i{display:block;height:100%;background:var(--ink);border-radius:999px}
-.emo{font-size:46px;line-height:1.1;margin-top:auto;letter-spacing:.04em}
+.slide{flex:0 0 auto;width:min(280px,72vw);height:auto;aspect-ratio:9/16;border-radius:26px;scroll-snap-align:start;box-shadow:0 24px 48px -28px rgba(36,16,56,.55);transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.slide:hover{transform:translateY(-6px) rotate(-1deg)}
 .strip-note{font-size:14px;color:var(--ink-2);padding:0 var(--gutter)}
 
 /* privacy */
@@ -155,10 +123,10 @@ footer a:hover{text-decoration:underline}
 footer .links{display:flex;gap:22px}
 
 @media (max-width:900px){
-  .hero{grid-template-columns:1fr}
-  .thread{max-width:440px}
-  .panel{grid-template-columns:1fr}
-  .privacy .wrap{grid-template-columns:1fr}
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .demo{justify-self:center}
+  .panel{grid-template-columns:minmax(0,1fr)}
+  .privacy .wrap{grid-template-columns:minmax(0,1fr)}
   .bar nav a:not(.go){display:none}
 }
 @media (max-width:600px){
@@ -170,8 +138,7 @@ footer .links{display:flex;gap:22px}
 }
 @media (hover:none) and (max-width:900px){ .send-mac{display:inline-block} }
 @media (prefers-reduced-motion:reduce){
-  .b,.typing{animation:none;opacity:1;transform:none}
-  .typing i{animation:none}
+  .hero h1 .y{animation:none}
 }
 </style>
 </head>
@@ -196,18 +163,10 @@ footer .links{display:flex;gap:22px}
       <button class="send-mac" id="send-mac">Send this link to my Mac</button>
     </div>
 
-    <div class="thread" aria-label="Example of what Wrapped tells you">
-      <span class="stamp">Dec 31, 11:58 PM</span>
-      <div class="b s" style="--i:0">ok be honest. how bad was it this year</div>
-      <div class="b r big" style="--i:1"><span class="n">47,832</span><span class="l">messages. About 131 a day.</span></div>
-      <div class="b r" style="--i:2">Your #1 was Mom. 6,204 texts.</div>
-      <div class="b r" style="--i:3">You start 62% of conversations and reply in 4 minutes.</div>
-      <div class="b s" style="--i:4">that's not that bad</div>
-      <div class="b r late" style="--i:5">You also texted Jordan at 3am on 41 different nights.</div>
-      <div class="b r big diag" style="--i:6"><span class="l" style="margin:0 0 6px">Diagnosis</span><span class="n">Nocturnal menace</span></div>
-      <div class="typing" style="--i:7" aria-hidden="true"><i></i><i></i><i></i></div>
-      <span class="sample">Sample data. Yours stays on your Mac.</span>
-    </div>
+    <figure class="demo">
+      <iframe src="demo.html" title="A sample wrap with made-up data. Tap or use arrow keys to go through it." loading="eager"></iframe>
+      <figcaption>A live sample with made-up people. Tap through it.</figcaption>
+    </figure>
   </div>
   </main>
 </div>
@@ -276,20 +235,21 @@ footer .links{display:flex;gap:22px}
 
 <section class="inside" id="inside">
   <div class="wrap">
-    <h2>Twenty-odd slides about you.</h2>
-    <p class="sub">A swipeable story you can screenshot, send to the group chat, and regret.</p>
+    <h2>Twenty slides about you.</h2>
+    <p class="sub">Tap through it like a story. Turn the sound on and each slide plays a note. Send the best ones to the group chat and regret it.</p>
   </div>
   <div class="strip" tabindex="0" aria-label="Example slides">
-    <article class="slide s-cobalt"><span class="k">Total damage</span><span class="n">47,832</span><p class="t">messages this year. 892,410 words. A short novel, mostly "lol".</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-peach"><span class="k">Your #1</span><span class="name">Mom</span><p class="t">6,204 messages. She starts 71% of your chats.</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-ink"><span class="k">Diagnosis</span><span class="diag">Nocturnal menace</span><p class="t">Peak hour 11PM. Peak day Sunday. You reply in 4 minutes.</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-lav"><span class="k">Inner circle</span><ol><li><span>Mom</span><span>6,204</span></li><li><span>Jordan</span><span>4,918</span></li><li><span>Alex</span><span>3,377</span></li><li><span>Sam</span><span>2,940</span></li><li><span>Priya</span><span>2,102</span></li></ol><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-cobalt"><span class="k">Who texts first</span><div class="split"><div class="bub r">hey</div><div class="bub s">hey!! ok so</div><div class="bub s">also</div></div><span class="n" style="margin-top:22px">62%</span><p class="t">of conversations started by you.</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-ink"><span class="k">Your year</span><div class="grid365" id="g365" aria-hidden="true"></div><p class="t">Busiest day: Mar 14. 612 messages, 4.7× your normal.</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-white"><span class="k">Who texts first</span><span class="k" style="margin-top:auto;opacity:1">Heating up</span><span class="name" style="margin-top:6px">Priya</span><div class="bar2"><i style="width:82%"></i></div><p class="t">Up 340% since June.</p><span class="foot">wrap2026.com</span></article>
-    <article class="slide s-peach"><span class="k">Your emoji</span><span class="emo">😭💀🙏<br>😂❤️</span><p class="t">😭 alone: 2,811 times.</p><span class="foot">wrap2026.com</span></article>
+    <img class="slide" src="img/slide-intro.webp" width="600" height="1067" alt="The intro slide: Wrapped 2026" loading="lazy">
+    <img class="slide" src="img/slide-total.webp" width="600" height="1067" alt="47,832 messages this year, shown as a pile of message bubbles" loading="lazy">
+    <img class="slide" src="img/slide-number-one.webp" width="600" height="1067" alt="The person you texted most: Mom" loading="lazy">
+    <img class="slide" src="img/slide-year.webp" width="600" height="1067" alt="Your year as a grid of dots, one per day" loading="lazy">
+    <img class="slide" src="img/slide-personality.webp" width="600" height="1067" alt="Diagnosis: nocturnal menace" loading="lazy">
+    <img class="slide" src="img/slide-peak.webp" width="600" height="1067" alt="You text most at 11PM, with a clock" loading="lazy">
+    <img class="slide" src="img/slide-busiest-day.webp" width="600" height="1067" alt="Your busiest day, Mar 14, with a sparkline of the year" loading="lazy">
+    <img class="slide" src="img/slide-emoji.webp" width="600" height="1067" alt="Your most-used emoji" loading="lazy">
+    <img class="slide" src="img/slide-summary.webp" width="600" height="1067" alt="The summary card" loading="lazy">
   </div>
-  <p class="strip-note">Sample slides with made-up data.</p>
+  <p class="strip-note">Real slides, made-up people. Every slide saves as a 1080×1920 image for your story.</p>
 </section>
 
 <section class="privacy" id="privacy">
@@ -302,7 +262,7 @@ footer .links{display:flex;gap:22px}
     </div>
     <dl class="facts">
       <dt>What it reads</dt><dd>Timestamps, who sent what to whom, counts, and emoji. Not the words in your messages.</dd>
-      <dt>Network</dt><dd>None. No servers, no uploads, no analytics.</dd>
+      <dt>Network</dt><dd>The script makes no network calls. Your wrap page loads two fonts and a small image-saving library. No servers, no uploads, no analytics.</dd>
       <dt>Dependencies</dt><dd>Python's standard library. Nothing to install.</dd>
       <dt>Output</dt><dd>One HTML file, saved next to the script.</dd>
       <dt>The exception</dt><dd>People, with Claude reads message text so Claude Code can write about it. It runs in your own Claude Code session.</dd>
@@ -324,7 +284,9 @@ async function copyText(t){
     const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
     const ok=document.execCommand('copy');ta.remove();return ok}
 }
-function flash(btn,label){const o=btn.textContent;btn.textContent=label;btn.classList.add('done');setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800)}
+const hap=document.createElement('label');hap.innerHTML='<input type="checkbox" switch tabindex="-1">';hap.style.cssText='position:fixed;left:-99px;opacity:0';hap.setAttribute('aria-hidden','true');document.body.appendChild(hap);
+function buzz(){if(navigator.vibrate)navigator.vibrate(8);else if(matchMedia('(pointer:coarse)').matches)hap.click()}
+function flash(btn,label){buzz();const o=btn.textContent;btn.textContent=label;btn.classList.add('done');setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800)}
 document.querySelectorAll('[data-copy]').forEach(btn=>{
   btn.addEventListener('click',async()=>{
     const el=document.getElementById(btn.dataset.copy);
@@ -360,11 +322,6 @@ sm.addEventListener('click',async()=>{
   else{flash(sm,(await copyText('https://wrap2026.com'))?'Link copied':'wrap2026.com')}
 });
 
-// sample year grid (deterministic, not real data)
-const g=document.getElementById('g365');let s=7;
-for(let i=0;i<364;i++){s=(s*9301+49297)%233280;const r=s/233280;const w=(i%7===0||i%7===6)?.15:0;
-  const v=r+w+(i>60&&i<80?.25:0)+(i>300?.15:0);
-  const c=document.createElement('i');if(i===72)c.className='c';else if(v>.9)c.className='b';else if(v>.55)c.className='a';g.appendChild(c)}
 </script>
 </body>
 </html>

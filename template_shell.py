@@ -7,7 +7,7 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
 :root{
@@ -43,16 +43,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
 .card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
 .body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
-.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
 
 /* type */
 .lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
 .lead.gap{margin-top:1.2em}
 .hero.fit{white-space:nowrap;overflow-wrap:normal}
-.hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
-.hero small{font-size:.32em;font-stretch:100%;font-weight:700;letter-spacing:0;margin-left:.15em}
-.hero.name{font-weight:800;font-stretch:62%;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
-.hero.diag{font-weight:800;font-stretch:62%;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
+.hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
 .hero.sm{font-size:3.4em}
 .after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
 .after b{font-weight:600;opacity:1}
@@ -60,7 +60,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* stat split */
 .split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
-.split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
 
 /* ranked rows */
@@ -69,9 +69,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
 .row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
 .row>*{position:relative;z-index:1}
-.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;opacity:.5;font-size:.85em}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
 .row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variant-numeric:tabular-nums}
+.row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
 .row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
 .row:first-child{font-size:1.15em}
 .row:last-child{border-bottom-color:transparent}
@@ -87,7 +87,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
 .t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
 /* avatars */
-.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
 .av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
 .stack{display:flex;margin-bottom:auto;padding-left:.7em}
 .stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
@@ -138,7 +138,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
 .vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
 .vs div:last-child{background:var(--soft);color:var(--fg)}
-.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variant-numeric:tabular-nums;margin-left:1em}
+.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
 
 /* bubbles */
 .thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
@@ -151,8 +151,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .intro{display:flex;flex-direction:column;flex:1}
 .stretch{font-family:var(--display);line-height:.82;letter-spacing:-.04em;margin-bottom:auto}
 .stretch span{display:block}
-.stretch span:first-child{font-weight:800;font-stretch:58%;font-size:3.6em;white-space:nowrap}
-.stretch span:last-child{font-weight:900;font-stretch:150%;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
+.stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
+.stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
 .intro .thread{margin:0 0 1.2em}
 .hint{font-size:.85em;opacity:.7;font-weight:500}
 
@@ -186,8 +186,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .summary .hero{font-size:4.2em}
 .grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
 .grid4 dt{font-size:.7em;opacity:.7}
-.grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
+.grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
 .top3{font-size:.85em;opacity:.85;margin-top:.5em}
 
 /* chrome: progress + controls, sized to the card */
@@ -197,9 +197,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bars button::after{content:"";position:absolute;inset:-10px 0}
 .bars button.done{opacity:.9}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
-.ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-size:14px;opacity:.85}
+.ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
-.pill{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
 .pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
 .pill:active{transform:scale(.94)}
 .pill svg{width:14px;height:14px}
@@ -243,18 +243,23 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes rowIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
-@keyframes stretch{from{font-stretch:50%;opacity:0}30%{opacity:1}to{font-stretch:150%}}
+@keyframes stretch{from{font-stretch:50%;font-variation-settings:"wdth" 50;opacity:0}30%{opacity:1}to{font-stretch:150%;font-variation-settings:"wdth" 150}}
 @keyframes dot{from{transform:scale(0)}to{transform:none}}
 @keyframes moon{from{opacity:0;transform:rotate(-60deg) translateY(1em)}to{opacity:1;transform:rotate(-20deg)}}
 .after{--o:.85}
 
 /* saving: freeze everything at its final frame */
 .capturing *, .capturing *::before{animation:none !important;transition:none !important}
+.card.saving{border-radius:0;box-shadow:none}
 
 @media (max-width:540px){
   :root{--cw:100vw;--ch:100dvh}
   .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
   .top{padding-top:max(10px, env(safe-area-inset-top))}
+}
+@media (max-width:400px){
+  .ctl .brand{display:none}
+  .ctl{justify-content:flex-end}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before{animation:none !important;transition-duration:.01s !important}
@@ -288,11 +293,12 @@ let cur = -1;
 
 // fit text to the card width (numbers and the intro title)
 function fit(el, max) {
-  el.style.fontSize = '';
-  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth;
-  el.style.fontSize = base + 'px';
-  const ratio = w / el.scrollWidth;
+  const anim = el.style.animation, disp = el.style.display;
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
+  const ratio = w / el.getBoundingClientRect().width;
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
+  el.style.animation = anim; el.style.display = disp; el.style.width = '';
 }
 function fitAll() {
   document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
@@ -303,6 +309,7 @@ document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children
 document.querySelectorAll('.pile i').forEach(i => i.style.setProperty('--d', Math.round(Math.random() * 900)));
 document.querySelectorAll('.stack, .slide .body').forEach(p => p.querySelectorAll(':scope > .av, :scope > .stack > .av').forEach((a, k) => a.style.setProperty('--i', k)));
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(fitAll);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitAll);
 addEventListener('resize', fitAll);
 
 // dot rows stagger by month
@@ -432,7 +439,7 @@ saveBtn.addEventListener('click', async e => {
   if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
   saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
   const prev = card.style.transform; card.style.transform = 'none';
-  s.classList.add('capturing');
+  s.classList.add('capturing'); card.classList.add('saving');
   s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
   try {
     const url = await modernScreenshot.domToPng(card, {
@@ -442,7 +449,7 @@ saveBtn.addEventListener('click', async e => {
     const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
     saveLbl.textContent = 'Saved'; buzz();
   } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
-  s.classList.remove('capturing'); card.style.transform = prev;
+  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
   setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
 });
 

@@ -520,1184 +520,808 @@ def analyze(ts_start, ts_end, ts_jun):
 
     return d
 
-def gen_html(d, contacts, path):
-    s = d['stats']
-    top = d['top']
-    n = lambda h: get_name(h, contacts)
-    ptype, proast = d['personality']
-    hr = d['hour']
-    # Format hour
-    if hr == 0:
-        hr_str = "12AM"
-    elif hr < 12:
-        hr_str = f"{hr}AM"
-    elif hr == 12:
-        hr_str = "12PM"
-    else:
-        hr_str = f"{hr-12}PM"
-
-    # Format busiest day
-    from datetime import datetime as dt
-    if d['busiest_day']:
-        bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
-        busiest_str = bd.strftime('%b %d')
-        busiest_count = d['busiest_day'][1]
-    else:
-        busiest_str = "N/A"
-        busiest_count = 0
-
-    # Calculate days elapsed
-    now = dt.now()
-    year_start = dt(now.year, 1, 1)
-    days_elapsed = max(1, (now - year_start).days)
-    msgs_per_day = s[0] // days_elapsed
-
-    slides = []
-
-    # Slide 1: Intro
-    slides.append('''
-    <div class="slide intro">
-        <div class="slide-icon">💬</div>
-        <h1>WHATSAPP<br>WRAPPED</h1>
-        <p class="subtitle">your 2026 texting habits, exposed</p>
-        <div class="tap-hint">click anywhere to start →</div>
-    </div>''')
-
-    # Slide 2: Total messages
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// TOTAL DAMAGE</div>
-        <div class="big-number green">{s[0]:,}</div>
-        <div class="slide-text">messages this year</div>
-        <div class="stat-grid">
-            <div class="stat-item"><span class="stat-num">{msgs_per_day}</span><span class="stat-lbl">/day</span></div>
-            <div class="stat-item"><span class="stat-num">{s[1]:,}</span><span class="stat-lbl">sent</span></div>
-            <div class="stat-item"><span class="stat-num">{s[2]:,}</span><span class="stat-lbl">received</span></div>
-        </div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_total_messages.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Slide 3: Words sent
-    words = d['words']
-    words_display = f"{words // 1000:,}K" if words >= 1000 else f"{words:,}"
-    pages = max(1, words // 250)
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// WORD COUNT</div>
-        <div class="big-number cyan">{words_display}</div>
-        <div class="slide-text">words you typed</div>
-        <div class="roast">that's about {pages:,} pages of a novel</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_word_count.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Slide 4: Contribution Graph (GitHub-style activity heatmap) - Year overview
-    if d['daily_counts']:
-        from datetime import datetime as dt, date as ddate, timedelta
-        today = dt.now().date()
-        year = int(d.get('year', today.year))
-        year_start = ddate(year, 1, 1)
-        # Show up to today for the current year, else finish on Dec 31 of that year
-        year_end = today if year == today.year else ddate(year, 12, 31)
-
-        # Build the calendar grid (weeks x 7 days, GitHub style Sunday→Saturday)
-        cal_cells = []
-
-        # Find the Sunday on or before Jan 1
-        first_day = year_start - timedelta(days=(year_start.weekday() + 1) % 7)
-        # Find the Saturday of the last week that contains year_end
-        last_day = year_end + timedelta(days=(5 - year_end.weekday()) % 7)
-
-        current_date = first_day
-        max_count = max(d['daily_counts'].values()) if d['daily_counts'] else 1
-
-        # Month labels - track when months start
-        month_labels = []
-        last_month = None
-
-        week_idx = 0
-        while current_date <= last_day:
-            week_cells = []
-            for _ in range(7):  # Sun to Sat
-                date_str = current_date.strftime('%Y-%m-%d')
-                count = d['daily_counts'].get(date_str, 0)
-
-                # Track month changes for labels
-                if (year_start <= current_date <= year_end) and current_date.month != last_month:
-                    month_labels.append((week_idx, current_date.strftime('%b')))
-                    last_month = current_date.month
-
-                # Determine intensity level (0-4 like GitHub)
-                if count == 0:
-                    level = 0
-                elif count <= max_count * 0.25:
-                    level = 1
-                elif count <= max_count * 0.5:
-                    level = 2
-                elif count <= max_count * 0.75:
-                    level = 3
-                else:
-                    level = 4
-
-                # Only show cells for the target year
-                in_year = year_start <= current_date <= year_end
-                week_cells.append((date_str, count, level, in_year))
-                current_date += timedelta(days=1)
-
-            cal_cells.append(week_cells)
-            week_idx += 1
-            if week_idx > 60:  # Safety limit
-                break
-
-        # Build the HTML grid with proper structure
-        contrib_html = '<div class="contrib-graph">'
-        contrib_html += '<div class="contrib-container">'
-
-        # Y-axis: Day labels
-        contrib_html += '<div class="contrib-days"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>'
-
-        contrib_html += '<div class="contrib-main">'
-
-        # X-axis: Month labels - position based on week index, each week is 12px (10px cell + 2px gap)
-        contrib_html += '<div class="contrib-months">'
-        for week_num, month_name in month_labels:
-            # Position each month label at the start of its first week
-            left_px = week_num * 12  # 10px cell + 2px gap
-            contrib_html += f'<span style="position:absolute;left:{left_px}px">{month_name}</span>'
-        contrib_html += '</div>'
-
-        # Grid of cells
-        contrib_html += '<div class="contrib-grid">'
-        for week in cal_cells:
-            contrib_html += '<div class="contrib-week">'
-            for date_str, count, level, in_year in week:
-                if in_year:
-                    # Format date nicely for tooltip (e.g., "Dec 7, 2026")
-                    from datetime import datetime as dt_parse
-                    try:
-                        date_obj = dt_parse.strptime(date_str, '%Y-%m-%d')
-                        formatted_date = date_obj.strftime('%b %d, %Y')
-                    except:
-                        formatted_date = date_str
-                    msg_text = "message" if count == 1 else "messages"
-                    contrib_html += f'<div class="contrib-cell level-{level}" data-date="{formatted_date}" data-count="{count}" data-msg-text="{msg_text}"></div>'
-                else:
-                    contrib_html += '<div class="contrib-cell empty"></div>'
-            contrib_html += '</div>'
-        contrib_html += '</div>'
-
-        contrib_html += '</div>'  # close contrib-main
-        contrib_html += '</div>'  # close contrib-container
-
-        # Legend
-        contrib_html += '<div class="contrib-legend"><span>Less</span><div class="contrib-cell level-0"></div><div class="contrib-cell level-1"></div><div class="contrib-cell level-2"></div><div class="contrib-cell level-3"></div><div class="contrib-cell level-4"></div><span>More</span></div>'
-        contrib_html += '</div>'
-
-        slides.append(f'''
-        <div class="slide contrib-slide">
-            <div class="slide-label">// MESSAGE ACTIVITY</div>
-            <div class="slide-text">your texting throughout the year</div>
-            {contrib_html}
-            <div class="contrib-stats">
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['avg_daily']}</span><span class="contrib-stat-lbl">avg/day</span></div>
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['busiest_month']}</span><span class="contrib-stat-lbl">busiest month</span></div>
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['quiet_days']}</span><span class="contrib-stat-lbl">quiet days</span></div>
-            </div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_contribution_graph.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide 5: Your #1
-    if top:
-        slides.append(f'''
-        <div class="slide whatsapp-bg">
-            <div class="slide-label">// YOUR #1</div>
-            <div class="slide-text">most texted person</div>
-            <div class="huge-name">{n(top[0][0])}</div>
-            <div class="big-number yellow">{top[0][1]:,}</div>
-            <div class="slide-text">messages</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_your_number_one.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-        # Slide 5: Top 5
-        top5_html = ''.join([f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{n(h)}</span><span class="rank-count">{t:,}</span></div>' for i,(h,t,_,_) in enumerate(top[:5],1)])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// INNER CIRCLE</div>
-            <div class="slide-text">your top 5</div>
-            <div class="rank-list">{top5_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_inner_circle.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Group chat slides
-    gs = d['group_stats']
-    if gs['count'] > 0:
-        lurker_pct = round((1 - gs['sent'] / max(gs['total'], 1)) * 100)
-        lurker_label = "LURKER" if lurker_pct > 60 else "CONTRIBUTOR" if lurker_pct < 40 else "BALANCED"
-        lurker_class = "yellow" if lurker_pct > 60 else "green" if lurker_pct < 40 else "cyan"
-
-        if d['group_leaderboard']:
-            gc_html = ''.join([
-                f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{gc["name"]}</span><span class="rank-count">{gc["msg_count"]:,}</span></div>'
-                for i, gc in enumerate(d['group_leaderboard'][:5], 1)
-            ])
-        else:
-            gc_html = '<div class="slide-text">no group data</div>'
-
-        slides.append(f'''
-        <div class="slide orange-bg">
-            <div class="slide-label">// GROUP CHATS</div>
-            <div class="slide-icon">��</div>
-            <div class="big-number green">{gs['count']}</div>
-            <div class="slide-text">active group chats</div>
-            <div class="stat-grid">
-                <div class="stat-item"><span class="stat-num">{gs['total']:,}</span><span class="stat-lbl">total msgs</span></div>
-                <div class="stat-item"><span class="stat-num">{gs['sent']:,}</span><span class="stat-lbl">sent</span></div>
-                <div class="stat-item"><span class="stat-num">{round(gs['sent']/max(gs['total'],1)*100)}%</span><span class="stat-lbl">yours</span></div>
-            </div>
-            <div class="badge {lurker_class}">{lurker_label}</div>
-            <div class="slide-text" style="margin-top:18px;">your most active groups</div>
-            <div class="rank-list group-list">{gc_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_group_chats.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Personality slide
-    slides.append(f'''
-    <div class="slide purple-bg">
-        <div class="slide-label">// DIAGNOSIS</div>
-        <div class="slide-text">texting personality</div>
-        <div class="personality-type">{ptype}</div>
-        <div class="roast">"{proast}"</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_personality.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Who texts first
-    starter_label = "YOU START" if d['starter_pct'] > 50 else "THEY START"
-    starter_class = "green" if d['starter_pct'] > 50 else "yellow"
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// WHO TEXTS FIRST</div>
-        <div class="slide-text">conversation initiator</div>
-        <div class="big-number {starter_class}">{d['starter_pct']}<span class="pct">%</span></div>
-        <div class="slide-text">of convos started by you</div>
-        <div class="badge {starter_class}">{starter_label}</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_who_texts_first.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Response time
-    resp_class = 'green' if d['resp'] < 10 else 'yellow' if d['resp'] < 60 else 'red'
-    resp_label = "INSTANT" if d['resp'] < 10 else "NORMAL" if d['resp'] < 60 else "SLOW"
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// RESPONSE TIME</div>
-        <div class="slide-text">avg reply</div>
-        <div class="big-number {resp_class}">{d['resp']}</div>
-        <div class="slide-text">minutes</div>
-        <div class="badge {resp_class}">{resp_label}</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_response_time.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Peak hours
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// PEAK HOURS</div>
-        <div class="slide-text">most active</div>
-        <div class="big-number green">{hr_str}</div>
-        <div class="slide-text">on <span class="yellow">{d['day']}s</span></div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_peak_hours.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # 3AM Bestie
-    if d['late']:
-        ln = d['late'][0]
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// 3AM BESTIE</div>
-            <div class="slide-icon">🌙</div>
-            <div class="huge-name cyan">{n(ln[0])}</div>
-            <div class="big-number yellow">{ln[1]}</div>
-            <div class="slide-text">late night texts</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_3am_bestie.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Busiest Day
-    if d['busiest_day']:
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// BUSIEST DAY</div>
-            <div class="slide-text">your most unhinged day</div>
-            <div class="big-number orange">{busiest_str}</div>
-            <div class="slide-text"><span class="yellow">{busiest_count:,}</span> messages in one day</div>
-            <div class="roast">what happened??</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_busiest_day.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Biggest fan
-    if d['fan']:
-        f = d['fan'][0]
-        ratio = round(f[1]/(f[2]+1), 1)
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// BIGGEST FAN</div>
-            <div class="slide-text">texts you most</div>
-            <div class="huge-name orange">{n(f[0])}</div>
-            <div class="slide-text"><span class="big-number yellow" style="font-size:56px">{ratio}x</span> more than you</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_biggest_fan.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Down bad
-    if d['simp']:
-        si = d['simp'][0]
-        ratio = round(si[1]/(si[2]+1), 1)
-        slides.append(f'''
-        <div class="slide red-bg">
-            <div class="slide-label">// DOWN BAD</div>
-            <div class="slide-text">you simp for</div>
-            <div class="huge-name">{n(si[0])}</div>
-            <div class="slide-text">you text <span class="big-number yellow" style="font-size:56px">{ratio}x</span> more</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_down_bad.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Your Priority List (who you reply to fastest)
-    if d.get('priority_list'):
-        def format_time(mins):
-            if mins < 1:
-                return "<1 min"
-            elif mins < 60:
-                return f"{int(mins)} min"
-            else:
-                return f"{mins/60:.1f} hr"
-
-        priority_html = ''.join([f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{n(h)}</span><span class="rank-count cyan">{format_time(t)}</span></div>' for i,(h,t,_) in enumerate(d['priority_list'][:5],1)])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// YOUR PRIORITY LIST</div>
-            <div class="slide-text">who you reply to fastest</div>
-            <div class="rank-list">{priority_html}</div>
-            <div class="roast" style="margin-top:16px;">these people get the instant reply</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_priority_list.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Who Drops Everything (who replies to YOU fastest)
-    if d.get('fast_responders'):
-        def format_time(mins):
-            if mins < 1:
-                return "<1 min"
-            elif mins < 60:
-                return f"{int(mins)} min"
-            else:
-                return f"{mins/60:.1f} hr"
-
-        fast_html = ''.join([f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{n(h)}</span><span class="rank-count green">{format_time(t)}</span></div>' for i,(h,t,_) in enumerate(d['fast_responders'][:5],1)])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// WHO DROPS EVERYTHING</div>
-            <div class="slide-text">your fastest responders</div>
-            <div class="rank-list">{fast_html}</div>
-            <div class="roast" style="margin-top:16px;">they see your name and stop what they're doing</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_fast_responders.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Who Texts First (per-person initiation breakdown)
-    if d.get('initiation_breakdown'):
-        # Split into "you always reach out" vs "they always find you"
-        you_reach_out = [(h, y, t, tc) for h, y, t, tc in d['initiation_breakdown'] if tc > 0 and (y / tc) > 0.7][:3]
-        they_find_you = [(h, y, t, tc) for h, y, t, tc in d['initiation_breakdown'] if tc > 0 and (t / tc) > 0.7][:3]
-
-        if you_reach_out or they_find_you:
-            you_html = ''
-            they_html = ''
-            if you_reach_out:
-                you_html = ''.join([f'<div class="rank-item"><span class="rank-num">📤</span><span class="rank-name">{n(h)}</span><span class="rank-count yellow">{int(y/tc*100)}%</span></div>' for h,y,t,tc in you_reach_out])
-            if they_find_you:
-                they_html = ''.join([f'<div class="rank-item"><span class="rank-num">📥</span><span class="rank-name">{n(h)}</span><span class="rank-count cyan">{int(t/tc*100)}%</span></div>' for h,y,t,tc in they_find_you])
-
-            slides.append(f'''
-            <div class="slide">
-                <div class="slide-label">// WHO TEXTS FIRST</div>
-                <div class="slide-text">per-person initiation breakdown</div>
-                <div class="dual-cards">
-                    {f'<div class="stat-card"><div class="stat-tag">You Always Reach Out</div><div class="rank-list">{you_html}</div></div>' if you_html else ''}
-                    {f'<div class="stat-card"><div class="stat-tag">They Always Find You</div><div class="rank-list">{they_html}</div></div>' if they_html else ''}
-                </div>
-                <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_who_texts_first.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-                <div class="slide-watermark">wrap2026.com</div>
-            </div>''')
-
-    # Heating Up
-    if d['heating']:
-        heat_html = ''.join([f'<div class="rank-item"><span class="rank-num">🔥</span><span class="rank-name">{n(h)}</span><span class="rank-count green">+{h2-h1}</span></div>' for h,h1,h2 in d['heating'][:5]])
-        slides.append(f'''
-        <div class="slide orange-bg">
-            <div class="slide-label">// HEATING UP</div>
-            <div class="slide-text">getting stronger in H2</div>
-            <div class="rank-list">{heat_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_heating_up.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Ghosted
-    if d['ghosted']:
-        ghost_html = ''.join([f'<div class="rank-item"><span class="rank-num">👻</span><span class="rank-name">{n(h)}</span><span class="rank-count"><span class="green">{b}</span> → <span class="red">{a}</span></span></div>' for h,b,a in d['ghosted'][:5]])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// GHOSTED</div>
-            <div class="slide-text">they chose peace</div>
-            <div class="rank-list">{ghost_html}</div>
-            <div class="roast" style="margin-top:16px;">before June → after</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_ghosted.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Emojis
-    if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
-        emo = '  '.join([e[0] for e in d['emoji'] if e[1] > 0])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// EMOJIS</div>
-            <div class="slide-text">your emotional range</div>
-            <div class="emoji-row">{emo}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_emojis.png', this)"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Final slide: Summary
-    top3_names = ', '.join([n(h) for h,_,_,_ in top[:3]]) if top else "No contacts"
-    slides.append(f'''
-    <div class="slide summary-slide">
-        <div class="summary-card" id="summaryCard">
-            <div class="summary-header">
-                <span class="summary-logo">💬</span>
-                <span class="summary-title">WHATSAPP WRAPPED 2026</span>
-            </div>
-            <div class="summary-hero">
-                <div class="summary-big-stat">
-                    <span class="summary-big-num">{s[0]:,}</span>
-                    <span class="summary-big-label">messages</span>
-                </div>
-            </div>
-            <div class="summary-stats">
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{s[3]:,}</span>
-                    <span class="summary-stat-lbl">people</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{words_display}</span>
-                    <span class="summary-stat-lbl">words</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{d['starter_pct']}%</span>
-                    <span class="summary-stat-lbl">starter</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{d['resp']}m</span>
-                    <span class="summary-stat-lbl">response</span>
-                </div>
-            </div>
-            <div class="summary-personality">
-                <span class="summary-personality-type">{ptype}</span>
-            </div>
-            <div class="summary-top3">
-                <span class="summary-top3-label">TOP 3:</span>
-                <span class="summary-top3-names">{top3_names}</span>
-            </div>
-            <div class="summary-footer">
-                <span>wrap2026.com</span>
-            </div>
-        </div>
-        <button class="screenshot-btn" onclick="takeScreenshot()">
-            <span class="btn-icon">📸</span>
-            <span>Save Screenshot</span>
-        </button>
-        <div class="share-hint">share your damage</div>
-    </div>''')
-
-    slides_html = ''.join(slides)
-    num_slides = len(slides)
-
-    favicon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌯</text></svg>"
-
-    html = f'''<!DOCTYPE html>
-<html><head>
+TEMPLATE = r'''<!DOCTYPE html>
+<html lang="en"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WhatsApp Wrapped 2026</title>
-<link rel="icon" href="{favicon}">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>__TITLE__</title>
+<meta name="theme-color" content="#160A26">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Azeret+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
+:root{
+  --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
+  --cobalt:#2F4BFF; --pink:#FF5FA2; --white:#FFFFFF;
+  --cw:min(100vw, calc(92dvh * 9 / 16));
+  --ch:calc(var(--cw) * 16 / 9);
+  --display:'Anybody',system-ui,sans-serif;
+  --body:'Onest',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.3,1.4,.5,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--night);color:var(--white);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-y;transition:background .6s var(--ease)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
-:root {{
-    --bg: #0a0a12;
-    --text: #f0f0f0;
-    --muted: #8892a0;
-    --green: #25D366;
-    --yellow: #fbbf24;
-    --red: #f87171;
-    --cyan: #22d3ee;
-    --pink: #f472b6;
-    --orange: #fb923c;
-    --purple: #a78bfa;
-    --whatsapp: #25D366;
-    --font-pixel: 'Silkscreen', cursive;
-    --font-mono: 'Azeret Mono', monospace;
-    --font-body: 'Space Grotesk', sans-serif;
-}}
+/* themes */
+.t-cobalt{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
+.t-lilac{--bg:var(--lilac);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-white{--bg:var(--white);--fg:var(--ink);--soft:rgba(36,16,56,.07);--tint:var(--cobalt)}
+.t-ink{--bg:var(--ink);--fg:var(--lilac);--soft:rgba(238,232,255,.1);--tint:var(--pink)}
+.t-night{--bg:var(--night);--fg:var(--lilac);--soft:rgba(238,232,255,.09);--tint:var(--pink)}
+.t-pink{--bg:var(--pink);--fg:var(--ink);--soft:rgba(36,16,56,.1);--tint:var(--white)}
+.t-lav{--bg:var(--lav);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-stage{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
 
-* {{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }}
-html, body {{ height:100%; overflow:hidden; }}
-body {{ font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); }}
+/* deck */
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;visibility:hidden;transform:translateX(5%) scale(.97);transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s .55s}
+.slide.past{transform:translateX(-5%) scale(.97)}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
+.card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
+.body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
 
-.gallery {{
-    display:flex;
-    height:100%;
-    transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
-}}
+/* type */
+.lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
+.lead.gap{margin-top:1.2em}
+.hero.fit{white-space:nowrap;overflow-wrap:normal}
+.hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
+.hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero.sm{font-size:3.4em}
+.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
+.after b{font-weight:600;opacity:1}
+.after .count{font-weight:600}
 
-.slide {{
-    position:relative;
-    min-width:100vw;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    padding:40px 32px 80px;
-    text-align:center;
-    background:var(--bg);
-}}
+/* stat split */
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
+.split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
 
-.slide.intro {{ background:linear-gradient(145deg,#12121f 0%,#0d1f0f 50%,#0f2847 100%); }}
-.slide.whatsapp-bg {{ background:linear-gradient(145deg,#12121f 0%,#0d2f1a 100%); }}
-.slide.purple-bg {{ background:linear-gradient(145deg,#12121f 0%,#1f1a3d 100%); }}
-.slide.orange-bg {{ background:linear-gradient(145deg,#12121f 0%,#2d1f1a 100%); }}
-.slide.red-bg {{ background:linear-gradient(145deg,#12121f 0%,#2d1a1a 100%); }}
-.slide.summary-slide {{ background:linear-gradient(145deg,#0d1f0f 0%,#12121f 50%,#1a1a2e 100%); }}
-.slide.contrib-slide {{ background:linear-gradient(145deg,#12121f 0%,#0d1f1a 100%); padding:24px 16px 80px; }}
+/* ranked rows */
+.rows{list-style:none;display:flex;flex-direction:column;gap:.32em;margin-top:.9em}
+.row{position:relative;display:grid;grid-template-columns:1.5em minmax(0,1fr) auto;align-items:baseline;gap:.4em;padding:.55em .75em;border-radius:.7em;overflow:hidden;font-size:.95em}
+.row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
+.row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
+.row>*{position:relative;z-index:1}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
+.row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
+.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
+.row:first-child{font-size:1.15em}
+.row:last-child{border-bottom-color:transparent}
+.row.extra{display:none}
+.rows.all .row.extra{display:grid}
+.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.7;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
+.more:hover{opacity:1}
 
-/* === CONTRIBUTION GRAPH STYLES === */
-.contrib-graph {{ display:flex; flex-direction:column; align-items:center; margin:20px auto; padding:0 8px; }}
-.contrib-container {{ display:flex; gap:4px; }}
-.contrib-days {{ display:flex; flex-direction:column; gap:2px; font-size:9px; color:var(--muted); padding-top:20px; min-width:28px; text-align:right; padding-right:4px; }}
-.contrib-days span {{ height:10px; line-height:10px; }}
-.contrib-main {{ display:flex; flex-direction:column; }}
-.contrib-months {{ position:relative; height:16px; margin-bottom:4px; font-size:10px; color:var(--muted); }}
-.contrib-months span {{ position:absolute; white-space:nowrap; }}
-.contrib-grid {{ display:flex; gap:2px; }}
-.contrib-week {{ display:flex; flex-direction:column; gap:2px; }}
-.contrib-cell {{ width:10px; height:10px; border-radius:2px; background:rgba(255,255,255,0.05); }}
-.contrib-cell.empty {{ background:transparent; }}
-.contrib-cell.level-0 {{ background:rgba(255,255,255,0.12); }}
-.contrib-cell.level-1 {{ background:rgba(37,211,102,0.25); }}
-.contrib-cell.level-2 {{ background:rgba(37,211,102,0.45); }}
-.contrib-cell.level-3 {{ background:rgba(37,211,102,0.70); }}
-.contrib-cell.level-4 {{ background:var(--whatsapp); }}
-.contrib-cell:not(.empty) {{ cursor:pointer; position:relative; }}
-.contrib-tooltip {{ position:fixed; background:rgba(20,20,30,0.95); color:var(--text); padding:8px 12px; border-radius:6px; font-size:12px; pointer-events:none; z-index:1000; white-space:nowrap; border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 12px rgba(0,0,0,0.3); }}
-.contrib-tooltip .tooltip-count {{ font-family:var(--font-mono); color:var(--whatsapp); font-weight:600; }}
-.contrib-tooltip .tooltip-date {{ color:var(--muted); font-size:11px; margin-top:2px; }}
-.contrib-legend {{ display:flex; align-items:center; justify-content:center; gap:4px; margin-top:12px; font-size:10px; color:var(--muted); }}
-.contrib-legend .contrib-cell {{ cursor:default; }}
-.contrib-stats {{ display:flex; gap:32px; margin-top:24px; justify-content:center; }}
-.contrib-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.contrib-stat-num {{ font-family:var(--font-mono); font-size:28px; font-weight:600; color:var(--whatsapp); }}
-.contrib-stat-lbl {{ font-size:11px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }}
+/* avatars: five colorways, swapped where one would vanish into the slide */
+.a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
+.t-cobalt .a0,.t-stage .a0{--ab:var(--white);--af:var(--cobalt)}.t-cobalt .a4{--ab:var(--lilac);--af:var(--ink)}
+.t-pink .a1{--ab:var(--white);--af:var(--pink)}
+.t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
+.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
+/* avatars */
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
+.stack{display:flex;margin-bottom:auto;padding-left:.7em}
+.stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
+.stack .av:nth-child(1){width:4.6em;height:4.6em;z-index:5}
+.stack .av:nth-child(2){z-index:4}.stack .av:nth-child(3){z-index:3}.stack .av:nth-child(4){z-index:2}.stack .av:nth-child(5){z-index:1}
 
-.slide h1 {{ font-family:var(--font-pixel); font-size:36px; font-weight:400; line-height:1.2; margin:20px 0; }}
-.slide-label {{ font-family:var(--font-pixel); font-size:12px; font-weight:400; color:var(--whatsapp); letter-spacing:0.5px; margin-bottom:16px; }}
-.slide-icon {{ font-size:80px; margin-bottom:16px; }}
-.slide-text {{ font-size:18px; color:var(--muted); margin:8px 0; }}
-.subtitle {{ font-size:18px; color:var(--muted); margin-top:8px; }}
+/* message pile */
+.pile{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:auto;align-content:flex-start;max-height:46%;overflow:hidden}
+.pile i{width:1.05em;height:.75em;border-radius:.4em .4em .4em .12em;background:var(--soft);background:color-mix(in srgb,var(--fg) 16%,transparent)}
+.pile i.s{background:var(--cobalt);border-radius:.4em .4em .12em .4em}
 
-.big-number {{ font-family:var(--font-mono); font-size:80px; font-weight:500; line-height:1; letter-spacing:-2px; }}
-.pct {{ font-family:var(--font-body); font-size:48px; }}
-.huge-name {{ font-family:var(--font-body); font-size:32px; font-weight:600; line-height:1.25; word-break:break-word; max-width:90%; margin:16px 0; }}
-.personality-type {{ font-family:var(--font-pixel); font-size:18px; font-weight:400; line-height:1.25; color:var(--purple); margin:24px 0; text-transform:uppercase; letter-spacing:0.5px; }}
-.roast {{ font-style:italic; color:var(--muted); font-size:18px; margin-top:16px; max-width:400px; }}
+/* redacted text */
+.redact{display:flex;flex-direction:column;gap:.55em;margin-bottom:auto}
+.redact i{height:.8em;width:var(--w);border-radius:.4em;background:var(--soft);background:color-mix(in srgb,var(--fg) 12%,transparent)}
+.redact i:nth-child(4n){background:var(--cobalt);opacity:.85}
 
-.green {{ color:var(--green); }}
-.yellow {{ color:var(--yellow); }}
-.red {{ color:var(--red); }}
-.cyan {{ color:var(--cyan); }}
-.pink {{ color:var(--pink); }}
-.orange {{ color:var(--orange); }}
-.purple {{ color:var(--purple); }}
+/* streak chain */
+.chain{display:grid;grid-template-columns:repeat(15,1fr);gap:.3em;margin-bottom:auto}
+.chain i{aspect-ratio:1;border-radius:.25em;background:var(--cobalt)}
 
-.stat-grid {{ display:flex; gap:40px; margin-top:28px; }}
-.stat-item {{ display:flex; flex-direction:column; align-items:center; }}
-.stat-num {{ font-family:var(--font-mono); font-size:24px; font-weight:600; color:var(--cyan); }}
-.stat-lbl {{ font-size:11px; color:var(--muted); margin-top:6px; text-transform:uppercase; letter-spacing:0.5px; }}
+/* stars */
+.stars{position:absolute;inset:4em 0 50% 0;pointer-events:none}
+.stars i{position:absolute;width:.25em;height:.25em;border-radius:50%;background:var(--lilac);box-shadow:0 0 .6em var(--lilac);animation:twinkle 3s infinite;animation-delay:calc(var(--d) * -.4s)}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
-.rank-list {{ width:100%; max-width:420px; margin-top:20px; padding:0 16px 16px; }}
-.rank-item {{ display:flex; align-items:center; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.1); gap:16px; }}
-.rank-item:last-child {{ border-bottom:none; }}
-.rank-item:first-child {{ background:linear-gradient(90deg, rgba(37,211,102,0.15) 0%, transparent 100%); padding:14px 12px; margin:0 -12px; border-radius:8px; border-bottom:none; }}
-.rank-item:first-child .rank-name {{ font-weight:600; color:var(--whatsapp); }}
-.rank-item:first-child .rank-count {{ font-size:20px; }}
-.rank-num {{ font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--whatsapp); width:36px; text-align:center; }}
-.rank-name {{ flex:1; font-size:16px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.rank-count {{ font-family:var(--font-mono); font-size:18px; font-weight:600; color:var(--yellow); }}
+/* year sparkline */
+.spark{display:flex;align-items:flex-end;gap:1px;height:9em;margin-bottom:auto;padding-bottom:1.4em}
+.spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
+.spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
 
-.badge {{ display:inline-block; padding:8px 18px; border-radius:24px; font-family:var(--font-pixel); font-size:9px; font-weight:400; text-transform:uppercase; letter-spacing:0.3px; margin-top:20px; border:2px solid; }}
-.badge.green {{ border-color:var(--green); color:var(--green); background:rgba(37,211,102,0.1); }}
-.badge.yellow {{ border-color:var(--yellow); color:var(--yellow); background:rgba(251,191,36,0.1); }}
-.badge.red {{ border-color:var(--red); color:var(--red); background:rgba(248,113,113,0.1); }}
-.badge.cyan {{ border-color:var(--cyan); color:var(--cyan); background:rgba(34,211,238,0.1); }}
+/* sticker */
+.sticker.big{font-size:6em}
+.sticker{margin-bottom:auto;align-self:flex-start;font-size:4.2em;line-height:1;width:1.7em;height:1.7em;display:grid;place-items:center;border-radius:50%;background:var(--soft);transform:rotate(-8deg)}
 
-.emoji-row {{ font-size:64px; letter-spacing:20px; margin:28px 0; }}
+/* typing */
+.typing{display:flex;gap:.3em;padding:.85em 1em;font-size:1.6em}
+.typing i{width:.42em;height:.42em;border-radius:50%;background:currentColor;opacity:.35;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-.12em)}}
 
-.tap-hint {{ position:absolute; bottom:60px; font-size:16px; color:var(--muted); animation:pulse 2s infinite; }}
-@keyframes pulse {{ 0%,100%{{opacity:0.4}} 50%{{opacity:1}} }}
+/* clock */
+.clock{position:relative;width:11em;height:11em;border-radius:50%;margin-bottom:auto;background:var(--soft)}
+.clock i{position:absolute;left:50%;top:50%;width:.22em;height:.9em;margin:-.45em 0 0 -.11em;background:currentColor;opacity:.4;border-radius:.2em;transform:rotate(var(--t)) translateY(-4.6em)}
+.clock b{position:absolute;left:50%;top:50%;width:.36em;height:4.2em;margin-left:-.18em;background:var(--pink);border-radius:.3em;transform-origin:50% 0;transform:rotate(calc(var(--a) + 180deg));box-shadow:0 0 1.2em var(--pink)}
+.clock u{position:absolute;left:50%;top:50%;width:.9em;height:.9em;margin:-.45em;border-radius:50%;background:var(--pink)}
 
-/* === SLIDE ANIMATIONS === */
-/* Elements start hidden, animate when slide is active */
-.slide .slide-label,
-.slide .slide-text,
-.slide .slide-icon,
-.slide .big-number,
-.slide .huge-name,
-.slide .personality-type,
-.slide .roast,
-.slide .badge,
-.slide .stat-grid,
-.slide .rank-item,
-.slide .emoji-row,
-.slide h1,
-.slide .subtitle,
-.slide .summary-card,
-.slide .contrib-graph,
-.slide .contrib-stats {{
-    opacity: 0;
-    transform: translateY(20px);
-}}
+/* versus */
+.vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
+.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
+.vs div:last-child{background:var(--soft);color:var(--fg)}
+.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
 
-/* Gallery transition */
-.gallery {{ transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }}
+/* bubbles */
+.thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
+.bub{max-width:80%;padding:.5em .8em;border-radius:1.1em;font-size:1em;line-height:1.3;width:fit-content}
+.bub.r{background:var(--soft);border-bottom-left-radius:.3em}
+.bub.s{align-self:flex-end;background:var(--fg);color:var(--bg);border-bottom-right-radius:.3em}
+.thread.big .bub{font-size:1.4em}
 
-/* === DEFAULT ANIMATIONS - Varied motion styles === */
-.slide.active .slide-label {{ animation: labelSlide 0.4s ease-out forwards; }}
-.slide.active .slide-text {{ animation: textFade 0.4s ease-out 0.1s forwards; }}
-.slide.active .slide-icon {{ animation: iconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s forwards; }}
-.slide.active h1 {{ animation: titleReveal 0.5s ease-out 0.12s forwards; }}
-.slide.active .subtitle {{ animation: textFade 0.4s ease-out 0.25s forwards; }}
-.slide.active .big-number {{ animation: numberFlip 0.6s ease-out 0.18s forwards; }}
-.slide.active .huge-name {{ animation: nameBlur 0.5s ease-out 0.2s forwards; }}
-.slide.active .personality-type {{ animation: glitchReveal 0.8s ease-out 0.15s forwards; }}
-.slide.active .roast {{ animation: roastType 0.6s ease-out 0.4s forwards; }}
-.slide.active .badge {{ animation: badgeStamp 0.4s ease-out 0.5s forwards; }}
-.slide.active .stat-grid {{ animation: none; opacity: 1; transform: none; }}
-.slide.active .stat-item {{ animation: statFade 0.35s ease-out forwards; }}
-.slide.active .stat-item:nth-child(1) {{ animation-delay: 0.3s; }}
-.slide.active .stat-item:nth-child(2) {{ animation-delay: 0.38s; }}
-.slide.active .stat-item:nth-child(3) {{ animation-delay: 0.46s; }}
-.slide.active .rank-list {{ animation: none; opacity: 1; transform: none; }}
-.slide.active .rank-item {{ animation: rankSlide 0.35s ease-out forwards; }}
-.slide.active .rank-item:first-child {{ animation: topRankDrop 0.45s ease-out forwards; }}
-.slide.active .rank-item:nth-child(1) {{ animation-delay: 0.1s; }}
-.slide.active .rank-item:nth-child(2) {{ animation-delay: 0.18s; }}
-.slide.active .rank-item:nth-child(3) {{ animation-delay: 0.26s; }}
-.slide.active .rank-item:nth-child(4) {{ animation-delay: 0.34s; }}
-.slide.active .rank-item:nth-child(5) {{ animation-delay: 0.42s; }}
-.slide.active .emoji-row {{ animation: emojiSpread 0.6s ease-out 0.2s forwards; }}
-.slide.active .summary-card {{ animation: cardRise 0.6s ease-out 0.1s forwards; }}
-.slide.active .screenshot-btn {{ opacity: 0; animation: buttonSlide 0.4s ease-out 0.5s forwards; }}
-.slide.active .share-hint {{ opacity: 0; animation: hintFade 0.4s ease-out 0.7s forwards; }}
+/* intro */
+.intro{display:flex;flex-direction:column;flex:1}
+.stretch{font-family:var(--display);line-height:.82;letter-spacing:-.04em;margin-bottom:auto}
+.stretch span{display:block}
+.stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
+.stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
+.intro .thread{margin:0 0 1.2em}
+.hint{font-size:.85em;opacity:.7;font-weight:500}
 
-/* === INTRO SLIDE - Spin entrance === */
-.slide.intro.active .slide-icon {{ animation: introIconSpin 0.7s ease-out forwards; }}
-.slide.intro.active h1 {{ animation: introTitleGlitch 0.6s ease-out 0.3s forwards; }}
-.slide.intro.active .subtitle {{ animation: textFade 0.4s ease-out 0.5s forwards; }}
+/* year dots */
+.year{display:flex;flex-direction:column;gap:.34em;margin:1em 0 .2em}
+.mrow{display:grid;grid-template-columns:2em minmax(0,1fr);align-items:center}
+.mrow span{font-size:.6em;opacity:.6;font-weight:500}
+.dots{display:grid;grid-template-columns:repeat(31,1fr);gap:.14em}
+.dots i{aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.12}
+.dots i.na{opacity:0}
+.dots i.fut{opacity:.04}
+.dots i.l1{opacity:.3}.dots i.l2{opacity:.55}.dots i.l3{opacity:.85}
+.dots i.l4{opacity:1;background:var(--pink);box-shadow:0 0 .5em var(--pink)}
+.tip{position:fixed;pointer-events:none;background:var(--white);color:var(--ink);font:500 13px var(--body);padding:6px 10px;border-radius:999px;transform:translate(-50%,-140%);opacity:0;transition:opacity .15s;z-index:20;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 
-/* === WHATSAPP SLIDE (#1 person) - Soft glow === */
-.slide.whatsapp-bg.active .slide-label {{ animation: textFade 0.4s ease-out forwards; }}
-.slide.whatsapp-bg.active .huge-name {{ animation: nameGlow 0.6s ease-out 0.15s forwards; }}
-.slide.whatsapp-bg.active .big-number {{ animation: numberFlip 0.5s ease-out 0.35s forwards; }}
+/* moon */
+.moon{position:absolute;top:4.6em;right:1.6em;width:4.5em;height:4.5em;border-radius:50%;box-shadow:inset -1.1em .5em 0 0 var(--pink);filter:drop-shadow(0 0 1.4em rgba(255,95,162,.45));transform:rotate(-20deg)}
 
-/* === PURPLE SLIDE (Personality) - Glitch === */
-.slide.purple-bg.active .slide-label {{ animation: labelGlitch 0.5s ease-out forwards; }}
-.slide.purple-bg.active .personality-type {{ animation: personalityGlitch 0.8s ease-out 0.12s forwards; }}
-.slide.purple-bg.active .roast {{ animation: flickerReveal 0.6s ease-out 0.45s forwards; }}
+/* emoji */
+.emoji{display:flex;flex-wrap:wrap;gap:.1em .25em;font-size:3.2em;line-height:1.15;margin:.2em 0 .3em}
+.emoji span{display:inline-block}
 
-/* === RED SLIDE (Down Bad) - Drop from above === */
-.slide.red-bg.active .slide-label {{ animation: textFade 0.4s ease-out forwards; }}
-.slide.red-bg.active .huge-name {{ animation: dramaticDrop 0.5s ease-out 0.12s forwards; }}
-.slide.red-bg.active .big-number {{ animation: shakeReveal 0.5s ease-out 0.35s forwards; }}
+/* duo */
+.duo{margin-top:1.1em}
+.duo+.duo{padding-top:1.1em;border-top:1.5px solid var(--soft)}
 
-/* === ORANGE SLIDE (Heating Up / Top Groups) - Glow rise === */
-.slide.orange-bg.active .slide-label {{ animation: fireLabel 0.4s ease-out forwards; }}
-.slide.orange-bg.active .rank-item {{ animation: glowRise 0.4s ease-out forwards; }}
-.slide.orange-bg.active .rank-item:first-child {{ animation: glowRise 0.45s ease-out forwards; }}
-.slide.orange-bg.active .rank-item:nth-child(1) {{ animation-delay: 0.06s; }}
-.slide.orange-bg.active .rank-item:nth-child(2) {{ animation-delay: 0.14s; }}
-.slide.orange-bg.active .rank-item:nth-child(3) {{ animation-delay: 0.22s; }}
-.slide.orange-bg.active .rank-item:nth-child(4) {{ animation-delay: 0.30s; }}
-.slide.orange-bg.active .rank-item:nth-child(5) {{ animation-delay: 0.38s; }}
+/* summary */
+.t-stage .tilt{perspective:1200px}
+.summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
+.summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
+.summary .hero{font-size:4.2em}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
+.grid4 dt{font-size:.7em;opacity:.7}
+.grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
+.top3{font-size:.85em;opacity:.85;margin-top:.5em}
 
-/* === SUMMARY SLIDE - Clean rise === */
-.slide.summary-slide.active .summary-card {{ animation: cardRise 0.6s ease-out 0.1s forwards; }}
+/* chrome: progress + controls, sized to the card */
+.top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
+.bars{display:flex;gap:4px}
+.bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
+.bars button::after{content:"";position:absolute;inset:-10px 0}
+.bars button.done{opacity:.9}
+.ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
+.ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
+.pills{display:flex;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
+.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
+.pill:active{transform:scale(.94)}
+.pill svg{width:14px;height:14px}
+.eq{display:inline-flex;gap:2px;align-items:center;height:12px}
+.eq i{width:2px;height:4px;background:currentColor;border-radius:1px;transition:height .2s}
+.sound-on .eq i{animation:eq .9s infinite ease-in-out}
+.sound-on .eq i:nth-child(2){animation-delay:.15s}.sound-on .eq i:nth-child(3){animation-delay:.3s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
 
-/* === CONTRIBUTION GRAPH SLIDE - Grid reveal === */
-.slide.contrib-slide.active .contrib-graph {{ animation: graphReveal 0.8s ease-out 0.15s forwards; }}
-.slide.contrib-slide.active .contrib-stats {{ animation: none; opacity: 1; transform: none; }}
-.slide.contrib-slide.active .contrib-stat {{ animation: statFade 0.35s ease-out forwards; }}
-.slide.contrib-slide.active .contrib-stat:nth-child(1) {{ animation-delay: 0.5s; }}
-.slide.contrib-slide.active .contrib-stat:nth-child(2) {{ animation-delay: 0.6s; }}
-.slide.contrib-slide.active .contrib-stat:nth-child(3) {{ animation-delay: 0.7s; }}
+/* entrance choreography, replayed on each slide */
+.on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
+.on .lead{animation-delay:.05s}
+.on .hero{animation:heroIn .8s var(--spring) both;animation-delay:.15s}
+.on .after{animation-delay:.45s}
+.on .split,.on .grid4{animation:rise .7s var(--ease) both;animation-delay:.6s}
+.on .row{animation:rowIn .55s var(--ease) both;animation-delay:calc(.2s + var(--d) * 70ms)}
+.on .row::before{animation:grow .9s var(--ease) both;animation-delay:calc(.35s + var(--d) * 70ms)}
+.on .bub{animation:pop .45s var(--spring) both}
+.on .bub:nth-child(2){animation-delay:.55s}.on .bub:nth-child(3){animation-delay:1.1s}
+.on .intro .a1{animation-delay:.9s}.on .intro .a2{animation-delay:1.6s}.on .intro .a3{animation-delay:2.3s}
+.on .intro .a4{animation:rise .6s var(--ease) both;animation-delay:2.9s}
+.on .stretch span:last-child{animation:stretch 1.4s var(--ease) both}
+.on .stretch span:first-child{animation:rise .8s var(--ease) both}
+.on .emoji span{animation:pop .5s var(--spring) both;animation-delay:calc(.25s + var(--d) * 90ms)}
+.on .dots i{animation:dot .5s var(--ease) both;animation-delay:calc(var(--r, 0) * 45ms)}
+.on .moon{animation:moon 1.4s var(--ease) both}
+.on .redact i{animation:grow .8s var(--ease) both;transform-origin:left;animation-delay:calc(var(--k, 0) * 60ms)}
+.on .chain i{animation:pop .3s var(--spring) both;animation-delay:calc(var(--k, 0) * 12ms)}
+.on .spark i{animation:barUp .7s var(--ease) both;transform-origin:bottom;animation-delay:calc(var(--k, 0) * 2ms)}
+@keyframes barUp{from{transform:scaleY(0)}}
+.on .pile i{animation:pop .35s var(--spring) both;animation-delay:calc(var(--d, 0) * 1ms)}
+.on .av{animation:pop .6s var(--spring) both;animation-delay:calc(.1s + var(--i, 0) * 90ms)}
+.on .sticker{animation:sticker .8s var(--spring) both}
+.on .clock b{animation:hand 1.6s var(--spring) both}
+.on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
+.on .vs div:last-child{animation-delay:.65s}
+@keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
+@keyframes hand{from{transform:rotate(180deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
+@keyframes heroIn{from{opacity:0;transform:translateY(24px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes stretch{from{font-stretch:50%;font-variation-settings:"wdth" 50;opacity:0}30%{opacity:1}to{font-stretch:150%;font-variation-settings:"wdth" 150}}
+@keyframes dot{from{transform:scale(0)}to{transform:none}}
+@keyframes moon{from{opacity:0;transform:rotate(-60deg) translateY(1em)}to{opacity:1;transform:rotate(-20deg)}}
+.after{--o:.85}
 
-/* ===== KEYFRAMES ===== */
+/* saving: freeze everything at its final frame */
+.capturing *, .capturing *::before{animation:none !important;transition:none !important}
+.card.saving{border-radius:0;box-shadow:none}
 
-/* Base animations - VARIED STYLES */
-
-/* Slide from diagonal */
-@keyframes labelSlide {{
-    0% {{ opacity: 0; transform: translateY(12px) translateX(-8px); }}
-    100% {{ opacity: 1; transform: translateY(0) translateX(0); }}
-}}
-
-/* Simple fade up */
-@keyframes textFade {{
-    0% {{ opacity: 0; transform: translateY(15px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-/* Scale with slight overshoot */
-@keyframes titleReveal {{
-    0% {{ opacity: 0; transform: translateY(25px) scale(0.95); }}
-    70% {{ transform: translateY(-3px) scale(1.01); }}
-    100% {{ opacity: 1; transform: translateY(0) scale(1); }}
-}}
-
-/* Wobble rotation */
-@keyframes iconPop {{
-    0% {{ opacity: 0; transform: translateY(20px) scale(0.4) rotate(-15deg); }}
-    50% {{ transform: translateY(-8px) scale(1.15) rotate(8deg); }}
-    75% {{ transform: translateY(2px) scale(0.95) rotate(-3deg); }}
-    100% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0); }}
-}}
-
-/* 3D flip reveal - for impactful numbers */
-@keyframes numberFlip {{
-    0% {{ opacity: 0; transform: perspective(400px) rotateX(-60deg) translateY(20px); }}
-    60% {{ transform: perspective(400px) rotateX(10deg); }}
-    100% {{ opacity: 1; transform: perspective(400px) rotateX(0) translateY(0); }}
-}}
-
-/* Soft blur fade - for names */
-@keyframes nameBlur {{
-    0% {{ opacity: 0; transform: translateY(20px); filter: blur(8px); }}
-    100% {{ opacity: 1; transform: translateY(0); filter: blur(0); }}
-}}
-
-/* Typewriter cursor feel */
-@keyframes roastType {{
-    0% {{ opacity: 0; clip-path: inset(0 100% 0 0); }}
-    100% {{ opacity: 1; clip-path: inset(0 0 0 0); }}
-}}
-
-/* Stagger fade in - for stat items */
-@keyframes statFade {{
-    0% {{ opacity: 0; transform: translateY(12px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-/* Horizontal slide - for rank items */
-@keyframes rankSlide {{
-    0% {{ opacity: 0; transform: translateX(-20px); }}
-    100% {{ opacity: 1; transform: translateX(0); }}
-}}
-
-/* Crown drop for #1 */
-@keyframes topRankDrop {{
-    0% {{ opacity: 0; transform: translateY(-30px); }}
-    70% {{ transform: translateY(4px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-/* Pill stamp - for badges */
-@keyframes badgeStamp {{
-    0% {{ opacity: 0; transform: scale(1.4); }}
-    60% {{ transform: scale(0.95); }}
-    100% {{ opacity: 1; transform: scale(1); }}
-}}
-
-/* Letter spread - for emoji row */
-@keyframes emojiSpread {{
-    0% {{ opacity: 0; letter-spacing: 0px; }}
-    100% {{ opacity: 1; letter-spacing: 20px; }}
-}}
-
-/* Clean rise - for cards */
-@keyframes cardRise {{
-    0% {{ opacity: 0; transform: translateY(40px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-/* Graph reveal - for contribution graph */
-@keyframes graphReveal {{
-    0% {{ opacity: 0; transform: translateY(30px) scale(0.95); }}
-    100% {{ opacity: 1; transform: translateY(0) scale(1); }}
-}}
-
-/* Simple slide up */
-@keyframes buttonSlide {{
-    0% {{ opacity: 0; transform: translateY(15px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-/* Fade only */
-@keyframes hintFade {{
-    0% {{ opacity: 0; }}
-    100% {{ opacity: 1; }}
-}}
-
-/* Intro slide - spin and glitch */
-@keyframes introIconSpin {{
-    0% {{ opacity: 0; transform: rotate(-180deg) scale(0.3); }}
-    100% {{ opacity: 1; transform: rotate(0) scale(1); }}
-}}
-
-@keyframes introTitleGlitch {{
-    0% {{ opacity: 0; transform: translateY(15px); filter: blur(6px); }}
-    40% {{ opacity: 0.8; transform: translateY(3px) skewX(-3deg); filter: blur(2px); }}
-    70% {{ transform: translateY(-2px) skewX(2deg); filter: blur(0); }}
-    100% {{ opacity: 1; transform: translateY(0) skewX(0); }}
-}}
-
-/* WhatsApp slide - soft glow */
-@keyframes nameGlow {{
-    0% {{ opacity: 0; transform: translateY(15px); filter: blur(4px) brightness(1.3); }}
-    100% {{ opacity: 1; transform: translateY(0); filter: blur(0) brightness(1); }}
-}}
-
-/* Purple slide - glitch chaos */
-@keyframes labelGlitch {{
-    0% {{ opacity: 0; transform: skewX(-5deg); }}
-    50% {{ opacity: 0.7; transform: skewX(3deg); }}
-    100% {{ opacity: 1; transform: skewX(0); }}
-}}
-
-@keyframes personalityGlitch {{
-    0% {{ opacity: 0; transform: translateY(20px); filter: blur(8px); }}
-    20% {{ opacity: 0.5; transform: translateY(10px) skewX(-8deg); filter: blur(4px); }}
-    40% {{ opacity: 0.7; transform: translateY(5px) skewX(5deg); filter: blur(2px); }}
-    60% {{ opacity: 0.9; transform: translateY(-2px) skewX(-2deg); filter: blur(1px); }}
-    80% {{ transform: skewX(1deg); }}
-    100% {{ opacity: 1; transform: translateY(0) skewX(0); filter: blur(0); }}
-}}
-
-@keyframes flickerReveal {{
-    0% {{ opacity: 0; }}
-    20% {{ opacity: 0.4; }}
-    35% {{ opacity: 0.1; }}
-    50% {{ opacity: 0.7; }}
-    65% {{ opacity: 0.3; }}
-    80% {{ opacity: 0.9; }}
-    100% {{ opacity: 1; }}
-}}
-
-@keyframes glitchReveal {{
-    0% {{ opacity: 0; transform: translateY(15px); filter: blur(4px); }}
-    50% {{ opacity: 0.8; transform: translateY(3px) skewX(-3deg); filter: blur(1px); }}
-    100% {{ opacity: 1; transform: translateY(0) skewX(0); filter: blur(0); }}
-}}
-
-/* Red slide - dramatic drop */
-@keyframes dramaticDrop {{
-    0% {{ opacity: 0; transform: translateY(-50px); }}
-    70% {{ transform: translateY(5px); }}
-    100% {{ opacity: 1; transform: translateY(0); }}
-}}
-
-@keyframes shakeReveal {{
-    0% {{ opacity: 0; transform: translateX(0); }}
-    25% {{ opacity: 0.7; transform: translateX(-6px); }}
-    50% {{ transform: translateX(6px); }}
-    75% {{ transform: translateX(-3px); }}
-    100% {{ opacity: 1; transform: translateX(0); }}
-}}
-
-/* Orange slide - glow rise */
-@keyframes fireLabel {{
-    0% {{ opacity: 0; filter: brightness(1.4); }}
-    100% {{ opacity: 1; filter: brightness(1); }}
-}}
-
-@keyframes glowRise {{
-    0% {{ opacity: 0; transform: translateY(20px); filter: brightness(1.3); }}
-    100% {{ opacity: 1; transform: translateY(0); filter: brightness(1); }}
-}}
-
-.summary-card {{
-    background:linear-gradient(145deg,#1a1a2e 0%,#0d1f0f 100%);
-    border:2px solid rgba(255,255,255,0.1);
-    border-radius:24px;
-    padding:32px;
-    width:100%;
-    max-width:420px;
-    text-align:center;
-}}
-.summary-header {{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.1); }}
-.summary-logo {{ font-size:28px; }}
-.summary-title {{ font-family:var(--font-pixel); font-size:11px; font-weight:400; color:var(--text); }}
-.summary-hero {{ margin:24px 0; }}
-.summary-big-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.summary-big-num {{ font-family:var(--font-mono); font-size:56px; font-weight:600; color:var(--whatsapp); line-height:1; letter-spacing:-1px; }}
-.summary-big-label {{ font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:8px; }}
-.summary-stats {{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:24px 0; padding:20px 0; border-top:1px solid rgba(255,255,255,0.1); border-bottom:1px solid rgba(255,255,255,0.1); }}
-.summary-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.summary-stat-val {{ font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--cyan); }}
-.summary-stat-lbl {{ font-size:9px; color:var(--muted); text-transform:uppercase; margin-top:4px; letter-spacing:0.3px; }}
-.summary-personality {{ margin:20px 0; }}
-.summary-personality-type {{ font-family:var(--font-pixel); font-size:12px; font-weight:400; color:var(--purple); text-transform:uppercase; letter-spacing:0.3px; }}
-.summary-top3 {{ margin:16px 0; display:flex; flex-direction:column; gap:6px; }}
-.summary-top3-label {{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }}
-.summary-top3-names {{ font-size:13px; color:var(--text); }}
-.summary-footer {{ margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1); font-size:11px; color:var(--whatsapp); font-family:var(--font-pixel); font-weight:400; }}
-
-.screenshot-btn {{
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    font-family:var(--font-pixel); font-size:10px; font-weight:400; text-transform:uppercase; letter-spacing:0.3px;
-    background:var(--whatsapp); color:#000; border:none;
-    padding:16px 32px; border-radius:12px; margin-top:28px;
-    cursor:pointer; transition:transform 0.2s,background 0.2s;
-}}
-.screenshot-btn:hover {{ background:#2ee676; transform:scale(1.02); }}
-.screenshot-btn:active {{ transform:scale(0.98); }}
-.btn-icon {{ font-size:20px; }}
-.share-hint {{ font-size:14px; color:var(--muted); margin-top:16px; }}
-
-.slide-save-btn {{
-    position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    font-family:var(--font-pixel); font-size:9px; font-weight:400; text-transform:uppercase; letter-spacing:0.3px;
-    background:rgba(37,211,102,0.15); color:var(--whatsapp); border:1px solid rgba(37,211,102,0.3);
-    padding:10px 20px; border-radius:8px;
-    cursor:pointer; transition:all 0.2s; opacity:0;
-}}
-.slide.active .slide-save-btn {{ opacity:1; }}
-.slide-save-btn:hover {{ background:rgba(37,211,102,0.25); border-color:var(--whatsapp); }}
-.save-icon {{ width:14px; height:14px; stroke:currentColor; flex-shrink:0; }}
-
-/* Button container for slides with toggle + save buttons */
-.slide-buttons {{
-    position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
-    display:flex; flex-direction:column; align-items:center; gap:12px;
-}}
-.slide-buttons .toggle-busiest-btn {{ margin:0; }}
-.slide-buttons .slide-save-btn {{ position:static; transform:none; }}
-
-/* Force all elements visible for screenshot capture */
-.slide.capturing,
-.slide.capturing * {{
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
-    clip-path: none !important;
-}}
-.slide-watermark {{
-    position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
-    font-family:var(--font-pixel); font-size:10px; color:var(--whatsapp); opacity:0.6;
-    display:none;
-}}
-
-.progress {{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:100; }}
-.dot {{ width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.2); transition:all 0.3s; cursor:pointer; }}
-.dot:hover {{ background:rgba(255,255,255,0.4); }}
-.dot.active {{ background:var(--whatsapp); transform:scale(1.3); }}
-
-.nav {{ position:fixed; top:50%; transform:translateY(-50%); font-size:36px; color:rgba(255,255,255,0.2); cursor:pointer; z-index:100; padding:24px; transition:color 0.2s; user-select:none; }}
-.nav:hover {{ color:rgba(255,255,255,0.5); }}
-.nav.prev {{ left:8px; }}
-.nav.next {{ right:8px; }}
-.nav.hidden {{ opacity:0; pointer-events:none; }}
+@media (max-width:540px){
+  :root{--cw:100vw;--ch:100dvh}
+  .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
+  .top{padding-top:max(10px, env(safe-area-inset-top))}
+}
+@media (max-width:400px){
+  .ctl .brand{display:none}
+  .ctl{justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before{animation:none !important;transition-duration:.01s !important}
+}
 </style>
 </head>
 <body>
-
-<div class="gallery" id="gallery">{slides_html}</div>
-<div class="progress" id="progress"></div>
-<div class="nav prev" id="prev">‹</div>
-<div class="nav next" id="next">›</div>
+<div class="top" id="top">
+  <div class="bars" id="bars" role="tablist" aria-label="Slides"></div>
+  <div class="ctl">
+    <span class="brand">wrap2026</span>
+    <div class="pills">
+      <button class="pill" id="sound" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
+      <button class="pill" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="saveLbl">Save image</span></button>
+    </div>
+  </div>
+</div>
+<main class="deck" id="deck">__SLIDES__</main>
+<div class="tip" id="tip"></div>
+<label id="hapticLbl" style="position:fixed;left:-99px;top:-99px;opacity:0" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
 
 <script>
-const gallery = document.getElementById('gallery');
-const progressEl = document.getElementById('progress');
-const prevBtn = document.getElementById('prev');
-const nextBtn = document.getElementById('next');
-const total = {num_slides};
-let current = 0;
+(() => {
+const FILE = '__FILE__';
+const deck = document.getElementById('deck');
+const slides = [...deck.querySelectorAll('.slide')];
+const bars = document.getElementById('bars');
+const top = document.getElementById('top');
+const dark = new Set(['t-cobalt','t-ink','t-night','t-stage']);
+let cur = -1;
 
-for (let i = 0; i < total; i++) {{
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (i === 0 ? ' active' : '');
-    dot.onclick = () => goTo(i);
-    progressEl.appendChild(dot);
-}}
-const dots = progressEl.querySelectorAll('.dot');
+// fit text to the card width (numbers and the intro title)
+function fit(el, max) {
+  const anim = el.style.animation, disp = el.style.display;
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
+  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
+  el.style.animation = anim; el.style.display = disp; el.style.width = '';
+}
+function fitAll() {
+  document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
+  document.querySelectorAll('.hero.fit').forEach(e => fit(e));
+}
+document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
+document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
+document.querySelectorAll('.pile i').forEach(i => i.style.setProperty('--d', Math.round(Math.random() * 900)));
+document.querySelectorAll('.stack, .slide .body').forEach(p => p.querySelectorAll(':scope > .av, :scope > .stack > .av').forEach((a, k) => a.style.setProperty('--i', k)));
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(fitAll);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitAll);
+addEventListener('resize', fitAll);
 
-const slides = gallery.querySelectorAll('.slide');
+// dot rows stagger by month
+document.querySelectorAll('.mrow').forEach((r, i) => r.querySelectorAll('i').forEach(d => d.style.setProperty('--r', i)));
 
-function goTo(idx) {{
-    if (idx < 0 || idx >= total) return;
-    slides.forEach(s => s.classList.remove('active'));
-    current = idx;
-    gallery.style.transform = `translateX(-${{current * 100}}vw)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
-    prevBtn.classList.toggle('hidden', current === 0);
-    nextBtn.classList.toggle('hidden', current === total - 1);
-    setTimeout(() => slides[current].classList.add('active'), 50);
-}}
+slides.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', 'Slide ' + (i + 1));
+  b.addEventListener('click', e => { e.stopPropagation(); go(i); });
+  bars.appendChild(b);
+});
 
-document.addEventListener('click', (e) => {{
-    if (e.target.closest('.nav, button, .dot')) return;
-    const x = e.clientX / window.innerWidth;
-    if (x < 0.3) goTo(current - 1);
-    else goTo(current + 1);
-}});
+// sound: one soft note per slide, climbing a pentatonic scale
+let ctx = null, soundOn = false;
+try { soundOn = localStorage.getItem('wrap-sound') === '1'; } catch (_) {}
+const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+function note(i) {
+  if (!soundOn) return;
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const t = ctx.currentTime, f = 392 * Math.pow(2, scale[i % scale.length] / 12);
+  [1, 2].forEach((h, k) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = k ? 'triangle' : 'sine'; o.frequency.value = f * h;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(k ? .012 : .05, t + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .5);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
+  });
+}
+const soundBtn = document.getElementById('sound');
+function paintSound() {
+  document.body.classList.toggle('sound-on', soundOn);
+  soundBtn.setAttribute('aria-pressed', soundOn);
+  document.getElementById('soundLbl').textContent = soundOn ? 'Sound on' : 'Sound off';
+}
+soundBtn.addEventListener('click', e => {
+  e.stopPropagation(); soundOn = !soundOn; paintSound();
+  try { localStorage.setItem('wrap-sound', soundOn ? '1' : '0'); } catch (_) {}
+  note(cur); buzz();
+});
+paintSound();
 
-document.addEventListener('keydown', (e) => {{
-    if (e.key === 'ArrowRight' || e.key === ' ') {{ e.preventDefault(); goTo(current + 1); }}
-    if (e.key === 'ArrowLeft') {{ e.preventDefault(); goTo(current - 1); }}
-}});
+// haptics: Android vibrate, iOS switch-toggle tick
+const hap = document.querySelector('#hapticLbl');
+function buzz() {
+  if (navigator.vibrate) { navigator.vibrate(8); return; }
+  if (matchMedia('(pointer:coarse)').matches) hap.click();
+}
 
-prevBtn.onclick = (e) => {{ e.stopPropagation(); goTo(current - 1); }};
-nextBtn.onclick = (e) => {{ e.stopPropagation(); goTo(current + 1); }};
+// count-up for big numbers
+function countUp(el) {
+  const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
+  const t0 = performance.now(), dur = 1300;
+  const fmt = v => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + sfx;
+  (function f(t) {
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
+    el.textContent = fmt(p >= 1 ? to : to * e);
+    if (p < 1 && el.closest('.slide.on')) requestAnimationFrame(f); else el.textContent = fmt(to);
+  })(t0);
+}
 
-async function takeScreenshot() {{
-    const card = document.getElementById('summaryCard');
-    const btn = document.querySelector('.screenshot-btn');
-    btn.innerHTML = '<span>Saving...</span>';
-    btn.disabled = true;
-    // Force visibility for screenshot capture
-    card.style.opacity = '1';
-    card.style.transform = 'none';
-    await new Promise(r => setTimeout(r, 100));
-    try {{
-        const canvas = await html2canvas(card, {{ backgroundColor:'#0d1f0f', scale:2, logging:false, useCORS:true }});
-        const link = document.createElement('a');
-        link.download = 'whatsapp_wrapped_2026_summary.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        btn.innerHTML = '<span class="btn-icon">✓</span><span>Saved!</span>';
-        setTimeout(() => {{ btn.innerHTML = '<span class="btn-icon">📸</span><span>Save Screenshot</span>'; btn.disabled = false; }}, 2000);
-    }} catch (err) {{
-        btn.innerHTML = '<span class="btn-icon">📸</span><span>Save Screenshot</span>';
-        btn.disabled = false;
-    }}
-}}
+function go(i, quiet) {
+  if (i < 0 || i >= slides.length || i === cur) return;
+  slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  cur = i;
+  const s = slides[i];
+  const theme = [...s.classList].find(c => c.startsWith('t-'));
+  top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
+  s.querySelectorAll('.count').forEach(countUp);
+  if (!quiet) { note(i); buzz(); }
+  try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
+}
 
-async function saveSlide(slideEl, filename, btn) {{
-    btn.innerHTML = '⏳';
-    btn.disabled = true;
+// tap left third to go back, the rest to go forward; swipe works too
+let sx = null, sy = null;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+deck.addEventListener('pointerup', e => {
+  if (sx === null) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+  if (e.target.closest('button, a, .tilt')) return;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) go(e.clientX < innerWidth * .3 ? cur - 1 : cur + 1);
+});
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End') go(slides.length - 1);
+});
 
-    // Show watermark for screenshot
-    const watermark = slideEl.querySelector('.slide-watermark');
-    if (watermark) watermark.style.display = 'block';
+// show all 10
+document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click', e => {
+  e.stopPropagation();
+  const list = b.closest('.body').querySelector('.rows');
+  const all = list.classList.toggle('all');
+  b.textContent = all ? 'Show top 5' : b.textContent.replace('Show top 5', '');
+  if (!all) b.textContent = 'Show all ' + list.children.length;
+  buzz();
+}));
 
-    // Hide the save button temporarily
-    btn.style.visibility = 'hidden';
+// day tooltips
+const tip = document.getElementById('tip');
+document.querySelectorAll('.dots i[data-tip]').forEach(d => {
+  d.addEventListener('pointerenter', e => { if (e.pointerType !== 'mouse') return; const r = d.getBoundingClientRect(); tip.textContent = d.dataset.tip; tip.style.left = (r.left + r.width / 2) + 'px'; tip.style.top = r.top + 'px'; tip.style.opacity = 1; });
+  d.addEventListener('pointerleave', () => tip.style.opacity = 0);
+});
 
-    // Add capturing class to force all animations to final state
-    slideEl.classList.add('capturing');
+// summary card tilts toward the pointer
+const tilt = document.querySelector('.tilt');
+if (tilt) {
+  const card = tilt.querySelector('.card');
+  tilt.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    card.style.transition = 'transform .08s linear';
+    card.style.transform = `rotateY(${(x - .5) * 14}deg) rotateX(${(.5 - y) * 14}deg)`;
+    card.style.setProperty('--mx', x * 100 + '%'); card.style.setProperty('--my', y * 100 + '%');
+  });
+  tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
+}
 
-    // Wait for browser to apply styles
-    await new Promise(r => setTimeout(r, 50));
+// save the current slide as a 1080x1920 image
+const saveBtn = document.getElementById('save'), saveLbl = document.getElementById('saveLbl');
+saveBtn.addEventListener('click', async e => {
+  e.stopPropagation();
+  const s = slides[cur], card = s.querySelector('.card');
+  if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
+  saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
+  const prev = card.style.transform; card.style.transform = 'none';
+  s.classList.add('capturing'); card.classList.add('saving');
+  s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
+  try {
+    const url = await modernScreenshot.domToPng(card, {
+      scale: 1080 / card.offsetWidth,
+      filter: n => !(n.classList && n.classList.contains('chrome')),
+    });
+    const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
+    saveLbl.textContent = 'Saved'; buzz();
+  } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
+  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
+  setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
+});
 
-    // Get computed background color (html2canvas has issues with CSS variables)
-    const computedBg = getComputedStyle(slideEl).backgroundColor;
-    const bgColor = computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#0a0a12';
-
-    try {{
-        const canvas = await html2canvas(slideEl, {{
-            backgroundColor: bgColor,
-            scale: 2,
-            logging: false,
-            useCORS: true,
-            width: slideEl.offsetWidth,
-            height: slideEl.offsetHeight
-        }});
-
-        // Create a square canvas centered on content
-        const size = Math.min(canvas.width, canvas.height);
-        const squareCanvas = document.createElement('canvas');
-        squareCanvas.width = size;
-        squareCanvas.height = size;
-        const ctx = squareCanvas.getContext('2d');
-
-        // Fill with background color
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, size, size);
-
-        // Calculate crop position (center of original)
-        const srcX = (canvas.width - size) / 2;
-        const srcY = (canvas.height - size) / 2;
-
-        // Draw centered portion
-        ctx.drawImage(canvas, srcX, srcY, size, size, 0, 0, size, size);
-
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = squareCanvas.toDataURL('image/png');
-        link.click();
-        btn.innerHTML = '✓';
-        setTimeout(() => {{ btn.innerHTML = '📸 Save'; btn.disabled = false; btn.style.visibility = 'visible'; }}, 2000);
-    }} catch (err) {{
-        btn.innerHTML = '📸 Save';
-        btn.disabled = false;
-        btn.style.visibility = 'visible';
-    }}
-
-    // Remove capturing class and hide watermark
-    slideEl.classList.remove('capturing');
-    if (watermark) watermark.style.display = 'none';
-}}
-
-// Contribution graph tooltip
-const tooltip = document.createElement('div');
-tooltip.className = 'contrib-tooltip';
-tooltip.style.display = 'none';
-document.body.appendChild(tooltip);
-
-document.querySelectorAll('.contrib-cell[data-date]').forEach(cell => {{
-    cell.addEventListener('mouseenter', (e) => {{
-        const count = cell.dataset.count;
-        const date = cell.dataset.date;
-        const msgText = cell.dataset.msgText;
-        tooltip.innerHTML = `<div class="tooltip-count">${{count}} ${{msgText}}</div><div class="tooltip-date">${{date}}</div>`;
-        tooltip.style.display = 'block';
-    }});
-    cell.addEventListener('mousemove', (e) => {{
-        tooltip.style.left = (e.clientX + 12) + 'px';
-        tooltip.style.top = (e.clientY - 10) + 'px';
-    }});
-    cell.addEventListener('mouseleave', () => {{
-        tooltip.style.display = 'none';
-    }});
-}});
-
-goTo(0);
+if (location.search.includes('still')) document.body.classList.add('capturing');
+const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
+go(start > 0 ? start : 0, true);
+})();
 </script>
 </body></html>'''
 
-    with open(path, 'w') as f: f.write(html)
+# Additions on top of TEMPLATE, injected before </style> so TEMPLATE stays a verbatim copy of template_shell.py.
+# fit() measures .hero.fit as inline-block, but a flex item is always blockified and stretches to the column,
+# so wide numbers were never shrunk. Shrink-wrapping it lets the measurement see the real text width.
+EXTRA_CSS = ''
+
+
+def gen_html(d, contacts, path):
+    import html as _html
+    from datetime import datetime as dt, date as ddate, timedelta
+
+    esc = lambda v: _html.escape(str(v))
+    s = d['stats']
+    top = d['top']
+    n = lambda h: esc(get_name(h, contacts))
+    ptype, proast = d['personality']
+    year = int(d.get('year', dt.now().year))
+    hr = d['hour']
+    hr_str = "12AM" if hr == 0 else f"{hr}AM" if hr < 12 else "12PM" if hr == 12 else f"{hr-12}PM"
+
+    now = dt.now()
+    if year == now.year:
+        days_elapsed = max(1, (now - dt(year, 1, 1)).days)
+    else:
+        days_elapsed = 366 if year % 4 == 0 else 365
+    msgs_per_day = s[0] // days_elapsed
+
+    if d['busiest_day']:
+        bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
+        busiest_str = bd.strftime('%b %-d')
+        busiest_count = d['busiest_day'][1]
+        busiest_mult = round(busiest_count / max(msgs_per_day, 1), 1)
+
+    def num(v, fmt='int', suffix=''):
+        """Big number that counts up when its slide opens."""
+        shown = f"{v:,}" if fmt == 'int' else str(v)
+        return f'<span class="count" data-to="{v}" data-fmt="{fmt}" data-suffix="{esc(suffix)}">{shown}{esc(suffix)}</span>'
+
+    def mins(m):
+        if m < 1: return "under a minute"
+        if m < 60: return f"{int(m)} min"
+        return f"{m/60:.1f} hr"
+
+    def rows(items, hide_after=5):
+        """items: list of (label_html, value_html, weight 0..1)"""
+        out = []
+        for i, (label, value, w) in enumerate(items, 1):
+            hidden = ' extra' if i > hide_after else ''
+            out.append(f'<li class="row{hidden}" style="--w:{max(0.04, min(1, w)):.3f};--d:{i}"><span class="rk">{i}</span><span class="nm">{label}</span><span class="vl">{value}</span></li>')
+        return '<ol class="rows">' + ''.join(out) + '</ol>'
+
+    def initials(name):
+        parts = [p for p in str(name).replace('+', ' ').split() if p[:1].isalpha()]
+        return esc(''.join(p[0] for p in parts[:2]).upper() or '#')
+    def avatar(name, cls=''):
+        return f'<span class="av a{sum(map(ord, str(name))) % 5} {cls}">{initials(name)}</span>'
+
+    def stack(names):
+        return '<div class="stack" aria-hidden="true">' + ''.join(avatar(x) for x in names[:5]) + '</div>'
+
+    def hero(kind, text):
+        """Opening tag for a name/diagnosis hero, shrunk so its longest word stays on one line."""
+        longest = max((len(w) for w in str(text).split()), default=0)
+        if longest <= 9:
+            return f'<div class="hero {kind}">'
+        style = f' style="font-size:{3.4 * 13 / longest:.2f}em"' if longest > 13 else ''
+        return f'<div class="hero {kind} sm"{style}>'
+
+    def more_btn(count):
+        return f'<button class="more chrome" data-more>Show all {count}</button>' if count > 5 else ''
+
+    # optional slides can drop out, so never let two neighbors share a theme
+    swap = {'pink': 'lav', 'lav': 'lilac', 'lilac': 'white', 'white': 'lilac', 'cobalt': 'ink', 'ink': 'night', 'night': 'ink'}
+    last_theme = [None]
+    def slide(theme, body, name):
+        if theme == last_theme[0]:
+            theme = swap[theme]
+        last_theme[0] = theme
+        return f'<section class="slide t-{theme}" data-name="{name}"><div class="card"><div class="body">{body}</div><footer class="mark"><span>wrap2026.com</span><span>WhatsApp · {year}</span></footer></div></section>'
+
+    slides = []
+
+    # Intro
+    slides.append(slide('cobalt', f'''
+        <div class="intro">
+          <h1 class="stretch"><span>Wrapped</span><span>{year}</span></h1>
+          <div class="thread">
+            <div class="bub r a1">you up?</div>
+            <div class="bub r a2">I went through your WhatsApp.</div>
+            <div class="bub r a3">Your {year} texting habits, exposed.</div>
+          </div>
+          <p class="hint chrome a4">Tap to start</p>
+        </div>''', 'intro'))
+
+    # Total messages
+    slides.append(slide('lilac', f'''
+        <div class="pile" aria-hidden="true">{''.join('<i class="s"></i>' if (k * s[1]) % max(s[0],1) < s[1] else '<i></i>' for k in range(min(msgs_per_day, 240)))}</div>
+        <p class="lead">This year you sent and received</p>
+        <div class="hero">{num(s[0])}</div>
+        <p class="after">messages. That's the total damage.</p>
+        <div class="split">
+          <div><b>{msgs_per_day:,}</b><span>a day</span></div>
+          <div><b>{s[1]:,}</b><span>you sent</span></div>
+          <div><b>{s[2]:,}</b><span>you got</span></div>
+        </div>''', 'total'))
+
+    # Words
+    words = d['words']
+    pages = max(1, words // 250)
+    slides.append(slide('white', f'''
+        <div class="redact" aria-hidden="true">{''.join(f'<i style="--w:{w}%"></i>' for w in (92, 64, 81, 100, 47, 88, 73, 95, 58, 84, 69))}</div>
+        <p class="lead">You typed</p>
+        <div class="hero">{num(words)}</div>
+        <p class="after">words. That's about {pages:,} pages of a novel nobody asked for.</p>''', 'words'))
+
+    # Year in dots: 12 rows (months) x 31 columns (days)
+    if d['daily_counts']:
+        max_count = max(d['daily_counts'].values()) or 1
+        last = now.date() if year == now.year else ddate(year, 12, 31)
+        month_rows = []
+        for m in range(1, 13):
+            cells = []
+            for day in range(1, 32):
+                try:
+                    cur = ddate(year, m, day)
+                except ValueError:
+                    cells.append('<i class="na"></i>')
+                    continue
+                if cur > last:
+                    cells.append('<i class="fut"></i>')
+                    continue
+                c = d['daily_counts'].get(cur.strftime('%Y-%m-%d'), 0)
+                lvl = 0 if c == 0 else 1 if c <= max_count * .15 else 2 if c <= max_count * .35 else 3 if c <= max_count * .65 else 4
+                cells.append(f'<i class="l{lvl}" data-tip="{c:,} {"message" if c == 1 else "messages"} on {cur.strftime("%b %-d")}"></i>')
+            month_rows.append(f'<div class="mrow"><span>{ddate(year, m, 1).strftime("%b")}</span><div class="dots">{"".join(cells)}</div></div>')
+        slides.append(slide('ink', f'''
+            <p class="lead">Your year, one dot per day.</p>
+            <div class="year">{"".join(month_rows)}</div>
+            <div class="split">
+              <div><b>{d['avg_daily']:,}</b><span>a day, on average</span></div>
+              <div><b>{esc(d['busiest_month'])}</b><span>busiest month</span></div>
+              <div><b>{d['quiet_days']:,}</b><span>quiet days</span></div>
+            </div>''', 'year'))
+
+    # Your #1 and inner circle
+    if top:
+        first = get_name(top[0][0], contacts)
+        slides.append(slide('pink', f'''
+            {avatar(first, 'xl')}
+            <p class="lead">The person you texted most</p>
+            {hero('name', first)}{esc(first)}</div>
+            <p class="after">{num(top[0][1])} messages. {round(top[0][1] / max(s[0], 1) * 100)}% of your whole year.</p>''', 'number-one'))
+        top5 = top[:5]
+        mx = top5[0][1] or 1
+        slides.append(slide('lilac', f'''
+            {stack([get_name(h, contacts) for h, *_ in top5])}
+            <p class="lead">Your inner circle</p>
+            {rows([(n(h), f'{t:,}', t / mx) for h, t, *_ in top5])}''', 'inner-circle'))
+
+    # Groups
+    gs = d['group_stats']
+    if gs['count'] > 0:
+        yours = round(gs['sent'] / max(gs['total'], 1) * 100)
+        role = "a lurker" if yours < 40 else "a contributor" if yours > 60 else "perfectly balanced"
+        lb = d['group_leaderboard'][:5]
+        gmx = lb[0]['msg_count'] if lb else 1
+        slides.append(slide('cobalt', f'''
+            {stack([gc['name'] for gc in lb]) if lb else '<div class="sticker" aria-hidden="true">👥</div>'}
+            <p class="lead">You were in {num(gs['count'])} group chats. You wrote {gs['sent']:,} of their {gs['total']:,} messages, {yours}%. You're {role}.</p>
+            {rows([(esc(gc['name']), f'{gc["msg_count"]:,}', gc["msg_count"] / gmx) for gc in lb]) if lb else '<p class="after">No group data.</p>'}''', 'groups'))
+
+    # Personality
+    glyph = {'NOCTURNAL': '🌙', 'TERMINALLY': '📱', 'TOO COOL': '🧊', 'POPULAR': '💅', 'YAPPER': '🗣️', 'STARTER': '🎬', 'WAITER': '⏳'}
+    g = next((v for k, v in glyph.items() if k in ptype), '🫡')
+    slides.append(slide('night', f'''
+        <div class="sticker" aria-hidden="true">{g}</div>
+        <p class="lead">Your texting personality</p>
+        {hero('diag', ptype)}{esc(ptype.lower())}</div>
+        <p class="after">{esc(proast[0].upper() + proast[1:])}.</p>''', 'personality'))
+
+    # Who starts
+    you_start = d['starter_pct'] > 50
+    slides.append(slide('cobalt', f'''
+        <div class="thread big">
+          <div class="bub {"s" if you_start else "r"}">hey</div>
+          <div class="bub {"r" if you_start else "s"}">hey!</div>
+        </div>
+        <p class="lead">You start</p>
+        <div class="hero">{num(d['starter_pct'], 'int', '%')}</div>
+        <p class="after">of your conversations. {"Someone has to." if you_start else "You let them come to you."}</p>''', 'starter'))
+
+    # Response time
+    r = d['resp']
+    verdict = "Basically instant." if r < 10 else "Normal. Respectable, even." if r < 60 else "Slow. People have moved on by then."
+    slides.append(slide('white', f'''
+        <div class="thread big">
+          <div class="bub r">you there?</div>
+          <div class="bub s typing"><i></i><i></i><i></i></div>
+        </div>
+        <p class="lead">Your average reply takes</p>
+        <div class="hero">{num(r)}<small>min</small></div>
+        <p class="after">{verdict}</p>''', 'response'))
+
+    # Peak hours
+    slides.append(slide('lav', f'''
+        <div class="clock" style="--a:{(hr % 12) * 30}deg" aria-hidden="true">{''.join(f'<i style="--t:{k*30}deg"></i>' for k in range(12))}<b></b><u></u></div>
+        <p class="lead">You text most at</p>
+        <div class="hero">{hr_str}</div>
+        <p class="after">on {esc(d['day'])}s.</p>''', 'peak'))
+
+    # 3am bestie
+    if d['late']:
+        ln = d['late'][0]
+        slides.append(slide('night', f'''
+            <div class="moon" aria-hidden="true"></div>
+            <div class="stars" aria-hidden="true">{''.join(f'<i style="left:{x}%;top:{y}%;--d:{k}"></i>' for k, (x, y) in enumerate([(8, 14), (30, 30), (52, 9), (18, 44), (66, 36), (40, 52), (84, 54), (12, 62)]))}</div>
+            <p class="lead">Between midnight and 5am, you texted</p>
+            {hero('name', get_name(ln[0], contacts))}{n(ln[0])}</div>
+            <p class="after">{num(ln[1])} times. Go to sleep.</p>''', 'three-am'))
+
+    # Busiest day
+    if d['busiest_day']:
+        spark = ''
+        if d['daily_counts']:
+            dc = d['daily_counts']; peak = max(dc.values()) or 1
+            last = now.date() if year == now.year else ddate(year, 12, 31)
+            days = [ddate(year, 1, 1) + timedelta(days=k) for k in range((last - ddate(year, 1, 1)).days + 1)]
+            bars = ''.join(f'<i class="{"pk" if x.isoformat() == d["busiest_day"][0] else ""}" style="--h:{max(2, dc.get(x.isoformat(), 0) / peak * 100):.1f}%"></i>' for x in days)
+            spark = f'<div class="spark" aria-hidden="true">{bars}</div>'
+        slides.append(slide('pink', f'''
+            {spark}
+            <p class="lead">Your most unhinged day</p>
+            <div class="hero">{busiest_str}</div>
+            <p class="after">{num(busiest_count)} messages in one day, {busiest_mult}× a normal day. What happened?</p>''', 'busiest-day'))
+
+    # Biggest fan / down bad
+    if d['fan']:
+        f = d['fan'][0]
+        slides.append(slide('cobalt', f'''
+            {avatar(get_name(f[0], contacts), 'xl')}
+            <p class="lead">Your biggest fan</p>
+            {hero('name', get_name(f[0], contacts))}{n(f[0])}</div>
+            <p class="after">texts you {num(round(f[1]/(f[2]+1), 1), 'dec', '×')} more than you text them.</p>
+            <div class="vs"><div style="--w:1"><span>{n(f[0])}</span><b>{f[1]:,}</b></div><div style="--w:{f[2]/max(f[1],1):.3f}"><span>You</span><b>{f[2]:,}</b></div></div>''', 'biggest-fan'))
+    if d['simp']:
+        si = d['simp'][0]
+        slides.append(slide('pink', f'''
+            {avatar(get_name(si[0], contacts), 'xl')}
+            <p class="lead">You're down bad for</p>
+            {hero('name', get_name(si[0], contacts))}{n(si[0])}</div>
+            <p class="after">You text them {num(round(si[1]/(si[2]+1), 1), 'dec', '×')} more than they text you.</p>
+            <div class="vs"><div style="--w:1"><span>You</span><b>{si[1]:,}</b></div><div style="--w:{si[2]/max(si[1],1):.3f}"><span>{n(si[0])}</span><b>{si[2]:,}</b></div></div>''', 'down-bad'))
+
+    # Reply speed lists
+    if d.get('priority_list'):
+        pl = d['priority_list'][:5]
+        slides.append(slide('white', f'''
+            {stack([get_name(h, contacts) for h, _, _ in pl])}
+            <p class="lead">You reply fastest to</p>
+            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(pl)])}
+            <p class="after">They get the instant reply. Everyone else waits.</p>''', 'priority'))
+    if d.get('fast_responders'):
+        fr = d['fast_responders'][:5]
+        slides.append(slide('lilac', f'''
+            {stack([get_name(h, contacts) for h, _, _ in fr])}
+            <p class="lead">These people drop everything for you</p>
+            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(fr)])}
+            <p class="after">They see your name and stop what they're doing.</p>''', 'fast-responders'))
+
+    # Who reaches out
+    if d.get('initiation_breakdown'):
+        ib = d['initiation_breakdown']
+        you_out = [(h, y, tc) for h, y, t, tc in ib if tc > 0 and y / tc > 0.7][:3]
+        they_in = [(h, t, tc) for h, y, t, tc in ib if tc > 0 and t / tc > 0.7][:3]
+        if you_out or they_in:
+            body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>'
+            if you_out:
+                body += '<p class="lead">You always reach out first</p>' + rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out])
+            if they_in:
+                body += '<p class="lead gap">They always find you first</p>' + rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in])
+            slides.append(slide('cobalt', body, 'who-reaches-out'))
+
+    # Heating up / ghosted
+    if d.get('heating'):
+        ht = d['heating'][:5]
+        hmx = max((b - a) for _, a, b in ht) or 1
+        slides.append(slide('pink', f'''
+            <div class="sticker" aria-hidden="true">🔥</div>
+            <p class="lead">Heating up since June</p>
+            {rows([(n(h), f'+{b-a:,}', (b - a) / hmx) for h, a, b in ht])}
+            <p class="after">More messages after June than before. Getting stronger.</p>''', 'heating-up'))
+    if d.get('ghosted'):
+        gh = d['ghosted'][:5]
+        gmx2 = max(b for _, b, _ in gh) or 1
+        slides.append(slide('lav', f'''
+            <div class="sticker" aria-hidden="true">👻</div>
+            <p class="lead">They chose peace after June</p>
+            {rows([(n(h), f'{b:,} <i>to</i> {a:,}', b / gmx2) for h, b, a in gh])}
+            <p class="after">Messages before June, then after.</p>''', 'ghosted'))
+
+    # Emoji
+    if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
+        em = [e for e in d['emoji'] if e[1] > 0]
+        slides.append(slide('white', f'''
+            <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
+            <p class="lead">Your emotional range</p>
+            <div class="emoji">{"".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))}</div>
+            <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} times.</p>''', 'emoji'))
+
+    # Summary
+    top3 = ', '.join(n(h) for h, *_ in top[:3]) if top else "Nobody yet"
+    slides.append(f'''
+    <section class="slide t-stage" data-name="summary">
+      <div class="tilt">
+        <div class="card summary" id="summaryCard">
+          <div class="sheen" aria-hidden="true"></div>
+          <div class="body">
+            <p class="lead">My {year} on WhatsApp</p>
+            <div class="hero">{s[0]:,}</div>
+            <p class="after">messages</p>
+            <dl class="grid4">
+              <div><dt>People</dt><dd>{s[3]:,}</dd></div>
+              <div><dt>Words</dt><dd>{words:,}</dd></div>
+              <div><dt>I start</dt><dd>{d['starter_pct']}%</dd></div>
+              <div><dt>Reply</dt><dd>{d['resp']} min</dd></div>
+            </dl>
+            <p class="diag-sm">{esc(ptype.lower())}</p>
+            <p class="top3">{top3}</p>
+          </div>
+          <footer class="mark"><span>wrap2026.com</span><span>WhatsApp · {year}</span></footer>
+        </div>
+      </div>
+    </section>''')
+
+    html_out = TEMPLATE.replace('</style>', EXTRA_CSS + '\n</style>', 1).replace('__TITLE__', f'WhatsApp Wrapped {year}') \
+                       .replace('__FILE__', f'whatsapp_wrapped_{year}') \
+                       .replace('__SLIDES__', ''.join(slides))
+    with open(path, 'w') as fh:
+        fh.write(html_out)
     return path
+
 
 def main():
     parser = argparse.ArgumentParser()

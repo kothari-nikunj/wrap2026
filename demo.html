@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>iMessage Wrapped 2026</title>
+<meta name="theme-color" content="#160A26">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
+<style>
+:root{
+  --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
+  --cobalt:#2F4BFF; --pink:#FF5FA2; --white:#FFFFFF;
+  --cw:min(100vw, calc(92dvh * 9 / 16));
+  --ch:calc(var(--cw) * 16 / 9);
+  --display:'Anybody',system-ui,sans-serif;
+  --body:'Onest',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.3,1.4,.5,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--night);color:var(--white);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-y;transition:background .6s var(--ease)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* themes */
+.t-cobalt{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
+.t-lilac{--bg:var(--lilac);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-white{--bg:var(--white);--fg:var(--ink);--soft:rgba(36,16,56,.07);--tint:var(--cobalt)}
+.t-ink{--bg:var(--ink);--fg:var(--lilac);--soft:rgba(238,232,255,.1);--tint:var(--pink)}
+.t-night{--bg:var(--night);--fg:var(--lilac);--soft:rgba(238,232,255,.09);--tint:var(--pink)}
+.t-pink{--bg:var(--pink);--fg:var(--ink);--soft:rgba(36,16,56,.1);--tint:var(--white)}
+.t-lav{--bg:var(--lav);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-stage{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
+
+/* deck */
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;visibility:hidden;transform:translateX(5%) scale(.97);transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s .55s}
+.slide.past{transform:translateX(-5%) scale(.97)}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
+.card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
+.body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
+
+/* type */
+.lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
+.lead.gap{margin-top:1.2em}
+.hero.fit{white-space:nowrap;overflow-wrap:normal}
+.hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
+.hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero.sm{font-size:3.4em}
+.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
+.after b{font-weight:600;opacity:1}
+.after .count{font-weight:600}
+
+/* stat split */
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
+.split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
+
+/* ranked rows */
+.rows{list-style:none;display:flex;flex-direction:column;gap:.32em;margin-top:.9em}
+.row{position:relative;display:grid;grid-template-columns:1.5em minmax(0,1fr) auto;align-items:baseline;gap:.4em;padding:.55em .75em;border-radius:.7em;overflow:hidden;font-size:.95em}
+.row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
+.row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
+.row>*{position:relative;z-index:1}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
+.row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
+.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
+.row:first-child{font-size:1.15em}
+.row:last-child{border-bottom-color:transparent}
+.row.extra{display:none}
+.rows.all .row.extra{display:grid}
+.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.7;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
+.more:hover{opacity:1}
+
+/* avatars: five colorways, swapped where one would vanish into the slide */
+.a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
+.t-cobalt .a0,.t-stage .a0{--ab:var(--white);--af:var(--cobalt)}.t-cobalt .a4{--ab:var(--lilac);--af:var(--ink)}
+.t-pink .a1{--ab:var(--white);--af:var(--pink)}
+.t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
+.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
+/* avatars */
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
+.stack{display:flex;margin-bottom:auto;padding-left:.7em}
+.stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
+.stack .av:nth-child(1){width:4.6em;height:4.6em;z-index:5}
+.stack .av:nth-child(2){z-index:4}.stack .av:nth-child(3){z-index:3}.stack .av:nth-child(4){z-index:2}.stack .av:nth-child(5){z-index:1}
+
+/* message pile */
+.pile{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:auto;align-content:flex-start;max-height:46%;overflow:hidden}
+.pile i{width:1.05em;height:.75em;border-radius:.4em .4em .4em .12em;background:var(--soft);background:color-mix(in srgb,var(--fg) 16%,transparent)}
+.pile i.s{background:var(--cobalt);border-radius:.4em .4em .12em .4em}
+
+/* redacted text */
+.redact{display:flex;flex-direction:column;gap:.55em;margin-bottom:auto}
+.redact i{height:.8em;width:var(--w);border-radius:.4em;background:var(--soft);background:color-mix(in srgb,var(--fg) 12%,transparent)}
+.redact i:nth-child(4n){background:var(--cobalt);opacity:.85}
+
+/* streak chain */
+.chain{display:grid;grid-template-columns:repeat(15,1fr);gap:.3em;margin-bottom:auto}
+.chain i{aspect-ratio:1;border-radius:.25em;background:var(--cobalt)}
+
+/* stars */
+.stars{position:absolute;inset:4em 0 50% 0;pointer-events:none}
+.stars i{position:absolute;width:.25em;height:.25em;border-radius:50%;background:var(--lilac);box-shadow:0 0 .6em var(--lilac);animation:twinkle 3s infinite;animation-delay:calc(var(--d) * -.4s)}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* year sparkline */
+.spark{display:flex;align-items:flex-end;gap:1px;height:9em;margin-bottom:auto;padding-bottom:1.4em}
+.spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
+.spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
+
+/* sticker */
+.sticker.big{font-size:6em}
+.sticker{margin-bottom:auto;align-self:flex-start;font-size:4.2em;line-height:1;width:1.7em;height:1.7em;display:grid;place-items:center;border-radius:50%;background:var(--soft);transform:rotate(-8deg)}
+
+/* typing */
+.typing{display:flex;gap:.3em;padding:.85em 1em;font-size:1.6em}
+.typing i{width:.42em;height:.42em;border-radius:50%;background:currentColor;opacity:.35;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-.12em)}}
+
+/* clock */
+.clock{position:relative;width:11em;height:11em;border-radius:50%;margin-bottom:auto;background:var(--soft)}
+.clock i{position:absolute;left:50%;top:50%;width:.22em;height:.9em;margin:-.45em 0 0 -.11em;background:currentColor;opacity:.4;border-radius:.2em;transform:rotate(var(--t)) translateY(-4.6em)}
+.clock b{position:absolute;left:50%;top:50%;width:.36em;height:4.2em;margin-left:-.18em;background:var(--pink);border-radius:.3em;transform-origin:50% 0;transform:rotate(calc(var(--a) + 180deg));box-shadow:0 0 1.2em var(--pink)}
+.clock u{position:absolute;left:50%;top:50%;width:.9em;height:.9em;margin:-.45em;border-radius:50%;background:var(--pink)}
+
+/* versus */
+.vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
+.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
+.vs div:last-child{background:var(--soft);color:var(--fg)}
+.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
+
+/* bubbles */
+.thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
+.bub{max-width:80%;padding:.5em .8em;border-radius:1.1em;font-size:1em;line-height:1.3;width:fit-content}
+.bub.r{background:var(--soft);border-bottom-left-radius:.3em}
+.bub.s{align-self:flex-end;background:var(--fg);color:var(--bg);border-bottom-right-radius:.3em}
+.thread.big .bub{font-size:1.4em}
+
+/* intro */
+.intro{display:flex;flex-direction:column;flex:1}
+.stretch{font-family:var(--display);line-height:.82;letter-spacing:-.04em;margin-bottom:auto}
+.stretch span{display:block}
+.stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
+.stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
+.intro .thread{margin:0 0 1.2em}
+.hint{font-size:.85em;opacity:.7;font-weight:500}
+
+/* year dots */
+.year{display:flex;flex-direction:column;gap:.34em;margin:1em 0 .2em}
+.mrow{display:grid;grid-template-columns:2em minmax(0,1fr);align-items:center}
+.mrow span{font-size:.6em;opacity:.6;font-weight:500}
+.dots{display:grid;grid-template-columns:repeat(31,1fr);gap:.14em}
+.dots i{aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.12}
+.dots i.na{opacity:0}
+.dots i.fut{opacity:.04}
+.dots i.l1{opacity:.3}.dots i.l2{opacity:.55}.dots i.l3{opacity:.85}
+.dots i.l4{opacity:1;background:var(--pink);box-shadow:0 0 .5em var(--pink)}
+.tip{position:fixed;pointer-events:none;background:var(--white);color:var(--ink);font:500 13px var(--body);padding:6px 10px;border-radius:999px;transform:translate(-50%,-140%);opacity:0;transition:opacity .15s;z-index:20;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* moon */
+.moon{position:absolute;top:4.6em;right:1.6em;width:4.5em;height:4.5em;border-radius:50%;box-shadow:inset -1.1em .5em 0 0 var(--pink);filter:drop-shadow(0 0 1.4em rgba(255,95,162,.45));transform:rotate(-20deg)}
+
+/* emoji */
+.emoji{display:flex;flex-wrap:wrap;gap:.1em .25em;font-size:3.2em;line-height:1.15;margin:.2em 0 .3em}
+.emoji span{display:inline-block}
+
+/* duo */
+.duo{margin-top:1.1em}
+.duo+.duo{padding-top:1.1em;border-top:1.5px solid var(--soft)}
+
+/* summary */
+.t-stage .tilt{perspective:1200px}
+.summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
+.summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
+.summary .hero{font-size:4.2em}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
+.grid4 dt{font-size:.7em;opacity:.7}
+.grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
+.top3{font-size:.85em;opacity:.85;margin-top:.5em}
+
+/* chrome: progress + controls, sized to the card */
+.top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
+.bars{display:flex;gap:4px}
+.bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
+.bars button::after{content:"";position:absolute;inset:-10px 0}
+.bars button.done{opacity:.9}
+.ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
+.ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
+.pills{display:flex;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
+.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
+.pill:active{transform:scale(.94)}
+.pill svg{width:14px;height:14px}
+.eq{display:inline-flex;gap:2px;align-items:center;height:12px}
+.eq i{width:2px;height:4px;background:currentColor;border-radius:1px;transition:height .2s}
+.sound-on .eq i{animation:eq .9s infinite ease-in-out}
+.sound-on .eq i:nth-child(2){animation-delay:.15s}.sound-on .eq i:nth-child(3){animation-delay:.3s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+
+/* entrance choreography, replayed on each slide */
+.on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
+.on .lead{animation-delay:.05s}
+.on .hero{animation:heroIn .8s var(--spring) both;animation-delay:.15s}
+.on .after{animation-delay:.45s}
+.on .split,.on .grid4{animation:rise .7s var(--ease) both;animation-delay:.6s}
+.on .row{animation:rowIn .55s var(--ease) both;animation-delay:calc(.2s + var(--d) * 70ms)}
+.on .row::before{animation:grow .9s var(--ease) both;animation-delay:calc(.35s + var(--d) * 70ms)}
+.on .bub{animation:pop .45s var(--spring) both}
+.on .bub:nth-child(2){animation-delay:.55s}.on .bub:nth-child(3){animation-delay:1.1s}
+.on .intro .a1{animation-delay:.9s}.on .intro .a2{animation-delay:1.6s}.on .intro .a3{animation-delay:2.3s}
+.on .intro .a4{animation:rise .6s var(--ease) both;animation-delay:2.9s}
+.on .stretch span:last-child{animation:stretch 1.4s var(--ease) both}
+.on .stretch span:first-child{animation:rise .8s var(--ease) both}
+.on .emoji span{animation:pop .5s var(--spring) both;animation-delay:calc(.25s + var(--d) * 90ms)}
+.on .dots i{animation:dot .5s var(--ease) both;animation-delay:calc(var(--r, 0) * 45ms)}
+.on .moon{animation:moon 1.4s var(--ease) both}
+.on .redact i{animation:grow .8s var(--ease) both;transform-origin:left;animation-delay:calc(var(--k, 0) * 60ms)}
+.on .chain i{animation:pop .3s var(--spring) both;animation-delay:calc(var(--k, 0) * 12ms)}
+.on .spark i{animation:barUp .7s var(--ease) both;transform-origin:bottom;animation-delay:calc(var(--k, 0) * 2ms)}
+@keyframes barUp{from{transform:scaleY(0)}}
+.on .pile i{animation:pop .35s var(--spring) both;animation-delay:calc(var(--d, 0) * 1ms)}
+.on .av{animation:pop .6s var(--spring) both;animation-delay:calc(.1s + var(--i, 0) * 90ms)}
+.on .sticker{animation:sticker .8s var(--spring) both}
+.on .clock b{animation:hand 1.6s var(--spring) both}
+.on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
+.on .vs div:last-child{animation-delay:.65s}
+@keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
+@keyframes hand{from{transform:rotate(180deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
+@keyframes heroIn{from{opacity:0;transform:translateY(24px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes stretch{from{font-stretch:50%;font-variation-settings:"wdth" 50;opacity:0}30%{opacity:1}to{font-stretch:150%;font-variation-settings:"wdth" 150}}
+@keyframes dot{from{transform:scale(0)}to{transform:none}}
+@keyframes moon{from{opacity:0;transform:rotate(-60deg) translateY(1em)}to{opacity:1;transform:rotate(-20deg)}}
+.after{--o:.85}
+
+/* saving: freeze everything at its final frame */
+.capturing *, .capturing *::before{animation:none !important;transition:none !important}
+.card.saving{border-radius:0;box-shadow:none}
+
+@media (max-width:540px){
+  :root{--cw:100vw;--ch:100dvh}
+  .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
+  .top{padding-top:max(10px, env(safe-area-inset-top))}
+}
+@media (max-width:400px){
+  .ctl .brand{display:none}
+  .ctl{justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before{animation:none !important;transition-duration:.01s !important}
+}
+</style>
+</head>
+<body>
+<div class="top" id="top">
+  <div class="bars" id="bars" role="tablist" aria-label="Slides"></div>
+  <div class="ctl">
+    <span class="brand">wrap2026</span>
+    <div class="pills">
+      <button class="pill" id="sound" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
+      <button class="pill" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="saveLbl">Save image</span></button>
+    </div>
+  </div>
+</div>
+<main class="deck" id="deck"><section class="slide t-cobalt" data-name="intro"><div class="card"><div class="body">
+        <div class="intro">
+          <h1 class="stretch"><span>Wrapped</span><span>2026</span></h1>
+          <div class="thread">
+            <div class="bub r a1">you up?</div>
+            <div class="bub r a2">I went through your texts.</div>
+            <div class="bub r a3">We need to talk about 2026.</div>
+          </div>
+          <p class="hint chrome a4">Tap to start</p>
+        </div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-lilac" data-name="total"><div class="card"><div class="body">
+        <div class="pile" aria-hidden="true"><i class="s"></i><i></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i><i class="s"></i><i></i></div>
+        <p class="lead">This year you sent and received</p>
+        <div class="hero"><span class="count" data-to="47832" data-fmt="int" data-suffix="">47,832</span></div>
+        <p class="after">messages. That's about 156 a day, one bubble each.</p>
+        <div class="split">
+          <div><b>23,410</b><span>you sent</span></div>
+          <div><b>24,422</b><span>you got</span></div>
+          <div><b>312</b><span>people</span></div>
+        </div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-white" data-name="words"><div class="card"><div class="body">
+        <div class="redact" aria-hidden="true"><i style="--w:92%"></i><i style="--w:64%"></i><i style="--w:81%"></i><i style="--w:100%"></i><i style="--w:47%"></i><i style="--w:88%"></i><i style="--w:73%"></i><i style="--w:95%"></i><i style="--w:58%"></i><i style="--w:84%"></i><i style="--w:69%"></i></div>
+        <p class="lead">You typed</p>
+        <div class="hero"><span class="count" data-to="892410" data-fmt="int" data-suffix="">892,410</span></div>
+        <p class="after">words. About 3,569 pages, or 12 novels nobody asked for.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-ink" data-name="year"><div class="card"><div class="body">
+            <p class="lead">Your year, one dot per day.</p>
+            <div class="year"><div class="mrow"><span>Jan</span><div class="dots"><i class="l3" data-tip="236 on Jan 1"></i><i class="l3" data-tip="222 on Jan 2"></i><i class="l2" data-tip="112 on Jan 3"></i><i class="l3" data-tip="330 on Jan 4"></i><i class="l2" data-tip="195 on Jan 5"></i><i class="l3" data-tip="265 on Jan 6"></i><i class="l3" data-tip="218 on Jan 7"></i><i class="l2" data-tip="210 on Jan 8"></i><i class="l3" data-tip="223 on Jan 9"></i><i class="l2" data-tip="122 on Jan 10"></i><i class="l2" data-tip="160 on Jan 11"></i><i class="l2" data-tip="98 on Jan 12"></i><i class="l3" data-tip="261 on Jan 13"></i><i class="l3" data-tip="229 on Jan 14"></i><i class="l2" data-tip="214 on Jan 15"></i><i class="l3" data-tip="251 on Jan 16"></i><i class="l3" data-tip="298 on Jan 17"></i><i class="l2" data-tip="174 on Jan 18"></i><i class="l1" data-tip="49 on Jan 19"></i><i class="l2" data-tip="116 on Jan 20"></i><i class="l2" data-tip="98 on Jan 21"></i><i class="l3" data-tip="228 on Jan 22"></i><i class="l2" data-tip="136 on Jan 23"></i><i class="l3" data-tip="360 on Jan 24"></i><i class="l2" data-tip="200 on Jan 25"></i><i class="l2" data-tip="139 on Jan 26"></i><i class="l1" data-tip="47 on Jan 27"></i><i class="l3" data-tip="380 on Jan 28"></i><i class="l2" data-tip="209 on Jan 29"></i><i class="l3" data-tip="274 on Jan 30"></i><i class="l3" data-tip="238 on Jan 31"></i></div></div><div class="mrow"><span>Feb</span><div class="dots"><i class="l2" data-tip="178 on Feb 1"></i><i class="l2" data-tip="200 on Feb 2"></i><i class="l2" data-tip="194 on Feb 3"></i><i class="l2" data-tip="141 on Feb 4"></i><i class="l2" data-tip="145 on Feb 5"></i><i class="l2" data-tip="159 on Feb 6"></i><i class="l3" data-tip="245 on Feb 7"></i><i class="l3" data-tip="349 on Feb 8"></i><i class="l2" data-tip="147 on Feb 9"></i><i class="l0" data-tip="0 on Feb 10"></i><i class="l3" data-tip="298 on Feb 11"></i><i class="l2" data-tip="154 on Feb 12"></i><i class="l1" data-tip="86 on Feb 13"></i><i class="l2" data-tip="151 on Feb 14"></i><i class="l2" data-tip="204 on Feb 15"></i><i class="l2" data-tip="193 on Feb 16"></i><i class="l2" data-tip="175 on Feb 17"></i><i class="l2" data-tip="188 on Feb 18"></i><i class="l2" data-tip="193 on Feb 19"></i><i class="l2" data-tip="115 on Feb 20"></i><i class="l3" data-tip="313 on Feb 21"></i><i class="l3" data-tip="231 on Feb 22"></i><i class="l3" data-tip="220 on Feb 23"></i><i class="l2" data-tip="194 on Feb 24"></i><i class="l3" data-tip="258 on Feb 25"></i><i class="l2" data-tip="200 on Feb 26"></i><i class="l3" data-tip="241 on Feb 27"></i><i class="l3" data-tip="299 on Feb 28"></i><i class="na"></i><i class="na"></i><i class="na"></i></div></div><div class="mrow"><span>Mar</span><div class="dots"><i class="l3" data-tip="319 on Mar 1"></i><i class="l2" data-tip="173 on Mar 2"></i><i class="l3" data-tip="391 on Mar 3"></i><i class="l3" data-tip="336 on Mar 4"></i><i class="l3" data-tip="360 on Mar 5"></i><i class="l0" data-tip="0 on Mar 6"></i><i class="l3" data-tip="308 on Mar 7"></i><i class="l3" data-tip="393 on Mar 8"></i><i class="l3" data-tip="369 on Mar 9"></i><i class="l4" data-tip="472 on Mar 10"></i><i class="l3" data-tip="370 on Mar 11"></i><i class="l2" data-tip="196 on Mar 12"></i><i class="l4" data-tip="406 on Mar 13"></i><i class="l4" data-tip="612 on Mar 14"></i><i class="l3" data-tip="298 on Mar 15"></i><i class="l4" data-tip="425 on Mar 16"></i><i class="l2" data-tip="213 on Mar 17"></i><i class="l3" data-tip="250 on Mar 18"></i><i class="l3" data-tip="215 on Mar 19"></i><i class="l3" data-tip="219 on Mar 20"></i><i class="l3" data-tip="362 on Mar 21"></i><i class="l3" data-tip="394 on Mar 22"></i><i class="l2" data-tip="98 on Mar 23"></i><i class="l3" data-tip="281 on Mar 24"></i><i class="l2" data-tip="155 on Mar 25"></i><i class="l3" data-tip="308 on Mar 26"></i><i class="l3" data-tip="312 on Mar 27"></i><i class="l3" data-tip="289 on Mar 28"></i><i class="l3" data-tip="326 on Mar 29"></i><i class="l3" data-tip="224 on Mar 30"></i><i class="l0" data-tip="0 on Mar 31"></i></div></div><div class="mrow"><span>Apr</span><div class="dots"><i class="l2" data-tip="158 on Apr 1"></i><i class="l0" data-tip="0 on Apr 2"></i><i class="l3" data-tip="275 on Apr 3"></i><i class="l3" data-tip="324 on Apr 4"></i><i class="l2" data-tip="103 on Apr 5"></i><i class="l2" data-tip="135 on Apr 6"></i><i class="l2" data-tip="108 on Apr 7"></i><i class="l3" data-tip="309 on Apr 8"></i><i class="l2" data-tip="164 on Apr 9"></i><i class="l0" data-tip="0 on Apr 10"></i><i class="l3" data-tip="237 on Apr 11"></i><i class="l3" data-tip="303 on Apr 12"></i><i class="l2" data-tip="108 on Apr 13"></i><i class="l2" data-tip="189 on Apr 14"></i><i class="l0" data-tip="0 on Apr 15"></i><i class="l2" data-tip="95 on Apr 16"></i><i class="l3" data-tip="255 on Apr 17"></i><i class="l3" data-tip="284 on Apr 18"></i><i class="l3" data-tip="220 on Apr 19"></i><i class="l3" data-tip="227 on Apr 20"></i><i class="l2" data-tip="208 on Apr 21"></i><i class="l2" data-tip="199 on Apr 22"></i><i class="l2" data-tip="105 on Apr 23"></i><i class="l2" data-tip="174 on Apr 24"></i><i class="l3" data-tip="371 on Apr 25"></i><i class="l3" data-tip="298 on Apr 26"></i><i class="l3" data-tip="217 on Apr 27"></i><i class="l2" data-tip="117 on Apr 28"></i><i class="l2" data-tip="210 on Apr 29"></i><i class="l2" data-tip="149 on Apr 30"></i><i class="na"></i></div></div><div class="mrow"><span>May</span><div class="dots"><i class="l2" data-tip="133 on May 1"></i><i class="l3" data-tip="314 on May 2"></i><i class="l3" data-tip="300 on May 3"></i><i class="l2" data-tip="182 on May 4"></i><i class="l2" data-tip="162 on May 5"></i><i class="l2" data-tip="101 on May 6"></i><i class="l3" data-tip="217 on May 7"></i><i class="l2" data-tip="126 on May 8"></i><i class="l2" data-tip="166 on May 9"></i><i class="l2" data-tip="164 on May 10"></i><i class="l3" data-tip="247 on May 11"></i><i class="l2" data-tip="139 on May 12"></i><i class="l3" data-tip="262 on May 13"></i><i class="l1" data-tip="88 on May 14"></i><i class="l3" data-tip="256 on May 15"></i><i class="l3" data-tip="332 on May 16"></i><i class="l3" data-tip="259 on May 17"></i><i class="l2" data-tip="201 on May 18"></i><i class="l3" data-tip="246 on May 19"></i><i class="l3" data-tip="315 on May 20"></i><i class="l2" data-tip="122 on May 21"></i><i class="l3" data-tip="258 on May 22"></i><i class="l3" data-tip="280 on May 23"></i><i class="l3" data-tip="222 on May 24"></i><i class="l2" data-tip="175 on May 25"></i><i class="l0" data-tip="0 on May 26"></i><i class="l2" data-tip="194 on May 27"></i><i class="l3" data-tip="220 on May 28"></i><i class="l1" data-tip="59 on May 29"></i><i class="l2" data-tip="169 on May 30"></i><i class="l2" data-tip="198 on May 31"></i></div></div><div class="mrow"><span>Jun</span><div class="dots"><i class="l2" data-tip="191 on Jun 1"></i><i class="l0" data-tip="0 on Jun 2"></i><i class="l2" data-tip="127 on Jun 3"></i><i class="l1" data-tip="76 on Jun 4"></i><i class="l2" data-tip="127 on Jun 5"></i><i class="l3" data-tip="391 on Jun 6"></i><i class="l3" data-tip="327 on Jun 7"></i><i class="l2" data-tip="114 on Jun 8"></i><i class="l2" data-tip="134 on Jun 9"></i><i class="l3" data-tip="267 on Jun 10"></i><i class="l2" data-tip="122 on Jun 11"></i><i class="l3" data-tip="221 on Jun 12"></i><i class="l3" data-tip="230 on Jun 13"></i><i class="l3" data-tip="246 on Jun 14"></i><i class="l2" data-tip="146 on Jun 15"></i><i class="l1" data-tip="89 on Jun 16"></i><i class="l2" data-tip="150 on Jun 17"></i><i class="l2" data-tip="151 on Jun 18"></i><i class="l3" data-tip="336 on Jun 19"></i><i class="l3" data-tip="227 on Jun 20"></i><i class="l3" data-tip="285 on Jun 21"></i><i class="l2" data-tip="209 on Jun 22"></i><i class="l3" data-tip="274 on Jun 23"></i><i class="l2" data-tip="104 on Jun 24"></i><i class="l2" data-tip="128 on Jun 25"></i><i class="l3" data-tip="342 on Jun 26"></i><i class="l2" data-tip="202 on Jun 27"></i><i class="l2" data-tip="160 on Jun 28"></i><i class="l2" data-tip="139 on Jun 29"></i><i class="l2" data-tip="173 on Jun 30"></i><i class="na"></i></div></div><div class="mrow"><span>Jul</span><div class="dots"><i class="l0" data-tip="0 on Jul 1"></i><i class="l2" data-tip="197 on Jul 2"></i><i class="l2" data-tip="197 on Jul 3"></i><i class="l3" data-tip="324 on Jul 4"></i><i class="l2" data-tip="170 on Jul 5"></i><i class="l3" data-tip="317 on Jul 6"></i><i class="l2" data-tip="137 on Jul 7"></i><i class="l2" data-tip="141 on Jul 8"></i><i class="l1" data-tip="74 on Jul 9"></i><i class="l3" data-tip="256 on Jul 10"></i><i class="l3" data-tip="351 on Jul 11"></i><i class="l3" data-tip="310 on Jul 12"></i><i class="l3" data-tip="304 on Jul 13"></i><i class="l2" data-tip="122 on Jul 14"></i><i class="l1" data-tip="53 on Jul 15"></i><i class="l2" data-tip="165 on Jul 16"></i><i class="l2" data-tip="187 on Jul 17"></i><i class="l0" data-tip="0 on Jul 18"></i><i class="l3" data-tip="263 on Jul 19"></i><i class="l2" data-tip="213 on Jul 20"></i><i class="l2" data-tip="190 on Jul 21"></i><i class="l3" data-tip="268 on Jul 22"></i><i class="l3" data-tip="231 on Jul 23"></i><i class="l3" data-tip="300 on Jul 24"></i><i class="l3" data-tip="384 on Jul 25"></i><i class="l2" data-tip="161 on Jul 26"></i><i class="l3" data-tip="226 on Jul 27"></i><i class="l2" data-tip="99 on Jul 28"></i><i class="l3" data-tip="230 on Jul 29"></i><i class="l2" data-tip="148 on Jul 30"></i><i class="l2" data-tip="164 on Jul 31"></i></div></div><div class="mrow"><span>Aug</span><div class="dots"><i class="l3" data-tip="228 on Aug 1"></i><i class="l3" data-tip="304 on Aug 2"></i><i class="l2" data-tip="99 on Aug 3"></i><i class="l2" data-tip="134 on Aug 4"></i><i class="l2" data-tip="134 on Aug 5"></i><i class="l3" data-tip="293 on Aug 6"></i><i class="l1" data-tip="89 on Aug 7"></i><i class="l2" data-tip="172 on Aug 8"></i><i class="l2" data-tip="187 on Aug 9"></i><i class="l3" data-tip="276 on Aug 10"></i><i class="l3" data-tip="234 on Aug 11"></i><i class="l2" data-tip="136 on Aug 12"></i><i class="l2" data-tip="149 on Aug 13"></i><i class="l2" data-tip="210 on Aug 14"></i><i class="l1" data-tip="89 on Aug 15"></i><i class="l3" data-tip="369 on Aug 16"></i><i class="l2" data-tip="162 on Aug 17"></i><i class="l0" data-tip="0 on Aug 18"></i><i class="l2" data-tip="110 on Aug 19"></i><i class="l0" data-tip="0 on Aug 20"></i><i class="l2" data-tip="111 on Aug 21"></i><i class="l0" data-tip="0 on Aug 22"></i><i class="l3" data-tip="280 on Aug 23"></i><i class="l3" data-tip="232 on Aug 24"></i><i class="l2" data-tip="203 on Aug 25"></i><i class="l2" data-tip="126 on Aug 26"></i><i class="l3" data-tip="250 on Aug 27"></i><i class="l2" data-tip="195 on Aug 28"></i><i class="l3" data-tip="278 on Aug 29"></i><i class="l2" data-tip="195 on Aug 30"></i><i class="l2" data-tip="158 on Aug 31"></i></div></div><div class="mrow"><span>Sep</span><div class="dots"><i class="l2" data-tip="107 on Sep 1"></i><i class="l0" data-tip="0 on Sep 2"></i><i class="l3" data-tip="231 on Sep 3"></i><i class="l2" data-tip="156 on Sep 4"></i><i class="l2" data-tip="146 on Sep 5"></i><i class="l2" data-tip="143 on Sep 6"></i><i class="l2" data-tip="176 on Sep 7"></i><i class="l0" data-tip="0 on Sep 8"></i><i class="l3" data-tip="263 on Sep 9"></i><i class="l2" data-tip="212 on Sep 10"></i><i class="l2" data-tip="160 on Sep 11"></i><i class="l3" data-tip="282 on Sep 12"></i><i class="l3" data-tip="236 on Sep 13"></i><i class="l3" data-tip="274 on Sep 14"></i><i class="l2" data-tip="137 on Sep 15"></i><i class="l3" data-tip="228 on Sep 16"></i><i class="l3" data-tip="221 on Sep 17"></i><i class="l2" data-tip="206 on Sep 18"></i><i class="l3" data-tip="285 on Sep 19"></i><i class="l3" data-tip="297 on Sep 20"></i><i class="l2" data-tip="169 on Sep 21"></i><i class="l2" data-tip="203 on Sep 22"></i><i class="l2" data-tip="164 on Sep 23"></i><i class="l2" data-tip="176 on Sep 24"></i><i class="l2" data-tip="163 on Sep 25"></i><i class="l3" data-tip="245 on Sep 26"></i><i class="l3" data-tip="257 on Sep 27"></i><i class="l3" data-tip="275 on Sep 28"></i><i class="l2" data-tip="169 on Sep 29"></i><i class="l2" data-tip="202 on Sep 30"></i><i class="na"></i></div></div><div class="mrow"><span>Oct</span><div class="dots"><i class="l3" data-tip="222 on Oct 1"></i><i class="l2" data-tip="101 on Oct 2"></i><i class="l1" data-tip="62 on Oct 3"></i><i class="l2" data-tip="210 on Oct 4"></i><i class="l1" data-tip="80 on Oct 5"></i><i class="l2" data-tip="191 on Oct 6"></i><i class="l3" data-tip="216 on Oct 7"></i><i class="l2" data-tip="115 on Oct 8"></i><i class="l2" data-tip="163 on Oct 9"></i><i class="l3" data-tip="241 on Oct 10"></i><i class="l3" data-tip="220 on Oct 11"></i><i class="l2" data-tip="186 on Oct 12"></i><i class="l3" data-tip="271 on Oct 13"></i><i class="l2" data-tip="142 on Oct 14"></i><i class="l3" data-tip="235 on Oct 15"></i><i class="l2" data-tip="203 on Oct 16"></i><i class="l3" data-tip="300 on Oct 17"></i><i class="l3" data-tip="284 on Oct 18"></i><i class="l2" data-tip="187 on Oct 19"></i><i class="l3" data-tip="256 on Oct 20"></i><i class="l2" data-tip="149 on Oct 21"></i><i class="l2" data-tip="166 on Oct 22"></i><i class="l2" data-tip="111 on Oct 23"></i><i class="l2" data-tip="176 on Oct 24"></i><i class="l3" data-tip="254 on Oct 25"></i><i class="l3" data-tip="300 on Oct 26"></i><i class="l2" data-tip="202 on Oct 27"></i><i class="l3" data-tip="223 on Oct 28"></i><i class="l3" data-tip="218 on Oct 29"></i><i class="l0" data-tip="0 on Oct 30"></i><i class="l3" data-tip="261 on Oct 31"></i></div></div><div class="mrow"><span>Nov</span><div class="dots"><i class="l2" data-tip="168 on Nov 1"></i><i class="l2" data-tip="117 on Nov 2"></i><i class="l0" data-tip="0 on Nov 3"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="na"></i></div></div><div class="mrow"><span>Dec</span><div class="dots"><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i><i class="fut"></i></div></div></div>
+            <div class="split">
+              <div><b>156</b><span>a day, on average</span></div>
+              <div><b>Mar</b><span>busiest month</span></div>
+              <div><b>11</b><span>days of silence</span></div>
+            </div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-pink" data-name="number-one"><div class="card"><div class="body">
+            <span class="av a2 xl">M</span>
+            <p class="lead">The person you texted most</p>
+            <div class="hero name">Mom</div>
+            <p class="after"><span class="count" data-to="6204" data-fmt="int" data-suffix="">6,204</span> messages. 13% of your whole year.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-lilac" data-name="inner-circle"><div class="card"><div class="body">
+            <div class="stack" aria-hidden="true"><span class="av a2 ">M</span><span class="av a1 ">JL</span><span class="av a3 ">AC</span><span class="av a3 ">SM</span><span class="av a1 ">PN</span></div>
+            <p class="lead">Your inner circle</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Mom</span><span class="vl">6,204</span></li><li class="row" style="--w:0.793;--d:2"><span class="rk">2</span><span class="nm">Jordan Lee</span><span class="vl">4,918</span></li><li class="row" style="--w:0.544;--d:3"><span class="rk">3</span><span class="nm">Alex Chen</span><span class="vl">3,377</span></li><li class="row" style="--w:0.474;--d:4"><span class="rk">4</span><span class="nm">Sam Martinez</span><span class="vl">2,940</span></li><li class="row" style="--w:0.339;--d:5"><span class="rk">5</span><span class="nm">Priya Natarajan</span><span class="vl">2,102</span></li><li class="row extra" style="--w:0.284;--d:6"><span class="rk">6</span><span class="nm">Dad</span><span class="vl">1,760</span></li><li class="row extra" style="--w:0.226;--d:7"><span class="rk">7</span><span class="nm">Maya</span><span class="vl">1,403</span></li><li class="row extra" style="--w:0.197;--d:8"><span class="rk">8</span><span class="nm">Chris O.</span><span class="vl">1,220</span></li><li class="row extra" style="--w:0.158;--d:9"><span class="rk">9</span><span class="nm">Theo</span><span class="vl">980</span></li><li class="row extra" style="--w:0.139;--d:10"><span class="rk">10</span><span class="nm">Aunt Rina</span><span class="vl">861</span></li></ol>
+            <button class="more chrome" data-more>Show all 10</button></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-cobalt" data-name="groups"><div class="card"><div class="body">
+            <div class="stack groups" aria-hidden="true"><span class="av a0 ">SD</span><span class="av a4 ">BP</span><span class="av a0 ">FL</span><span class="av a0 ">F</span><span class="av a0 ">C</span></div>
+            <p class="lead">You were in <span class="count" data-to="38" data-fmt="int" data-suffix="">38</span> group chats and wrote 23% of what they said. You're a lurker.</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Sunday dinner crew</span><span class="vl">4,210</span></li><li class="row" style="--w:0.708;--d:2"><span class="rk">2</span><span class="nm">Bachelor party 🍾</span><span class="vl">2,980</span></li><li class="row" style="--w:0.549;--d:3"><span class="rk">3</span><span class="nm">Fantasy league</span><span class="vl">2,311</span></li><li class="row" style="--w:0.444;--d:4"><span class="rk">4</span><span class="nm">Family</span><span class="vl">1,870</span></li><li class="row" style="--w:0.333;--d:5"><span class="rk">5</span><span class="nm">Climbing</span><span class="vl">1,402</span></li><li class="row extra" style="--w:0.235;--d:6"><span class="rk">6</span><span class="nm">Book club</span><span class="vl">990</span></li><li class="row extra" style="--w:0.145;--d:7"><span class="rk">7</span><span class="nm">Roommates 2019</span><span class="vl">610</span></li></ol>
+            <button class="more chrome" data-more>Show all 7</button></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-night" data-name="personality"><div class="card"><div class="body">
+        <div class="sticker" aria-hidden="true">🌙</div>
+        <p class="lead">Diagnosis</p>
+        <div class="hero diag">nocturnal menace</div>
+        <p class="after">Terrorizes people at ungodly hours.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-cobalt" data-name="starter"><div class="card"><div class="body">
+        <div class="thread big">
+          <div class="bub s">hey</div>
+          <div class="bub r">hey!</div>
+        </div>
+        <p class="lead">You start</p>
+        <div class="hero"><span class="count" data-to="62" data-fmt="int" data-suffix="%">62%</span></div>
+        <p class="after">of your conversations. Someone has to.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-white" data-name="response"><div class="card"><div class="body">
+        <div class="thread"><div class="bub r typing"><i></i><i></i><i></i></div></div>
+        <p class="lead">Your average reply takes</p>
+        <div class="hero"><span class="count" data-to="4" data-fmt="int" data-suffix="">4</span><small>min</small></div>
+        <p class="after">Basically instant.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-night" data-name="peak"><div class="card"><div class="body">
+        <div class="clock" style="--a:330deg" aria-hidden="true"><i style="--t:0deg"></i><i style="--t:30deg"></i><i style="--t:60deg"></i><i style="--t:90deg"></i><i style="--t:120deg"></i><i style="--t:150deg"></i><i style="--t:180deg"></i><i style="--t:210deg"></i><i style="--t:240deg"></i><i style="--t:270deg"></i><i style="--t:300deg"></i><i style="--t:330deg"></i><b></b><u></u></div>
+        <p class="lead">You text most at</p>
+        <div class="hero">11PM</div>
+        <p class="after">on Sundays.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-lilac" data-name="streaks"><div class="card"><div class="body"><div class="chain" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="lead">Your longest runs</p><div class="duo"><div class="hero sm"><span class="count" data-to="87" data-fmt="int" data-suffix="">87</span></div><p class="after">days in a row with <b>Mom</b>, Apr 2 to Jun 27.</p></div><div class="duo"><div class="hero sm"><span class="count" data-to="488" data-fmt="int" data-suffix="">488</span></div><p class="after">messages with <b>Jordan Lee</b> on Mar 14, over 14 hours.</p></div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-night" data-name="three-am"><div class="card"><div class="body">
+            <div class="moon" aria-hidden="true"></div>
+            <div class="stars" aria-hidden="true"><i style="left:8%;top:14%;--d:0"></i><i style="left:30%;top:30%;--d:1"></i><i style="left:52%;top:9%;--d:2"></i><i style="left:18%;top:44%;--d:3"></i><i style="left:66%;top:36%;--d:4"></i><i style="left:40%;top:52%;--d:5"></i><i style="left:84%;top:54%;--d:6"></i><i style="left:12%;top:62%;--d:7"></i></div>
+            <p class="lead">Between midnight and 5am, you texted</p>
+            <div class="hero name">Jordan Lee</div>
+            <p class="after"><span class="count" data-to="412" data-fmt="int" data-suffix="">412</span> times. Go to sleep.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-pink" data-name="busiest-day"><div class="card"><div class="body">
+            <div class="spark" aria-hidden="true"><i class="" style="--h:38.6%"></i><i class="" style="--h:36.3%"></i><i class="" style="--h:18.3%"></i><i class="" style="--h:53.9%"></i><i class="" style="--h:31.9%"></i><i class="" style="--h:43.3%"></i><i class="" style="--h:35.6%"></i><i class="" style="--h:34.3%"></i><i class="" style="--h:36.4%"></i><i class="" style="--h:19.9%"></i><i class="" style="--h:26.1%"></i><i class="" style="--h:16.0%"></i><i class="" style="--h:42.6%"></i><i class="" style="--h:37.4%"></i><i class="" style="--h:35.0%"></i><i class="" style="--h:41.0%"></i><i class="" style="--h:48.7%"></i><i class="" style="--h:28.4%"></i><i class="" style="--h:8.0%"></i><i class="" style="--h:19.0%"></i><i class="" style="--h:16.0%"></i><i class="" style="--h:37.3%"></i><i class="" style="--h:22.2%"></i><i class="" style="--h:58.8%"></i><i class="" style="--h:32.7%"></i><i class="" style="--h:22.7%"></i><i class="" style="--h:7.7%"></i><i class="" style="--h:62.1%"></i><i class="" style="--h:34.2%"></i><i class="" style="--h:44.8%"></i><i class="" style="--h:38.9%"></i><i class="" style="--h:29.1%"></i><i class="" style="--h:32.7%"></i><i class="" style="--h:31.7%"></i><i class="" style="--h:23.0%"></i><i class="" style="--h:23.7%"></i><i class="" style="--h:26.0%"></i><i class="" style="--h:40.0%"></i><i class="" style="--h:57.0%"></i><i class="" style="--h:24.0%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:48.7%"></i><i class="" style="--h:25.2%"></i><i class="" style="--h:14.1%"></i><i class="" style="--h:24.7%"></i><i class="" style="--h:33.3%"></i><i class="" style="--h:31.5%"></i><i class="" style="--h:28.6%"></i><i class="" style="--h:30.7%"></i><i class="" style="--h:31.5%"></i><i class="" style="--h:18.8%"></i><i class="" style="--h:51.1%"></i><i class="" style="--h:37.7%"></i><i class="" style="--h:35.9%"></i><i class="" style="--h:31.7%"></i><i class="" style="--h:42.2%"></i><i class="" style="--h:32.7%"></i><i class="" style="--h:39.4%"></i><i class="" style="--h:48.9%"></i><i class="" style="--h:52.1%"></i><i class="" style="--h:28.3%"></i><i class="" style="--h:63.9%"></i><i class="" style="--h:54.9%"></i><i class="" style="--h:58.8%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:50.3%"></i><i class="" style="--h:64.2%"></i><i class="" style="--h:60.3%"></i><i class="" style="--h:77.1%"></i><i class="" style="--h:60.5%"></i><i class="" style="--h:32.0%"></i><i class="" style="--h:66.3%"></i><i class="pk" style="--h:100.0%"></i><i class="" style="--h:48.7%"></i><i class="" style="--h:69.4%"></i><i class="" style="--h:34.8%"></i><i class="" style="--h:40.8%"></i><i class="" style="--h:35.1%"></i><i class="" style="--h:35.8%"></i><i class="" style="--h:59.2%"></i><i class="" style="--h:64.4%"></i><i class="" style="--h:16.0%"></i><i class="" style="--h:45.9%"></i><i class="" style="--h:25.3%"></i><i class="" style="--h:50.3%"></i><i class="" style="--h:51.0%"></i><i class="" style="--h:47.2%"></i><i class="" style="--h:53.3%"></i><i class="" style="--h:36.6%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:25.8%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:44.9%"></i><i class="" style="--h:52.9%"></i><i class="" style="--h:16.8%"></i><i class="" style="--h:22.1%"></i><i class="" style="--h:17.6%"></i><i class="" style="--h:50.5%"></i><i class="" style="--h:26.8%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:38.7%"></i><i class="" style="--h:49.5%"></i><i class="" style="--h:17.6%"></i><i class="" style="--h:30.9%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:15.5%"></i><i class="" style="--h:41.7%"></i><i class="" style="--h:46.4%"></i><i class="" style="--h:35.9%"></i><i class="" style="--h:37.1%"></i><i class="" style="--h:34.0%"></i><i class="" style="--h:32.5%"></i><i class="" style="--h:17.2%"></i><i class="" style="--h:28.4%"></i><i class="" style="--h:60.6%"></i><i class="" style="--h:48.7%"></i><i class="" style="--h:35.5%"></i><i class="" style="--h:19.1%"></i><i class="" style="--h:34.3%"></i><i class="" style="--h:24.3%"></i><i class="" style="--h:21.7%"></i><i class="" style="--h:51.3%"></i><i class="" style="--h:49.0%"></i><i class="" style="--h:29.7%"></i><i class="" style="--h:26.5%"></i><i class="" style="--h:16.5%"></i><i class="" style="--h:35.5%"></i><i class="" style="--h:20.6%"></i><i class="" style="--h:27.1%"></i><i class="" style="--h:26.8%"></i><i class="" style="--h:40.4%"></i><i class="" style="--h:22.7%"></i><i class="" style="--h:42.8%"></i><i class="" style="--h:14.4%"></i><i class="" style="--h:41.8%"></i><i class="" style="--h:54.2%"></i><i class="" style="--h:42.3%"></i><i class="" style="--h:32.8%"></i><i class="" style="--h:40.2%"></i><i class="" style="--h:51.5%"></i><i class="" style="--h:19.9%"></i><i class="" style="--h:42.2%"></i><i class="" style="--h:45.8%"></i><i class="" style="--h:36.3%"></i><i class="" style="--h:28.6%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:31.7%"></i><i class="" style="--h:35.9%"></i><i class="" style="--h:9.6%"></i><i class="" style="--h:27.6%"></i><i class="" style="--h:32.4%"></i><i class="" style="--h:31.2%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:20.8%"></i><i class="" style="--h:12.4%"></i><i class="" style="--h:20.8%"></i><i class="" style="--h:63.9%"></i><i class="" style="--h:53.4%"></i><i class="" style="--h:18.6%"></i><i class="" style="--h:21.9%"></i><i class="" style="--h:43.6%"></i><i class="" style="--h:19.9%"></i><i class="" style="--h:36.1%"></i><i class="" style="--h:37.6%"></i><i class="" style="--h:40.2%"></i><i class="" style="--h:23.9%"></i><i class="" style="--h:14.5%"></i><i class="" style="--h:24.5%"></i><i class="" style="--h:24.7%"></i><i class="" style="--h:54.9%"></i><i class="" style="--h:37.1%"></i><i class="" style="--h:46.6%"></i><i class="" style="--h:34.2%"></i><i class="" style="--h:44.8%"></i><i class="" style="--h:17.0%"></i><i class="" style="--h:20.9%"></i><i class="" style="--h:55.9%"></i><i class="" style="--h:33.0%"></i><i class="" style="--h:26.1%"></i><i class="" style="--h:22.7%"></i><i class="" style="--h:28.3%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:32.2%"></i><i class="" style="--h:32.2%"></i><i class="" style="--h:52.9%"></i><i class="" style="--h:27.8%"></i><i class="" style="--h:51.8%"></i><i class="" style="--h:22.4%"></i><i class="" style="--h:23.0%"></i><i class="" style="--h:12.1%"></i><i class="" style="--h:41.8%"></i><i class="" style="--h:57.4%"></i><i class="" style="--h:50.7%"></i><i class="" style="--h:49.7%"></i><i class="" style="--h:19.9%"></i><i class="" style="--h:8.7%"></i><i class="" style="--h:27.0%"></i><i class="" style="--h:30.6%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:43.0%"></i><i class="" style="--h:34.8%"></i><i class="" style="--h:31.0%"></i><i class="" style="--h:43.8%"></i><i class="" style="--h:37.7%"></i><i class="" style="--h:49.0%"></i><i class="" style="--h:62.7%"></i><i class="" style="--h:26.3%"></i><i class="" style="--h:36.9%"></i><i class="" style="--h:16.2%"></i><i class="" style="--h:37.6%"></i><i class="" style="--h:24.2%"></i><i class="" style="--h:26.8%"></i><i class="" style="--h:37.3%"></i><i class="" style="--h:49.7%"></i><i class="" style="--h:16.2%"></i><i class="" style="--h:21.9%"></i><i class="" style="--h:21.9%"></i><i class="" style="--h:47.9%"></i><i class="" style="--h:14.5%"></i><i class="" style="--h:28.1%"></i><i class="" style="--h:30.6%"></i><i class="" style="--h:45.1%"></i><i class="" style="--h:38.2%"></i><i class="" style="--h:22.2%"></i><i class="" style="--h:24.3%"></i><i class="" style="--h:34.3%"></i><i class="" style="--h:14.5%"></i><i class="" style="--h:60.3%"></i><i class="" style="--h:26.5%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:18.0%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:18.1%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:45.8%"></i><i class="" style="--h:37.9%"></i><i class="" style="--h:33.2%"></i><i class="" style="--h:20.6%"></i><i class="" style="--h:40.8%"></i><i class="" style="--h:31.9%"></i><i class="" style="--h:45.4%"></i><i class="" style="--h:31.9%"></i><i class="" style="--h:25.8%"></i><i class="" style="--h:17.5%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:37.7%"></i><i class="" style="--h:25.5%"></i><i class="" style="--h:23.9%"></i><i class="" style="--h:23.4%"></i><i class="" style="--h:28.8%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:43.0%"></i><i class="" style="--h:34.6%"></i><i class="" style="--h:26.1%"></i><i class="" style="--h:46.1%"></i><i class="" style="--h:38.6%"></i><i class="" style="--h:44.8%"></i><i class="" style="--h:22.4%"></i><i class="" style="--h:37.3%"></i><i class="" style="--h:36.1%"></i><i class="" style="--h:33.7%"></i><i class="" style="--h:46.6%"></i><i class="" style="--h:48.5%"></i><i class="" style="--h:27.6%"></i><i class="" style="--h:33.2%"></i><i class="" style="--h:26.8%"></i><i class="" style="--h:28.8%"></i><i class="" style="--h:26.6%"></i><i class="" style="--h:40.0%"></i><i class="" style="--h:42.0%"></i><i class="" style="--h:44.9%"></i><i class="" style="--h:27.6%"></i><i class="" style="--h:33.0%"></i><i class="" style="--h:36.3%"></i><i class="" style="--h:16.5%"></i><i class="" style="--h:10.1%"></i><i class="" style="--h:34.3%"></i><i class="" style="--h:13.1%"></i><i class="" style="--h:31.2%"></i><i class="" style="--h:35.3%"></i><i class="" style="--h:18.8%"></i><i class="" style="--h:26.6%"></i><i class="" style="--h:39.4%"></i><i class="" style="--h:35.9%"></i><i class="" style="--h:30.4%"></i><i class="" style="--h:44.3%"></i><i class="" style="--h:23.2%"></i><i class="" style="--h:38.4%"></i><i class="" style="--h:33.2%"></i><i class="" style="--h:49.0%"></i><i class="" style="--h:46.4%"></i><i class="" style="--h:30.6%"></i><i class="" style="--h:41.8%"></i><i class="" style="--h:24.3%"></i><i class="" style="--h:27.1%"></i><i class="" style="--h:18.1%"></i><i class="" style="--h:28.8%"></i><i class="" style="--h:41.5%"></i><i class="" style="--h:49.0%"></i><i class="" style="--h:33.0%"></i><i class="" style="--h:36.4%"></i><i class="" style="--h:35.6%"></i><i class="" style="--h:2.0%"></i><i class="" style="--h:42.6%"></i><i class="" style="--h:27.5%"></i><i class="" style="--h:19.1%"></i><i class="" style="--h:2.0%"></i></div>
+            <p class="lead">Your most unhinged day</p>
+            <div class="hero">Mar 14</div>
+            <p class="after"><span class="count" data-to="612" data-fmt="int" data-suffix="">612</span> messages, 3.9× a normal day. What happened?</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Jordan Lee</span><span class="vl">488</span></li><li class="row" style="--w:0.084;--d:2"><span class="rk">2</span><span class="nm">Mom</span><span class="vl">41</span></li><li class="row" style="--w:0.061;--d:3"><span class="rk">3</span><span class="nm">Alex Chen</span><span class="vl">30</span></li><li class="row" style="--w:0.045;--d:4"><span class="rk">4</span><span class="nm">Theo</span><span class="vl">22</span></li><li class="row" style="--w:0.040;--d:5"><span class="rk">5</span><span class="nm">Maya</span><span class="vl">12</span></li><li class="row extra" style="--w:0.040;--d:6"><span class="rk">6</span><span class="nm">Dad</span><span class="vl">9</span></li></ol>
+            <button class="more chrome" data-more>Show all 6</button></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-cobalt" data-name="biggest-fan"><div class="card"><div class="body">
+            <span class="av a4 xl">AR</span>
+            <p class="lead">Your biggest fan</p>
+            <div class="hero name">Aunt Rina</div>
+            <p class="after">texts you <span class="count" data-to="5.3" data-fmt="dec" data-suffix="×">5.3×</span> more than you text them.</p>
+            <div class="vs"><div style="--w:1"><span>Aunt Rina</span><b>640</b></div><div style="--w:0.188"><span>You</span><b>120</b></div></div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-pink" data-name="down-bad"><div class="card"><div class="body">
+            <span class="av a1 xl">PN</span>
+            <p class="lead">You're down bad for</p>
+            <div class="hero name">Priya Natarajan</div>
+            <p class="after">You text them <span class="count" data-to="2.5" data-fmt="dec" data-suffix="×">2.5×</span> more than they text you.</p>
+            <div class="vs"><div style="--w:1"><span>You</span><b>1,500</b></div><div style="--w:0.401"><span>Priya Natarajan</span><b>602</b></div></div></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-white" data-name="priority"><div class="card"><div class="body">
+            <div class="stack" aria-hidden="true"><span class="av a2 ">M</span><span class="av a1 ">PN</span><span class="av a1 ">JL</span><span class="av a2 ">M</span><span class="av a0 ">T</span></div>
+            <p class="lead">You reply fastest to</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Mom</span><span class="vl">under a minute</span></li><li class="row" style="--w:0.833;--d:2"><span class="rk">2</span><span class="nm">Priya Natarajan</span><span class="vl">1 min</span></li><li class="row" style="--w:0.667;--d:3"><span class="rk">3</span><span class="nm">Jordan Lee</span><span class="vl">2 min</span></li><li class="row" style="--w:0.500;--d:4"><span class="rk">4</span><span class="nm">Maya</span><span class="vl">3 min</span></li><li class="row" style="--w:0.333;--d:5"><span class="rk">5</span><span class="nm">Theo</span><span class="vl">7 min</span></li></ol>
+            <p class="after">They get the instant reply. Everyone else waits.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-lilac" data-name="fast-responders"><div class="card"><div class="body">
+            <div class="stack" aria-hidden="true"><span class="av a0 ">D</span><span class="av a3 ">AC</span><span class="av a3 ">SM</span><span class="av a2 ">CO</span><span class="av a2 ">M</span></div>
+            <p class="lead">These people drop everything for you</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Dad</span><span class="vl">under a minute</span></li><li class="row" style="--w:0.833;--d:2"><span class="rk">2</span><span class="nm">Alex Chen</span><span class="vl">1 min</span></li><li class="row" style="--w:0.667;--d:3"><span class="rk">3</span><span class="nm">Sam Martinez</span><span class="vl">4 min</span></li><li class="row" style="--w:0.500;--d:4"><span class="rk">4</span><span class="nm">Chris O.</span><span class="vl">9 min</span></li><li class="row" style="--w:0.333;--d:5"><span class="rk">5</span><span class="nm">Mom</span><span class="vl">14 min</span></li></ol></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-cobalt" data-name="who-reaches-out"><div class="card"><div class="body"><div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div><p class="lead">You always text first</p><ol class="rows"><li class="row" style="--w:0.900;--d:1"><span class="rk">1</span><span class="nm">Theo</span><span class="vl">90%</span></li><li class="row" style="--w:0.889;--d:2"><span class="rk">2</span><span class="nm">Maya</span><span class="vl">88%</span></li></ol><p class="lead gap">They always text first</p><ol class="rows"><li class="row" style="--w:0.938;--d:1"><span class="rk">1</span><span class="nm">Aunt Rina</span><span class="vl">93%</span></li><li class="row" style="--w:0.875;--d:2"><span class="rk">2</span><span class="nm">Dad</span><span class="vl">87%</span></li></ol></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-pink" data-name="heating-up"><div class="card"><div class="body">
+            <div class="sticker" aria-hidden="true">🔥</div>
+            <p class="lead">Heating up since June</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Priya Natarajan</span><span class="vl">+1,860</span></li><li class="row" style="--w:0.312;--d:2"><span class="rk">2</span><span class="nm">Theo</span><span class="vl">+580</span></li><li class="row" style="--w:0.231;--d:3"><span class="rk">3</span><span class="nm">Maya</span><span class="vl">+430</span></li></ol></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-lav" data-name="ghosted"><div class="card"><div class="body">
+            <div class="sticker" aria-hidden="true">👻</div>
+            <p class="lead">They went quiet after June</p>
+            <ol class="rows"><li class="row" style="--w:1.000;--d:1"><span class="rk">1</span><span class="nm">Chris O.</span><span class="vl">640 <i>to</i> 12</span></li><li class="row" style="--w:0.469;--d:2"><span class="rk">2</span><span class="nm">Roommate Ben</span><span class="vl">300 <i>to</i> 0</span></li><li class="row" style="--w:0.328;--d:3"><span class="rk">3</span><span class="nm">Kelsey</span><span class="vl">210 <i>to</i> 4</span></li></ol>
+            <p class="after">Messages before June, then after.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section><section class="slide t-white" data-name="emoji"><div class="card"><div class="body">
+            <div class="sticker big" aria-hidden="true">😭</div>
+            <p class="lead">Your emotional range</p>
+            <div class="emoji"><span style="--d:0">💀</span><span style="--d:1">🙏</span><span style="--d:2">😂</span><span style="--d:3">❤️</span><span style="--d:4">🥲</span></div>
+            <p class="after">😭 alone: 2,811 times.</p></div><footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer></div></section>
+    <section class="slide t-stage" data-name="summary">
+      <div class="tilt">
+        <div class="card summary" id="summaryCard">
+          <div class="sheen" aria-hidden="true"></div>
+          <div class="body">
+            <p class="lead">My 2026 in texts</p>
+            <div class="hero">47,832</div>
+            <p class="after">messages</p>
+            <dl class="grid4">
+              <div><dt>People</dt><dd>312</dd></div>
+              <div><dt>Words</dt><dd>892,410</dd></div>
+              <div><dt>I start</dt><dd>62%</dd></div>
+              <div><dt>Reply</dt><dd>4 min</dd></div>
+            </dl>
+            <p class="diag-sm">nocturnal menace</p>
+            <p class="top3">Mom, Jordan Lee, Alex Chen</p>
+          </div>
+          <footer class="mark"><span>wrap2026.com</span><span>iMessage · 2026</span></footer>
+        </div>
+      </div>
+    </section></main>
+<div class="tip" id="tip"></div>
+<label id="hapticLbl" style="position:fixed;left:-99px;top:-99px;opacity:0" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+
+<script>
+(() => {
+const FILE = 'imessage_wrapped_2026';
+const deck = document.getElementById('deck');
+const slides = [...deck.querySelectorAll('.slide')];
+const bars = document.getElementById('bars');
+const top = document.getElementById('top');
+const dark = new Set(['t-cobalt','t-ink','t-night','t-stage']);
+let cur = -1;
+
+// fit text to the card width (numbers and the intro title)
+function fit(el, max) {
+  const anim = el.style.animation, disp = el.style.display;
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
+  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
+  el.style.animation = anim; el.style.display = disp; el.style.width = '';
+}
+function fitAll() {
+  document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
+  document.querySelectorAll('.hero.fit').forEach(e => fit(e));
+}
+document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
+document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
+document.querySelectorAll('.pile i').forEach(i => i.style.setProperty('--d', Math.round(Math.random() * 900)));
+document.querySelectorAll('.stack, .slide .body').forEach(p => p.querySelectorAll(':scope > .av, :scope > .stack > .av').forEach((a, k) => a.style.setProperty('--i', k)));
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(fitAll);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitAll);
+addEventListener('resize', fitAll);
+
+// dot rows stagger by month
+document.querySelectorAll('.mrow').forEach((r, i) => r.querySelectorAll('i').forEach(d => d.style.setProperty('--r', i)));
+
+slides.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', 'Slide ' + (i + 1));
+  b.addEventListener('click', e => { e.stopPropagation(); go(i); });
+  bars.appendChild(b);
+});
+
+// sound: one soft note per slide, climbing a pentatonic scale
+let ctx = null, soundOn = false;
+try { soundOn = localStorage.getItem('wrap-sound') === '1'; } catch (_) {}
+const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+function note(i) {
+  if (!soundOn) return;
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const t = ctx.currentTime, f = 392 * Math.pow(2, scale[i % scale.length] / 12);
+  [1, 2].forEach((h, k) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = k ? 'triangle' : 'sine'; o.frequency.value = f * h;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(k ? .012 : .05, t + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .5);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
+  });
+}
+const soundBtn = document.getElementById('sound');
+function paintSound() {
+  document.body.classList.toggle('sound-on', soundOn);
+  soundBtn.setAttribute('aria-pressed', soundOn);
+  document.getElementById('soundLbl').textContent = soundOn ? 'Sound on' : 'Sound off';
+}
+soundBtn.addEventListener('click', e => {
+  e.stopPropagation(); soundOn = !soundOn; paintSound();
+  try { localStorage.setItem('wrap-sound', soundOn ? '1' : '0'); } catch (_) {}
+  note(cur); buzz();
+});
+paintSound();
+
+// haptics: Android vibrate, iOS switch-toggle tick
+const hap = document.querySelector('#hapticLbl');
+function buzz() {
+  if (navigator.vibrate) { navigator.vibrate(8); return; }
+  if (matchMedia('(pointer:coarse)').matches) hap.click();
+}
+
+// count-up for big numbers
+function countUp(el) {
+  const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
+  const t0 = performance.now(), dur = 1300;
+  const fmt = v => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + sfx;
+  (function f(t) {
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
+    el.textContent = fmt(p >= 1 ? to : to * e);
+    if (p < 1 && el.closest('.slide.on')) requestAnimationFrame(f); else el.textContent = fmt(to);
+  })(t0);
+}
+
+function go(i, quiet) {
+  if (i < 0 || i >= slides.length || i === cur) return;
+  slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  cur = i;
+  const s = slides[i];
+  const theme = [...s.classList].find(c => c.startsWith('t-'));
+  top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
+  s.querySelectorAll('.count').forEach(countUp);
+  if (!quiet) { note(i); buzz(); }
+  try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
+}
+
+// tap left third to go back, the rest to go forward; swipe works too
+let sx = null, sy = null;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+deck.addEventListener('pointerup', e => {
+  if (sx === null) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+  if (e.target.closest('button, a, .tilt')) return;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) go(e.clientX < innerWidth * .3 ? cur - 1 : cur + 1);
+});
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End') go(slides.length - 1);
+});
+
+// show all 10
+document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click', e => {
+  e.stopPropagation();
+  const list = b.closest('.body').querySelector('.rows');
+  const all = list.classList.toggle('all');
+  b.textContent = all ? 'Show top 5' : b.textContent.replace('Show top 5', '');
+  if (!all) b.textContent = 'Show all ' + list.children.length;
+  buzz();
+}));
+
+// day tooltips
+const tip = document.getElementById('tip');
+document.querySelectorAll('.dots i[data-tip]').forEach(d => {
+  d.addEventListener('pointerenter', e => { if (e.pointerType !== 'mouse') return; const r = d.getBoundingClientRect(); tip.textContent = d.dataset.tip; tip.style.left = (r.left + r.width / 2) + 'px'; tip.style.top = r.top + 'px'; tip.style.opacity = 1; });
+  d.addEventListener('pointerleave', () => tip.style.opacity = 0);
+});
+
+// summary card tilts toward the pointer
+const tilt = document.querySelector('.tilt');
+if (tilt) {
+  const card = tilt.querySelector('.card');
+  tilt.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    card.style.transition = 'transform .08s linear';
+    card.style.transform = `rotateY(${(x - .5) * 14}deg) rotateX(${(.5 - y) * 14}deg)`;
+    card.style.setProperty('--mx', x * 100 + '%'); card.style.setProperty('--my', y * 100 + '%');
+  });
+  tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
+}
+
+// save the current slide as a 1080x1920 image
+const saveBtn = document.getElementById('save'), saveLbl = document.getElementById('saveLbl');
+saveBtn.addEventListener('click', async e => {
+  e.stopPropagation();
+  const s = slides[cur], card = s.querySelector('.card');
+  if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
+  saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
+  const prev = card.style.transform; card.style.transform = 'none';
+  s.classList.add('capturing'); card.classList.add('saving');
+  s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
+  try {
+    const url = await modernScreenshot.domToPng(card, {
+      scale: 1080 / card.offsetWidth,
+      filter: n => !(n.classList && n.classList.contains('chrome')),
+    });
+    const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
+    saveLbl.textContent = 'Saved'; buzz();
+  } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
+  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
+  setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
+});
+
+if (location.search.includes('still')) document.body.classList.add('capturing');
+const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
+go(start > 0 ? start : 0, true);
+})();
+</script>
+</body></html>

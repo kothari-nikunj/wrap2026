@@ -808,1093 +808,983 @@ def get_data_coverage(ts_start, ts_end, has_phone, has_whatsapp):
     return earliest, latest
 
 
+TEMPLATE = r'''<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>__TITLE__</title>
+<meta name="theme-color" content="#160A26">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
+<style>
+:root{
+  --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
+  --cobalt:#2F4BFF; --pink:#FF5FA2; --white:#FFFFFF;
+  --cw:min(100vw, calc(92dvh * 9 / 16));
+  --ch:calc(var(--cw) * 16 / 9);
+  --display:'Anybody',system-ui,sans-serif;
+  --body:'Onest',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.3,1.4,.5,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--night);color:var(--white);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-y;transition:background .6s var(--ease)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* themes */
+.t-cobalt{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
+.t-lilac{--bg:var(--lilac);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-white{--bg:var(--white);--fg:var(--ink);--soft:rgba(36,16,56,.07);--tint:var(--cobalt)}
+.t-ink{--bg:var(--ink);--fg:var(--lilac);--soft:rgba(238,232,255,.1);--tint:var(--pink)}
+.t-night{--bg:var(--night);--fg:var(--lilac);--soft:rgba(238,232,255,.09);--tint:var(--pink)}
+.t-pink{--bg:var(--pink);--fg:var(--ink);--soft:rgba(36,16,56,.1);--tint:var(--white)}
+.t-lav{--bg:var(--lav);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt)}
+.t-stage{--bg:var(--cobalt);--fg:var(--white);--soft:rgba(255,255,255,.14);--tint:#9FB0FF}
+
+/* deck */
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;visibility:hidden;transform:translateX(5%) scale(.97);transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s .55s}
+.slide.past{transform:translateX(-5%) scale(.97)}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
+.card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
+.body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
+
+/* type */
+.lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
+.lead.gap{margin-top:1.2em}
+.hero.fit{white-space:nowrap;overflow-wrap:normal}
+.hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
+.hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero.sm{font-size:3.4em}
+.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
+.after b{font-weight:600;opacity:1}
+.after .count{font-weight:600}
+
+/* stat split */
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
+.split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
+
+/* ranked rows */
+.rows{list-style:none;display:flex;flex-direction:column;gap:.32em;margin-top:.9em}
+.row{position:relative;display:grid;grid-template-columns:1.5em minmax(0,1fr) auto;align-items:baseline;gap:.4em;padding:.55em .75em;border-radius:.7em;overflow:hidden;font-size:.95em}
+.row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
+.row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
+.row>*{position:relative;z-index:1}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
+.row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
+.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
+.row:first-child{font-size:1.15em}
+.row:last-child{border-bottom-color:transparent}
+.row.extra{display:none}
+.rows.all .row.extra{display:grid}
+.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.7;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
+.more:hover{opacity:1}
+
+/* avatars: five colorways, swapped where one would vanish into the slide */
+.a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
+.t-cobalt .a0,.t-stage .a0{--ab:var(--white);--af:var(--cobalt)}.t-cobalt .a4{--ab:var(--lilac);--af:var(--ink)}
+.t-pink .a1{--ab:var(--white);--af:var(--pink)}
+.t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
+.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
+/* avatars */
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
+.stack{display:flex;margin-bottom:auto;padding-left:.7em}
+.stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
+.stack .av:nth-child(1){width:4.6em;height:4.6em;z-index:5}
+.stack .av:nth-child(2){z-index:4}.stack .av:nth-child(3){z-index:3}.stack .av:nth-child(4){z-index:2}.stack .av:nth-child(5){z-index:1}
+
+/* message pile */
+.pile{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:auto;align-content:flex-start;max-height:46%;overflow:hidden}
+.pile i{width:1.05em;height:.75em;border-radius:.4em .4em .4em .12em;background:var(--soft);background:color-mix(in srgb,var(--fg) 16%,transparent)}
+.pile i.s{background:var(--cobalt);border-radius:.4em .4em .12em .4em}
+
+/* redacted text */
+.redact{display:flex;flex-direction:column;gap:.55em;margin-bottom:auto}
+.redact i{height:.8em;width:var(--w);border-radius:.4em;background:var(--soft);background:color-mix(in srgb,var(--fg) 12%,transparent)}
+.redact i:nth-child(4n){background:var(--cobalt);opacity:.85}
+
+/* streak chain */
+.chain{display:grid;grid-template-columns:repeat(15,1fr);gap:.3em;margin-bottom:auto}
+.chain i{aspect-ratio:1;border-radius:.25em;background:var(--cobalt)}
+
+/* stars */
+.stars{position:absolute;inset:4em 0 50% 0;pointer-events:none}
+.stars i{position:absolute;width:.25em;height:.25em;border-radius:50%;background:var(--lilac);box-shadow:0 0 .6em var(--lilac);animation:twinkle 3s infinite;animation-delay:calc(var(--d) * -.4s)}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* year sparkline */
+.spark{display:flex;align-items:flex-end;gap:1px;height:9em;margin-bottom:auto;padding-bottom:1.4em}
+.spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
+.spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
+
+/* sticker */
+.sticker.big{font-size:6em}
+.sticker{margin-bottom:auto;align-self:flex-start;font-size:4.2em;line-height:1;width:1.7em;height:1.7em;display:grid;place-items:center;border-radius:50%;background:var(--soft);transform:rotate(-8deg)}
+
+/* typing */
+.typing{display:flex;gap:.3em;padding:.85em 1em;font-size:1.6em}
+.typing i{width:.42em;height:.42em;border-radius:50%;background:currentColor;opacity:.35;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-.12em)}}
+
+/* clock */
+.clock{position:relative;width:11em;height:11em;border-radius:50%;margin-bottom:auto;background:var(--soft)}
+.clock i{position:absolute;left:50%;top:50%;width:.22em;height:.9em;margin:-.45em 0 0 -.11em;background:currentColor;opacity:.4;border-radius:.2em;transform:rotate(var(--t)) translateY(-4.6em)}
+.clock b{position:absolute;left:50%;top:50%;width:.36em;height:4.2em;margin-left:-.18em;background:var(--pink);border-radius:.3em;transform-origin:50% 0;transform:rotate(calc(var(--a) + 180deg));box-shadow:0 0 1.2em var(--pink)}
+.clock u{position:absolute;left:50%;top:50%;width:.9em;height:.9em;margin:-.45em;border-radius:50%;background:var(--pink)}
+
+/* versus */
+.vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
+.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
+.vs div:last-child{background:var(--soft);color:var(--fg)}
+.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
+
+/* bubbles */
+.thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
+.bub{max-width:80%;padding:.5em .8em;border-radius:1.1em;font-size:1em;line-height:1.3;width:fit-content}
+.bub.r{background:var(--soft);border-bottom-left-radius:.3em}
+.bub.s{align-self:flex-end;background:var(--fg);color:var(--bg);border-bottom-right-radius:.3em}
+.thread.big .bub{font-size:1.4em}
+
+/* intro */
+.intro{display:flex;flex-direction:column;flex:1}
+.stretch{font-family:var(--display);line-height:.82;letter-spacing:-.04em;margin-bottom:auto}
+.stretch span{display:block}
+.stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
+.stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
+.intro .thread{margin:0 0 1.2em}
+.hint{font-size:.85em;opacity:.7;font-weight:500}
+
+/* year dots */
+.year{display:flex;flex-direction:column;gap:.34em;margin:1em 0 .2em}
+.mrow{display:grid;grid-template-columns:2em minmax(0,1fr);align-items:center}
+.mrow span{font-size:.6em;opacity:.6;font-weight:500}
+.dots{display:grid;grid-template-columns:repeat(31,1fr);gap:.14em}
+.dots i{aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.12}
+.dots i.na{opacity:0}
+.dots i.fut{opacity:.04}
+.dots i.l1{opacity:.3}.dots i.l2{opacity:.55}.dots i.l3{opacity:.85}
+.dots i.l4{opacity:1;background:var(--pink);box-shadow:0 0 .5em var(--pink)}
+.tip{position:fixed;pointer-events:none;background:var(--white);color:var(--ink);font:500 13px var(--body);padding:6px 10px;border-radius:999px;transform:translate(-50%,-140%);opacity:0;transition:opacity .15s;z-index:20;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* moon */
+.moon{position:absolute;top:4.6em;right:1.6em;width:4.5em;height:4.5em;border-radius:50%;box-shadow:inset -1.1em .5em 0 0 var(--pink);filter:drop-shadow(0 0 1.4em rgba(255,95,162,.45));transform:rotate(-20deg)}
+
+/* emoji */
+.emoji{display:flex;flex-wrap:wrap;gap:.1em .25em;font-size:3.2em;line-height:1.15;margin:.2em 0 .3em}
+.emoji span{display:inline-block}
+
+/* duo */
+.duo{margin-top:1.1em}
+.duo+.duo{padding-top:1.1em;border-top:1.5px solid var(--soft)}
+
+/* summary */
+.t-stage .tilt{perspective:1200px}
+.summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
+.summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
+.summary .hero{font-size:4.2em}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
+.grid4 dt{font-size:.7em;opacity:.7}
+.grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
+.top3{font-size:.85em;opacity:.85;margin-top:.5em}
+
+/* chrome: progress + controls, sized to the card */
+.top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
+.bars{display:flex;gap:4px}
+.bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
+.bars button::after{content:"";position:absolute;inset:-10px 0}
+.bars button.done{opacity:.9}
+.ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
+.ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
+.pills{display:flex;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
+.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
+.pill:active{transform:scale(.94)}
+.pill svg{width:14px;height:14px}
+.eq{display:inline-flex;gap:2px;align-items:center;height:12px}
+.eq i{width:2px;height:4px;background:currentColor;border-radius:1px;transition:height .2s}
+.sound-on .eq i{animation:eq .9s infinite ease-in-out}
+.sound-on .eq i:nth-child(2){animation-delay:.15s}.sound-on .eq i:nth-child(3){animation-delay:.3s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+
+/* entrance choreography, replayed on each slide */
+.on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
+.on .lead{animation-delay:.05s}
+.on .hero{animation:heroIn .8s var(--spring) both;animation-delay:.15s}
+.on .after{animation-delay:.45s}
+.on .split,.on .grid4{animation:rise .7s var(--ease) both;animation-delay:.6s}
+.on .row{animation:rowIn .55s var(--ease) both;animation-delay:calc(.2s + var(--d) * 70ms)}
+.on .row::before{animation:grow .9s var(--ease) both;animation-delay:calc(.35s + var(--d) * 70ms)}
+.on .bub{animation:pop .45s var(--spring) both}
+.on .bub:nth-child(2){animation-delay:.55s}.on .bub:nth-child(3){animation-delay:1.1s}
+.on .intro .a1{animation-delay:.9s}.on .intro .a2{animation-delay:1.6s}.on .intro .a3{animation-delay:2.3s}
+.on .intro .a4{animation:rise .6s var(--ease) both;animation-delay:2.9s}
+.on .stretch span:last-child{animation:stretch 1.4s var(--ease) both}
+.on .stretch span:first-child{animation:rise .8s var(--ease) both}
+.on .emoji span{animation:pop .5s var(--spring) both;animation-delay:calc(.25s + var(--d) * 90ms)}
+.on .dots i{animation:dot .5s var(--ease) both;animation-delay:calc(var(--r, 0) * 45ms)}
+.on .moon{animation:moon 1.4s var(--ease) both}
+.on .redact i{animation:grow .8s var(--ease) both;transform-origin:left;animation-delay:calc(var(--k, 0) * 60ms)}
+.on .chain i{animation:pop .3s var(--spring) both;animation-delay:calc(var(--k, 0) * 12ms)}
+.on .spark i{animation:barUp .7s var(--ease) both;transform-origin:bottom;animation-delay:calc(var(--k, 0) * 2ms)}
+@keyframes barUp{from{transform:scaleY(0)}}
+.on .pile i{animation:pop .35s var(--spring) both;animation-delay:calc(var(--d, 0) * 1ms)}
+.on .av{animation:pop .6s var(--spring) both;animation-delay:calc(.1s + var(--i, 0) * 90ms)}
+.on .sticker{animation:sticker .8s var(--spring) both}
+.on .clock b{animation:hand 1.6s var(--spring) both}
+.on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
+.on .vs div:last-child{animation-delay:.65s}
+@keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
+@keyframes hand{from{transform:rotate(180deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
+@keyframes heroIn{from{opacity:0;transform:translateY(24px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes stretch{from{font-stretch:50%;font-variation-settings:"wdth" 50;opacity:0}30%{opacity:1}to{font-stretch:150%;font-variation-settings:"wdth" 150}}
+@keyframes dot{from{transform:scale(0)}to{transform:none}}
+@keyframes moon{from{opacity:0;transform:rotate(-60deg) translateY(1em)}to{opacity:1;transform:rotate(-20deg)}}
+.after{--o:.85}
+
+/* saving: freeze everything at its final frame */
+.capturing *, .capturing *::before{animation:none !important;transition:none !important}
+.card.saving{border-radius:0;box-shadow:none}
+
+@media (max-width:540px){
+  :root{--cw:100vw;--ch:100dvh}
+  .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
+  .top{padding-top:max(10px, env(safe-area-inset-top))}
+}
+@media (max-width:400px){
+  .ctl .brand{display:none}
+  .ctl{justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before{animation:none !important;transition-duration:.01s !important}
+}
+</style>
+</head>
+<body>
+<div class="top" id="top">
+  <div class="bars" id="bars" role="tablist" aria-label="Slides"></div>
+  <div class="ctl">
+    <span class="brand">wrap2026</span>
+    <div class="pills">
+      <button class="pill" id="sound" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
+      <button class="pill" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="saveLbl">Save image</span></button>
+    </div>
+  </div>
+</div>
+<main class="deck" id="deck">__SLIDES__</main>
+<div class="tip" id="tip"></div>
+<label id="hapticLbl" style="position:fixed;left:-99px;top:-99px;opacity:0" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+
+<script>
+(() => {
+const FILE = '__FILE__';
+const deck = document.getElementById('deck');
+const slides = [...deck.querySelectorAll('.slide')];
+const bars = document.getElementById('bars');
+const top = document.getElementById('top');
+const dark = new Set(['t-cobalt','t-ink','t-night','t-stage']);
+let cur = -1;
+
+// fit text to the card width (numbers and the intro title)
+function fit(el, max) {
+  const anim = el.style.animation, disp = el.style.display;
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
+  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
+  el.style.animation = anim; el.style.display = disp; el.style.width = '';
+}
+function fitAll() {
+  document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
+  document.querySelectorAll('.hero.fit').forEach(e => fit(e));
+}
+document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
+document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
+document.querySelectorAll('.pile i').forEach(i => i.style.setProperty('--d', Math.round(Math.random() * 900)));
+document.querySelectorAll('.stack, .slide .body').forEach(p => p.querySelectorAll(':scope > .av, :scope > .stack > .av').forEach((a, k) => a.style.setProperty('--i', k)));
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(fitAll);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitAll);
+addEventListener('resize', fitAll);
+
+// dot rows stagger by month
+document.querySelectorAll('.mrow').forEach((r, i) => r.querySelectorAll('i').forEach(d => d.style.setProperty('--r', i)));
+
+slides.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', 'Slide ' + (i + 1));
+  b.addEventListener('click', e => { e.stopPropagation(); go(i); });
+  bars.appendChild(b);
+});
+
+// sound: one soft note per slide, climbing a pentatonic scale
+let ctx = null, soundOn = false;
+try { soundOn = localStorage.getItem('wrap-sound') === '1'; } catch (_) {}
+const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+function note(i) {
+  if (!soundOn) return;
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const t = ctx.currentTime, f = 392 * Math.pow(2, scale[i % scale.length] / 12);
+  [1, 2].forEach((h, k) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = k ? 'triangle' : 'sine'; o.frequency.value = f * h;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(k ? .012 : .05, t + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .5);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
+  });
+}
+const soundBtn = document.getElementById('sound');
+function paintSound() {
+  document.body.classList.toggle('sound-on', soundOn);
+  soundBtn.setAttribute('aria-pressed', soundOn);
+  document.getElementById('soundLbl').textContent = soundOn ? 'Sound on' : 'Sound off';
+}
+soundBtn.addEventListener('click', e => {
+  e.stopPropagation(); soundOn = !soundOn; paintSound();
+  try { localStorage.setItem('wrap-sound', soundOn ? '1' : '0'); } catch (_) {}
+  note(cur); buzz();
+});
+paintSound();
+
+// haptics: Android vibrate, iOS switch-toggle tick
+const hap = document.querySelector('#hapticLbl');
+function buzz() {
+  if (navigator.vibrate) { navigator.vibrate(8); return; }
+  if (matchMedia('(pointer:coarse)').matches) hap.click();
+}
+
+// count-up for big numbers
+function countUp(el) {
+  const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
+  const t0 = performance.now(), dur = 1300;
+  const fmt = v => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + sfx;
+  (function f(t) {
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
+    el.textContent = fmt(p >= 1 ? to : to * e);
+    if (p < 1 && el.closest('.slide.on')) requestAnimationFrame(f); else el.textContent = fmt(to);
+  })(t0);
+}
+
+function go(i, quiet) {
+  if (i < 0 || i >= slides.length || i === cur) return;
+  slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  cur = i;
+  const s = slides[i];
+  const theme = [...s.classList].find(c => c.startsWith('t-'));
+  top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
+  s.querySelectorAll('.count').forEach(countUp);
+  if (!quiet) { note(i); buzz(); }
+  try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
+}
+
+// tap left third to go back, the rest to go forward; swipe works too
+let sx = null, sy = null;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+deck.addEventListener('pointerup', e => {
+  if (sx === null) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+  if (e.target.closest('button, a, .tilt')) return;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) go(e.clientX < innerWidth * .3 ? cur - 1 : cur + 1);
+});
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End') go(slides.length - 1);
+});
+
+// show all 10
+document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click', e => {
+  e.stopPropagation();
+  const list = b.closest('.body').querySelector('.rows');
+  const all = list.classList.toggle('all');
+  b.textContent = all ? 'Show top 5' : b.textContent.replace('Show top 5', '');
+  if (!all) b.textContent = 'Show all ' + list.children.length;
+  buzz();
+}));
+
+// day tooltips
+const tip = document.getElementById('tip');
+document.querySelectorAll('.dots i[data-tip]').forEach(d => {
+  d.addEventListener('pointerenter', e => { if (e.pointerType !== 'mouse') return; const r = d.getBoundingClientRect(); tip.textContent = d.dataset.tip; tip.style.left = (r.left + r.width / 2) + 'px'; tip.style.top = r.top + 'px'; tip.style.opacity = 1; });
+  d.addEventListener('pointerleave', () => tip.style.opacity = 0);
+});
+
+// summary card tilts toward the pointer
+const tilt = document.querySelector('.tilt');
+if (tilt) {
+  const card = tilt.querySelector('.card');
+  tilt.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    card.style.transition = 'transform .08s linear';
+    card.style.transform = `rotateY(${(x - .5) * 14}deg) rotateX(${(.5 - y) * 14}deg)`;
+    card.style.setProperty('--mx', x * 100 + '%'); card.style.setProperty('--my', y * 100 + '%');
+  });
+  tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
+}
+
+// save the current slide as a 1080x1920 image
+const saveBtn = document.getElementById('save'), saveLbl = document.getElementById('saveLbl');
+saveBtn.addEventListener('click', async e => {
+  e.stopPropagation();
+  const s = slides[cur], card = s.querySelector('.card');
+  if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
+  saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
+  const prev = card.style.transform; card.style.transform = 'none';
+  s.classList.add('capturing'); card.classList.add('saving');
+  s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
+  try {
+    const url = await modernScreenshot.domToPng(card, {
+      scale: 1080 / card.offsetWidth,
+      filter: n => !(n.classList && n.classList.contains('chrome')),
+    });
+    const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
+    saveLbl.textContent = 'Saved'; buzz();
+  } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
+  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
+  setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
+});
+
+if (location.search.includes('still')) document.body.classList.add('capturing');
+const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
+go(start > 0 ? start : 0, true);
+})();
+</script>
+</body></html>'''
+
+CALL_CSS = r'''
+/* calls: waveform of the year, one bar per week */
+.wave{display:flex;align-items:center;gap:.16em;height:11em;margin-bottom:auto}
+.wave i{flex:1;height:var(--h);min-height:.3em;border-radius:1em;background:var(--fg);opacity:.32}
+.wave i.pk{opacity:1;background:var(--tint)}
+
+/* calls: platform share blocks */
+.share{display:flex;flex-direction:column;gap:.4em;height:16em;margin-bottom:auto}
+.share div{flex:var(--p) 1 0;min-height:3.1em;display:flex;justify-content:space-between;align-items:flex-end;padding:.6em .9em;border-radius:1.1em;background:var(--ab);color:var(--af);font-weight:600;transform-origin:top left}
+.share b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.5em;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* calls: video vs voice tiles */
+.tiles{display:grid;grid-template-columns:repeat(12,1fr);gap:.4em;margin-bottom:auto}
+.tiles i{aspect-ratio:1;border-radius:50%;background:var(--soft);background:color-mix(in srgb,var(--fg) 18%,transparent)}
+.tiles i.v{border-radius:.35em;background:var(--tint);box-shadow:0 0 .7em color-mix(in srgb,var(--tint) 55%,transparent)}
+
+/* calls: ringing avatar */
+.ringing{position:relative;align-self:flex-start;margin:2.4em 0 auto 2.6em;font-size:1em}
+.ringing .av.xl{margin:0;position:relative;z-index:2}
+.ringing b{position:absolute;inset:0;border-radius:50%;border:.14em solid var(--fg);transform:scale(calc(1.28 + var(--r) * .32));opacity:calc(.42 - var(--r) * .12);z-index:1}
+.ringing u{position:absolute;right:-.3em;bottom:-.1em;z-index:3;display:grid;place-items:center;width:2.8em;height:2.8em;border-radius:50%;background:var(--fg);color:var(--bg);font-size:1.1em;text-decoration:none;box-shadow:0 0 0 .2em var(--bg)}
+.ringing u svg{width:1.3em;height:1.3em}
+@keyframes ring{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.1);opacity:0}}
+
+/* calls: talk-time waffle, one square per slice of hours */
+.waffle{display:grid;grid-template-columns:repeat(12,1fr);gap:.3em;margin-bottom:auto}
+.waffle i{aspect-ratio:1;border-radius:.3em;background:var(--c)}
+.c0{--c:var(--cobalt)}.c1{--c:var(--pink)}.c2{--c:var(--ink)}.c3{--c:#9FB0FF}.c4{--c:var(--lav)}
+.sw{display:inline-block;width:.7em;height:.7em;border-radius:.2em;background:var(--c);margin-right:.45em;vertical-align:.02em}
+.pf{font-size:.7em;margin-left:.4em;letter-spacing:.1em;opacity:.9}
+
+/* calls: hour pies for the longest call */
+.pies{display:flex;flex-wrap:wrap;gap:.55em;margin-bottom:auto}
+.pies i{width:var(--s);height:var(--s);border-radius:50%;background:conic-gradient(var(--fg) calc(var(--p) * 1%),var(--soft) 0);box-shadow:inset 0 0 0 .14em color-mix(in srgb,var(--fg) 30%,transparent)}
+
+/* calls: missed-call banners */
+.notes{display:flex;flex-direction:column;gap:.45em;margin-bottom:auto}
+.notes div{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.7em;padding:.65em .9em .65em .65em;border-radius:1.3em;background:color-mix(in srgb,var(--white) 72%,transparent);color:var(--ink);box-shadow:0 .6em 1.6em -1em rgba(36,16,56,.5)}
+.notes div:nth-child(2){opacity:.85}.notes div:nth-child(3){opacity:.7}
+.notes span{display:grid;place-items:center;width:2.3em;height:2.3em;border-radius:.7em;background:var(--ink);color:var(--pink)}
+.notes span svg{width:1.2em;height:1.2em}
+.notes p{line-height:1.2;min-width:0}
+.notes p b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notes p em{font-style:normal;font-size:.8em;opacity:.65}
+.notes small{font-size:.75em;opacity:.55;font-weight:500}
+.notes .more-n{background:none;box-shadow:none;color:var(--fg);display:block;padding:.2em .2em 0;font-weight:600;font-size:.85em;opacity:.7}
+
+/* calls: tear-off calendar page */
+.cal{align-self:flex-start;margin:1em 0 auto .4em;width:8.4em;border-radius:1.3em;overflow:hidden;background:var(--white);color:var(--ink);text-align:center;transform:rotate(-6deg);box-shadow:0 1.4em 2.6em -1.2em rgba(22,10,38,.6)}
+.cal span{display:block;background:var(--pink);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.1em;padding:.4em 0 .35em}
+.cal b{display:block;font-family:var(--display);font-weight:900;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:4.4em;line-height:1;padding:.12em 0 0;letter-spacing:-.04em}
+.cal small{display:block;font-size:.85em;font-weight:600;opacity:.6;padding:.2em 0 .9em}
+@keyframes calIn{from{opacity:0;transform:rotate(-30deg) scale(.5)}to{opacity:1;transform:rotate(-6deg)}}
+
+/* calls: columns (week, call lengths) */
+.cols{display:flex;align-items:flex-end;gap:.5em;height:14em;margin-bottom:auto}
+.cols div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:.35em;min-width:0}
+.cols i{width:100%;height:var(--h);min-height:.5em;border-radius:.7em .7em .25em .25em;background:var(--fg);opacity:.22;transform-origin:bottom}
+.cols i.hi{opacity:1;background:var(--tint)}
+.cols b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;font-size:1.05em}
+.cols span{font-size:.72em;font-weight:600;opacity:.7;white-space:nowrap}
+
+/* calls: missed, then called back */
+.lag{display:flex;flex-direction:column;align-items:flex-start;margin:.6em 0 auto}
+.lag div{display:flex;align-items:center;gap:.6em;padding:.5em 1.1em .5em .5em;border-radius:999px;background:var(--soft);font-weight:600;font-size:1.1em}
+.lag div:last-of-type{background:var(--fg);color:var(--bg)}
+.lag div span{display:grid;place-items:center;width:2.2em;height:2.2em;border-radius:50%;background:var(--bg);color:var(--fg)}
+.lag div:last-of-type span{background:var(--tint);color:var(--white)}
+.lag span svg{width:1.1em;height:1.1em}
+.lag p{display:flex;align-items:center;gap:.9em;height:7em;margin-left:1.5em;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.05em}
+.lag p::before{content:"";height:100%;border-left:.28em dotted currentColor;opacity:.45}
+
+.on .wave i{animation:barMid .8s var(--ease) both;animation-delay:calc(var(--k, 0) * 12ms)}
+@keyframes barMid{from{transform:scaleY(0)}}
+.on .share div{animation:pop .55s var(--spring) both;animation-delay:calc(.1s + var(--k, 0) * 120ms)}
+.on .tiles i{animation:pop .35s var(--spring) both;animation-delay:calc(var(--k, 0) * 7ms)}
+.on .ringing b{animation:ring 2.4s var(--ease) infinite;animation-delay:calc(var(--r) * .8s)}
+.on .ringing u{animation:pop .5s var(--spring) both;animation-delay:.5s}
+.on .waffle i{animation:pop .3s var(--spring) both;animation-delay:calc(var(--k, 0) * 9ms)}
+.on .pies i{animation:pop .5s var(--spring) both;animation-delay:calc(.1s + var(--k, 0) * 110ms)}
+.on .notes div{animation:pop .5s var(--spring) both;animation-delay:calc(.1s + var(--k, 0) * 220ms)}
+.on .cal{animation:calIn .8s var(--spring) both}
+.on .cols i{animation:barUp .7s var(--ease) both;animation-delay:calc(.1s + var(--k, 0) * 80ms)}
+.on .lag div{animation:pop .5s var(--spring) both}
+.on .lag p{animation:rise .6s var(--ease) both;animation-delay:.4s}
+.on .lag div:last-of-type{animation-delay:.8s}
+'''
+
+
 def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date):
     """Generate the wrapped HTML report."""
+    import html as _html
+    from datetime import date as ddate
+
+    esc = lambda v: _html.escape(str(v))
     stats = d['stats']
+    year_int = int(year)
+    now = datetime.now()
+    last_day = now.date() if year_int == now.year else ddate(year_int, 12, 31)
 
-    # Format peak hour
     hr = d['peak_hour']
-    if hr == 0:
-        hr_str = "12AM"
-    elif hr < 12:
-        hr_str = f"{hr}AM"
-    elif hr == 12:
-        hr_str = "12PM"
-    else:
-        hr_str = f"{hr-12}PM"
+    hr_str = "12AM" if hr == 0 else f"{hr}AM" if hr < 12 else "12PM" if hr == 12 else f"{hr-12}PM"
 
-    # Format busiest day
     if d['busiest_day']:
         bd = datetime.strptime(d['busiest_day'][0], '%Y-%m-%d')
-        busiest_str = bd.strftime('%b %d')
+        busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-    else:
-        busiest_str = "N/A"
-        busiest_count = 0
 
-    # Data coverage warning
     coverage_warning = ""
     if earliest_date:
         earliest_dt = datetime.fromtimestamp(earliest_date)
-        year_start = datetime(int(year), 1, 1)
-        if earliest_dt > year_start + timedelta(days=7):
-            coverage_warning = f"Data starts {earliest_dt.strftime('%b %d')}"
+        if earliest_dt > datetime(year_int, 1, 1) + timedelta(days=7):
+            coverage_warning = f"Data starts {earliest_dt.strftime('%b %-d')}"
 
+    PHONE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>'
+    MISSED_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l6 6 4-4M13 7h-4M13 7v4"/><path d="M3 17c5-4 13-4 18 0l-2.4 2.4-3-1.6v-2.2a12 12 0 0 0-7.2 0v2.2l-3 1.6z" fill="currentColor" stroke="none"/></svg>'
+
+    def num(v, fmt='int', suffix=''):
+        shown = f"{v:,}" if fmt == 'int' else str(v)
+        return f'<span class="count" data-to="{v}" data-fmt="{fmt}" data-suffix="{esc(suffix)}">{shown}{esc(suffix)}</span>'
+
+    def dur_hero(sec):
+        h, m = int(sec // 3600), int((sec % 3600) // 60)
+        if h:
+            return f'{h}<small>h</small> {m}<small>m</small>' if m else f'{h}<small>h</small>'
+        if m:
+            return f'{m}<small>min</small>'
+        return f'{int(sec)}<small>sec</small>'
+
+    def rows(items, hide_after=5):
+        out = []
+        for i, (label, value, w) in enumerate(items, 1):
+            hidden = ' extra' if i > hide_after else ''
+            out.append(f'<li class="row{hidden}" style="--w:{max(0.04, min(1, w)):.3f};--d:{i}"><span class="rk">{i}</span><span class="nm">{label}</span><span class="vl">{value}</span></li>')
+        return '<ol class="rows">' + ''.join(out) + '</ol>'
+
+    def initials(name):
+        parts = [p for p in str(name).replace('+', ' ').split() if p[:1].isalpha()]
+        return esc(''.join(p[0] for p in parts[:2]).upper() or '#')
+
+    def avatar(name, cls=''):
+        return f'<span class="av a{sum(map(ord, str(name))) % 5} {cls}">{initials(name)}</span>'
+
+    def stack(names):
+        return '<div class="stack" aria-hidden="true">' + ''.join(avatar(x) for x in names[:5]) + '</div>'
+
+    def ringing(name):
+        return ('<div class="ringing" aria-hidden="true">' + ''.join(f'<b style="--r:{k}"></b>' for k in range(3))
+                + avatar(name, 'xl') + f'<u>{PHONE_SVG}</u></div>')
+
+    def more_btn(count):
+        return f'<button class="more chrome" data-more>Show all {count}</button>' if count > 5 else ''
+
+    def pf_icons(platforms):
+        icons = ''.join(g for p, g in (('Phone', '📱'), ('FaceTime', '📹'), ('WhatsApp', '💬')) if p in platforms)
+        return f'<span class="pf" aria-hidden="true">{icons}</span>' if icons else ''
+
+    def sentence(t):
+        t = str(t).strip()
+        return t[:1].upper() + t[1:] + ('' if t[-1:] in '.?!' else '.')
+
+    FALLBACK = {'cobalt': 'ink', 'ink': 'cobalt', 'night': 'ink', 'lilac': 'white', 'white': 'lav', 'lav': 'lilac', 'pink': 'lilac'}
     slides = []
+    last_theme = [None]
 
-    # Slide 1: Intro
+    def slide(theme, body, name):
+        if theme == last_theme[0]:
+            theme = FALLBACK[theme]
+        last_theme[0] = theme
+        slides.append(f'<section class="slide t-{theme}" data-name="{name}"><div class="card"><div class="body">{body}</div><footer class="mark"><span>wrap2026.com</span><span>Calls · {esc(year)}</span></footer></div></section>')
+
+    # Intro
     platforms_text = []
     if has_phone:
         platforms_text.append("Phone + FaceTime")
     if has_whatsapp:
         platforms_text.append("WhatsApp")
     platform_str = " & ".join(platforms_text)
+    slide('cobalt', f'''
+        <div class="intro">
+          <h1 class="stretch"><span>Wrapped</span><span>{esc(year)}</span></h1>
+          <div class="thread">
+            <div class="bub r a1">📞 Incoming call…</div>
+            <div class="bub r a2">I went through your call log.</div>
+            <div class="bub r a3">Your {esc(year)} calling habits, exposed.</div>
+          </div>
+          <p class="hint chrome a4">Tap to start · {esc(platform_str)}{f' · {esc(coverage_warning)}' if coverage_warning else ''}</p>
+        </div>''', 'intro')
 
-    slides.append(f'''
-    <div class="slide intro">
-        <div class="slide-icon">📞</div>
-        <h1>CALLS<br>WRAPPED</h1>
-        <p class="subtitle">{platform_str}</p>
-        <p class="subtitle2">your {year} calling habits, exposed</p>
-        {f'<p class="coverage-warning">⚠️ {coverage_warning}</p>' if coverage_warning else ''}
-        <div class="tap-hint">click anywhere to start →</div>
-    </div>''')
+    # Total calls, with the year as a voice waveform
+    wave = ''
+    if d['daily_counts']:
+        weeks = []
+        day = ddate(year_int, 1, 1)
+        while day <= last_day:
+            weeks.append(sum(d['daily_counts'].get((day + timedelta(days=k)).isoformat(), 0) for k in range(7)))
+            day += timedelta(days=7)
+        wpk = max(weeks) or 1
+        pk_i = weeks.index(wpk)
+        wave = '<div class="wave" aria-hidden="true">' + ''.join(
+            f'<i class="{"pk" if k == pk_i else ""}" style="--h:{max(4, c / wpk * 100):.1f}%;--k:{k}"></i>' for k, c in enumerate(weeks)) + '</div>'
+    slide('lilac', f'''
+        {wave}
+        <p class="lead">This year you made and took</p>
+        <div class="hero">{num(stats['total'])}</div>
+        <p class="after">calls. That's <b>{format_duration_short(stats['total_duration'])}</b> of your life on the phone.</p>
+        <div class="split">
+          <div><b>{d['avg_daily']}</b><span>a day</span></div>
+          <div><b>{stats['outgoing']:,}</b><span>outgoing</span></div>
+          <div><b>{stats['incoming']:,}</b><span>incoming</span></div>
+        </div>''', 'total')
 
-    # Slide 2: Total calls
-    avg_per_day = d['avg_daily']
-    total_duration_str = format_duration_short(stats['total_duration'])
-
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// TOTAL DAMAGE</div>
-        <div class="big-number gradient">{stats['total']:,}</div>
-        <div class="slide-text">calls this year</div>
-        <div class="stat-grid">
-            <div class="stat-item"><span class="stat-num">{avg_per_day}</span><span class="stat-lbl">/day</span></div>
-            <div class="stat-item"><span class="stat-num">{stats['outgoing']:,}</span><span class="stat-lbl">outgoing</span></div>
-            <div class="stat-item"><span class="stat-num">{stats['incoming']:,}</span><span class="stat-lbl">incoming</span></div>
-        </div>
-        <div class="roast" style="margin-top:24px;">that's {total_duration_str} of your life on calls</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_total_calls.png', this)">📸 Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Slide 3: Platform breakdown - horizontal stacked bar design
+    # Platform split
     if len(d['platforms']) > 1:
         total_calls = stats['total']
-        platform_data = []
-        bar_segments = []
-        platform_details = []
+        colorway = {'Phone': 'a0', 'FaceTime': 'a1', 'WhatsApp': 'a2'}
+        plats = [(p, d['platforms'][p]['count']) for p in ['Phone', 'FaceTime', 'WhatsApp'] if p in d['platforms']]
+        plats_ranked = sorted(plats, key=lambda x: x[1], reverse=True)
+        lead_p, lead_c = plats_ranked[0]
+        pct = lambda c: round(c / max(total_calls, 1) * 100)
+        blocks = ''.join(f'<div class="{colorway[p]}" style="--p:{max(c, 1)};--k:{k}"><span>{p}</span><b>{pct(c)}%</b></div>' for k, (p, c) in enumerate(plats_ranked))
+        slide('white', f'''
+            <div class="share" aria-hidden="true">{blocks}</div>
+            <p class="lead">Most of your calls went through</p>
+            <div class="hero name">{lead_p}</div>
+            <p class="after">{num(pct(lead_c), 'int', '%')} of all your calls. Loyal.</p>
+            <div class="split">{''.join(f'<div><b>{c:,}</b><span>{p} calls</span></div>' for p, c in plats)}</div>''', 'platforms')
 
-        for platform in ['Phone', 'FaceTime', 'WhatsApp']:
-            if platform in d['platforms']:
-                pct = round(d['platforms'][platform]['count'] / max(total_calls, 1) * 100)
-                count = d['platforms'][platform]['count']
-                css_class = platform.lower()
-                platform_data.append((platform, pct, count, css_class))
-
-                # Stacked bar segment
-                bar_segments.append(f'<div class="bar-segment {css_class}" style="width:{pct}%"></div>')
-
-                # Detail card below
-                platform_details.append(f'''
-                <div class="platform-detail {css_class}">
-                    <span class="platform-pct">{pct}%</span>
-                    <span class="platform-name">{platform}</span>
-                    <span class="platform-count">{count:,} calls</span>
-                </div>''')
-
-        slides.append(f'''
-        <div class="slide platform-breakdown">
-            <div class="slide-label">// PLATFORM SPLIT</div>
-            <div class="slide-text">where you call the most</div>
-            <div class="stacked-bar">
-                {''.join(bar_segments)}
-            </div>
-            <div class="platform-details">
-                {''.join(platform_details)}
-            </div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_platform_split.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide 4: Video vs Voice
+    # Video vs voice
     video = d['video_voice']['video']
     voice = d['video_voice']['voice']
     if video > 0:
         video_pct = round(video / max(stats['total'], 1) * 100)
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// VIDEO VS VOICE</div>
-            <div class="dual-stats">
-                <div class="dual-stat">
-                    <span class="dual-icon">🎥</span>
-                    <span class="dual-num cyan">{video:,}</span>
-                    <span class="dual-label">video calls</span>
-                </div>
-                <div class="dual-stat">
-                    <span class="dual-icon">🎤</span>
-                    <span class="dual-num yellow">{voice:,}</span>
-                    <span class="dual-label">voice calls</span>
-                </div>
-            </div>
-            <div class="roast">{video_pct}% of your calls were face-to-face</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_video_voice.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        nv = max(1, round(video / max(stats['total'], 1) * 96))
+        tiles = ''.join(f'<i class="{"v" if (k * 37) % 96 < nv else ""}" style="--k:{k}"></i>' for k in range(96))
+        slide('ink', f'''
+            <div class="tiles" aria-hidden="true">{tiles}</div>
+            <p class="lead">You showed your face on</p>
+            <div class="hero">{num(video_pct, 'int', '%')}</div>
+            <p class="after">of your calls. Hope the lighting was good.</p>
+            <div class="split">
+              <div><b>{video:,}</b><span>video calls</span></div>
+              <div><b>{voice:,}</b><span>voice calls</span></div>
+              <div><b>{video_pct}%</b><span>face to face</span></div>
+            </div>''', 'video-voice')
 
-    # Slide 5: Your #1 by calls
+    # Your #1 and inner circle
     if d['top_count']:
-        top = d['top_count'][0]
-        name, stats_top = top
-        platforms_icons = ' '.join(['📱' if p == 'Phone' else ('📹' if p == 'FaceTime' else '💬') for p in stats_top['platforms']])
-        slides.append(f'''
-        <div class="slide gradient-bg">
-            <div class="slide-label">// YOUR #1</div>
-            <div class="slide-text">most called person</div>
-            <div class="huge-name">{name}</div>
-            <div class="big-number yellow">{stats_top['count']:,}</div>
-            <div class="slide-text">calls <span class="source-badge">{platforms_icons}</span></div>
-            <div class="roast">{format_duration_short(stats_top['duration'])} total talk time</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_your_number_one.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        name, st = d['top_count'][0]
+        slide('pink', f'''
+            {avatar(name, 'xl')}
+            <p class="lead">The person you called most</p>
+            <div class="hero name">{esc(name)}</div>
+            <p class="after">{num(st['count'])} calls, {format_duration_short(st['duration'])} of talk time. {pf_icons(st['platforms'])}</p>''', 'number-one')
+        tc = d['top_count'][:10]
+        mx = tc[0][1]['count'] or 1
+        slide('lilac', f'''
+            {stack([nm for nm, _ in tc])}
+            <p class="lead">Your inner circle, by calls</p>
+            {rows([(esc(nm) + pf_icons(s2['platforms']), f"{s2['count']:,}", s2['count'] / mx) for nm, s2 in tc])}
+            {more_btn(len(tc))}''', 'inner-circle')
 
-    # Slide 6: Inner Circle (Top 5 by calls)
-    if d['top_count']:
-        def platform_icons(platforms):
-            icons = []
-            if 'Phone' in platforms:
-                icons.append('<span style="color:#4ade80;font-size:10px">📱</span>')
-            if 'FaceTime' in platforms:
-                icons.append('<span style="color:#22d3ee;font-size:10px">📹</span>')
-            if 'WhatsApp' in platforms:
-                icons.append('<span style="color:#25d366;font-size:10px">💬</span>')
-            return ''.join(icons) if icons else ''
-
-        top5_html = ''.join([
-            f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{name} <span class="platform-icons">{platform_icons(stats.get("platforms", []))}</span></span><span class="rank-count">{stats["count"]:,}</span></div>'
-            for i, (name, stats) in enumerate(d['top_count'][:5], 1)
-        ])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// INNER CIRCLE</div>
-            <div class="slide-text">top 5 by call count</div>
-            <div class="rank-list">{top5_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_inner_circle.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide 7: Talk Time Champions (Top 5 by duration)
+    # Talk time champions
     if d['top_duration']:
-        duration_html = ''.join([
-            f'<div class="rank-item"><span class="rank-num">{i}</span><span class="rank-name">{name} <span class="platform-icons">{platform_icons(stats.get("platforms", []))}</span></span><span class="rank-count cyan">{format_duration_short(stats["duration"])}</span></div>'
-            for i, (name, stats) in enumerate(d['top_duration'][:5], 1)
-        ])
-        slides.append(f'''
-        <div class="slide orange-bg">
-            <div class="slide-label">// TALK TIME CHAMPIONS</div>
-            <div class="slide-text">who you spend the most time with</div>
-            <div class="rank-list">{duration_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_talk_time.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        td = d['top_duration'][:5]
+        tot = sum(s2['duration'] for _, s2 in td) or 1
+        cells, acc = [], 0
+        for k, (_, s2) in enumerate(td):
+            prev = round(acc / tot * 72)
+            acc += s2['duration']
+            cells += [k] * (round(acc / tot * 72) - prev)
+        waffle = '<div class="waffle" aria-hidden="true">' + ''.join(f'<i class="c{c}" style="--k:{k}"></i>' for k, c in enumerate(cells)) + '</div>'
+        dmx = td[0][1]['duration'] or 1
+        slide('white', f'''
+            {waffle}
+            <p class="lead">Who you spend the most time with</p>
+            {rows([(f'<span class="sw c{k}"></span>' + esc(nm) + pf_icons(s2['platforms']), format_duration_short(s2['duration']), s2['duration'] / dmx) for k, (nm, s2) in enumerate(td)])}''', 'talk-time')
 
-    # Slide 8: Longest Call
+    # Longest call: one pie per hour on the line
     if d['longest_call']:
         lc = d['longest_call']
-        call_date = datetime.fromtimestamp(lc['timestamp']).strftime('%b %d')
+        call_date = datetime.fromtimestamp(lc['timestamp']).strftime('%b %-d')
         call_type = 'video' if lc['is_video'] else 'voice'
-        slides.append(f'''
-        <div class="slide purple-bg">
-            <div class="slide-label">// MARATHON CALL</div>
-            <div class="slide-icon">🏆</div>
-            <div class="huge-name cyan">{lc['name']}</div>
-            <div class="big-number yellow">{format_duration(lc['duration'])}</div>
-            <div class="slide-text">longest single call</div>
-            <div class="roast">{call_type} call on {call_date}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_longest_call.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        hours = lc['duration'] / 3600
+        full = min(int(hours), 15)
+        part = hours - int(hours) if int(hours) < 15 else 0
+        fills = [100] * full + ([round(part * 100)] if part > 0.02 or full == 0 else [])
+        size = '8em' if len(fills) <= 2 else '5.6em' if len(fills) <= 6 else '3.4em'
+        pies = '<div class="pies" aria-hidden="true">' + ''.join(f'<i style="--p:{p};--s:{size};--k:{k}"></i>' for k, p in enumerate(fills)) + '</div>'
+        slide('cobalt', f'''
+            {pies}
+            <p class="lead">Your longest call lasted</p>
+            <div class="hero">{dur_hero(lc['duration'])}</div>
+            <p class="after">A {call_type} call with <b>{esc(lc['name'])}</b> on {call_date}. One circle per hour.</p>''', 'longest-call')
 
-    # Slide 9: Contribution Graph (Call Activity)
+    # Year in dots
     if d['daily_counts']:
-        from datetime import date as ddate
-        today = datetime.now().date()
-        year_int = int(year)
-        year_start = ddate(year_int, 1, 1)
-        year_end = today if year_int == today.year else ddate(year_int, 12, 31)
+        max_count = max(d['daily_counts'].values()) or 1
+        month_rows = []
+        for m in range(1, 13):
+            cells = []
+            for day in range(1, 32):
+                try:
+                    cur = ddate(year_int, m, day)
+                except ValueError:
+                    cells.append('<i class="na"></i>')
+                    continue
+                if cur > last_day:
+                    cells.append('<i class="fut"></i>')
+                    continue
+                c = d['daily_counts'].get(cur.isoformat(), 0)
+                lvl = 0 if c == 0 else 1 if c <= max_count * .25 else 2 if c <= max_count * .5 else 3 if c <= max_count * .75 else 4
+                cells.append(f'<i class="l{lvl}" data-tip="{c:,} {"call" if c == 1 else "calls"} on {cur.strftime("%b %-d")}"></i>')
+            month_rows.append(f'<div class="mrow"><span>{ddate(year_int, m, 1).strftime("%b")}</span><div class="dots">{"".join(cells)}</div></div>')
+        note = f'<p class="after">{esc(coverage_warning)}. Your Mac only keeps about 1,000 calls.</p>' if coverage_warning else ''
+        slide('ink', f'''
+            <div class="year" style="margin:0 0 auto">{"".join(month_rows)}</div>
+            <p class="lead">Your year on the phone, one dot per day.</p>
+            {note}
+            <div class="split">
+              <div><b>{d['avg_daily']}</b><span>a day, on average</span></div>
+              <div><b>{esc(d['busiest_month'])}</b><span>busiest month</span></div>
+              <div><b>{d['quiet_days']}</b><span>quiet days</span></div>
+            </div>''', 'activity')
 
-        cal_cells = []
-        first_day = year_start - timedelta(days=(year_start.weekday() + 1) % 7)
-        last_day = year_end + timedelta(days=(5 - year_end.weekday()) % 7)
-
-        current_date = first_day
-        max_count = max(d['daily_counts'].values()) if d['daily_counts'] else 1
-        month_labels = []
-        last_month = None
-        week_idx = 0
-
-        while current_date <= last_day:
-            week_cells = []
-            for _ in range(7):
-                date_str = current_date.strftime('%Y-%m-%d')
-                count = d['daily_counts'].get(date_str, 0)
-
-                if (year_start <= current_date <= year_end) and current_date.month != last_month:
-                    month_labels.append((week_idx, current_date.strftime('%b')))
-                    last_month = current_date.month
-
-                if count == 0:
-                    level = 0
-                elif count <= max_count * 0.25:
-                    level = 1
-                elif count <= max_count * 0.5:
-                    level = 2
-                elif count <= max_count * 0.75:
-                    level = 3
-                else:
-                    level = 4
-
-                in_year = year_start <= current_date <= year_end
-                week_cells.append((date_str, count, level, in_year))
-                current_date += timedelta(days=1)
-
-            cal_cells.append(week_cells)
-            week_idx += 1
-            if week_idx > 60:
-                break
-
-        contrib_html = '<div class="contrib-graph">'
-        contrib_html += '<div class="contrib-container">'
-        contrib_html += '<div class="contrib-days"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>'
-        contrib_html += '<div class="contrib-main">'
-        contrib_html += '<div class="contrib-months">'
-        for week_num, month_name in month_labels:
-            left_px = week_num * 12
-            contrib_html += f'<span style="position:absolute;left:{left_px}px">{month_name}</span>'
-        contrib_html += '</div>'
-        contrib_html += '<div class="contrib-grid">'
-        for week in cal_cells:
-            contrib_html += '<div class="contrib-week">'
-            for date_str, count, level, in_year in week:
-                if in_year:
-                    try:
-                        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-                        formatted_date = date_obj.strftime('%b %d, %Y')
-                    except:
-                        formatted_date = date_str
-                    call_text = "call" if count == 1 else "calls"
-                    contrib_html += f'<div class="contrib-cell level-{level}" data-date="{formatted_date}" data-count="{count}" data-msg-text="{call_text}"></div>'
-                else:
-                    contrib_html += '<div class="contrib-cell empty"></div>'
-            contrib_html += '</div>'
-        contrib_html += '</div></div></div>'
-        contrib_html += '<div class="contrib-legend"><span>Less</span><div class="contrib-cell level-0"></div><div class="contrib-cell level-1"></div><div class="contrib-cell level-2"></div><div class="contrib-cell level-3"></div><div class="contrib-cell level-4"></div><span>More</span></div>'
-        contrib_html += '</div>'
-
-        # Add note about data coverage on activity slide
-        activity_note = ""
-        if coverage_warning:
-            activity_note = f'<div class="activity-note">⚠️ {coverage_warning} (Mac keeps ~1000 calls)</div>'
-
-        slides.append(f'''
-        <div class="slide contrib-slide">
-            <div class="slide-label">// CALL ACTIVITY</div>
-            <div class="slide-text">your calling throughout the year</div>
-            {contrib_html}
-            <div class="contrib-stats">
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['avg_daily']}</span><span class="contrib-stat-lbl">avg/day</span></div>
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['busiest_month']}</span><span class="contrib-stat-lbl">busiest month</span></div>
-                <div class="contrib-stat"><span class="contrib-stat-num">{d['quiet_days']}</span><span class="contrib-stat-lbl">quiet days</span></div>
-            </div>
-            {activity_note}
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_call_activity.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide 10: Peak Hours
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// PEAK HOURS</div>
-        <div class="slide-text">most active calling time</div>
-        <div class="big-number gradient">{hr_str}</div>
-        <div class="slide-text">on <span class="yellow">{d['peak_day']}s</span></div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_peak_hours.png', this)">📸 Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Slide 11: Busiest Day
+    # Busiest day
     if d['busiest_day']:
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// BUSIEST DAY</div>
-            <div class="slide-text">your most call-heavy day</div>
-            <div class="big-number orange">{busiest_str}</div>
-            <div class="slide-text"><span class="yellow">{busiest_count}</span> calls in one day</div>
-            <div class="roast">someone was popular</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_busiest_day.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        dc = d['daily_counts']
+        peak = max(dc.values()) or 1
+        days = [ddate(year_int, 1, 1) + timedelta(days=k) for k in range((last_day - ddate(year_int, 1, 1)).days + 1)]
+        bars = ''.join(f'<i class="{"pk" if x.isoformat() == d["busiest_day"][0] else ""}" style="--h:{max(2, dc.get(x.isoformat(), 0) / peak * 100):.1f}%"></i>' for x in days)
+        mult = round(busiest_count / max(d['avg_daily'], 0.1), 1)
+        slide('pink', f'''
+            <div class="spark" aria-hidden="true">{bars}</div>
+            <p class="lead">Your phone would not stop on</p>
+            <div class="hero sm">{busiest_str}</div>
+            <p class="after">{num(busiest_count)} calls in one day, {mult}× your usual. Someone was popular.</p>''', 'busiest-day')
 
-    # Slide 12: Night Owl
-    if d['night_owls']:
-        owl = d['night_owls'][0]
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// NIGHT OWL</div>
-            <div class="slide-icon">🌙</div>
-            <div class="huge-name cyan">{owl[0]}</div>
-            <div class="big-number yellow">{owl[1]}</div>
-            <div class="slide-text">late night calls (midnight-5am)</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_night_owl.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+    # Peak hours
+    slide('night', f'''
+        <div class="clock" style="--a:{(hr % 12) * 30}deg" aria-hidden="true">{''.join(f'<i style="--t:{k*30}deg"></i>' for k in range(12))}<b></b><u></u></div>
+        <p class="lead">Your phone rings most at</p>
+        <div class="hero">{hr_str}</div>
+        <p class="after">on {esc(d['peak_day'])}s.</p>''', 'peak')
 
-    # Slide 13: Missed Call King
-    if d['missed_kings']:
-        king = d['missed_kings'][0]
-        slides.append(f'''
-        <div class="slide red-bg">
-            <div class="slide-label">// MISSED CALL KING</div>
-            <div class="slide-icon">📵</div>
-            <div class="huge-name">{king[0]}</div>
-            <div class="big-number yellow">{king[1]}</div>
-            <div class="slide-text">calls you missed from them</div>
-            <div class="roast">maybe check your phone?</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_missed_king.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: First Call of the Year
-    if d['first_call']:
-        fc = d['first_call']
-        fc_date = datetime.fromtimestamp(fc['timestamp']).strftime('%b %d at %I:%M%p')
-        fc_direction = "to" if fc['outgoing'] else "from"
-        slides.append(f'''
-        <div class="slide purple-bg">
-            <div class="slide-label">// FIRST CALL OF {year}</div>
-            <div class="slide-icon">🎉</div>
-            <div class="slide-text">your year started with a call {fc_direction}</div>
-            <div class="huge-name cyan">{fc['name']}</div>
-            <div class="roast">{fc_date}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_first_call.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Biggest Fan (who calls YOU most)
-    if d['biggest_fans']:
-        fan = d['biggest_fans'][0]
-        slides.append(f'''
-        <div class="slide gradient-bg">
-            <div class="slide-label">// BIGGEST FAN</div>
-            <div class="slide-text">who calls YOU the most</div>
-            <div class="huge-name">{fan[0]}</div>
-            <div class="big-number yellow">{fan[1]}</div>
-            <div class="slide-text">incoming calls from them</div>
-            <div class="roast">someone really wants to hear your voice</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_biggest_fan.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Longest Streak
-    if d['longest_streak']:
-        streak_name, streak_days = d['longest_streak']
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// LONGEST STREAK</div>
-            <div class="slide-icon">🔥</div>
-            <div class="huge-name cyan">{streak_name}</div>
-            <div class="big-number yellow">{streak_days}</div>
-            <div class="slide-text">consecutive days calling</div>
-            <div class="roast">commitment level: high</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_longest_streak.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide: Weekday vs Weekend
-    ww = d['weekday_weekend']
-    weekday_pct = round(ww['weekday'] / max(stats['total'], 1) * 100)
-    weekend_pct = 100 - weekday_pct
-    slides.append(f'''
-    <div class="slide">
-        <div class="slide-label">// WORK-LIFE BALANCE</div>
-        <div class="dual-stats">
-            <div class="dual-stat">
-                <span class="dual-icon">💼</span>
-                <span class="dual-num cyan">{weekday_pct}%</span>
-                <span class="dual-label">weekday calls</span>
-            </div>
-            <div class="dual-stat">
-                <span class="dual-icon">🎉</span>
-                <span class="dual-num yellow">{weekend_pct}%</span>
-                <span class="dual-label">weekend calls</span>
-            </div>
-        </div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_weekday_weekend.png', this)">📸 Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
-
-    # Slide: Call Duration Buckets
+    # Call style: duration buckets
     buckets = d['duration_buckets']
     total_answered = buckets['quick'] + buckets['normal'] + buckets['marathon']
     if total_answered > 0:
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// CALL STYLE</div>
-            <div class="slide-text">how long are your calls?</div>
-            <div class="duration-buckets">
-                <div class="bucket">
-                    <span class="bucket-icon">⚡</span>
-                    <span class="bucket-num cyan">{buckets['quick']}</span>
-                    <span class="bucket-label">quick<br>&lt;2 min</span>
-                </div>
-                <div class="bucket">
-                    <span class="bucket-icon">💬</span>
-                    <span class="bucket-num yellow">{buckets['normal']}</span>
-                    <span class="bucket-label">normal<br>2-15 min</span>
-                </div>
-                <div class="bucket">
-                    <span class="bucket-icon">🗣️</span>
-                    <span class="bucket-num orange">{buckets['marathon']}</span>
-                    <span class="bucket-label">marathon<br>15+ min</span>
-                </div>
-            </div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_call_style.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        bk = [('quick', 'Under 2 min', 'Quick ones', 'under two minutes. In, out, done.'),
+              ('normal', '2 to 15 min', 'Normal ones', 'between two and fifteen minutes. Civilized.'),
+              ('marathon', '15 min +', 'Marathons', 'over fifteen minutes. Pace yourself.')]
+        win = max(bk, key=lambda b: buckets[b[0]])
+        bmx = buckets[win[0]] or 1
+        cols = ''.join(f'<div><b>{buckets[key]:,}</b><i class="{"hi" if key == win[0] else ""}" style="--h:{max(3, buckets[key] / bmx * 100):.1f}%;--k:{k}"></i><span>{lbl}</span></div>' for k, (key, lbl, _, _) in enumerate(bk))
+        slide('white', f'''
+            <div class="cols" aria-hidden="true">{cols}</div>
+            <p class="lead">Most of your calls were</p>
+            <div class="hero name">{win[2]}</div>
+            <p class="after">{num(round(buckets[win[0]] / total_answered * 100), 'int', '%')} of answered calls ran {win[3]}</p>''', 'call-style')
 
-    # Slide: Ghost Protocol (unreturned missed calls)
+    # Night owl
+    if d['night_owls']:
+        owl = d['night_owls'][0]
+        slide('night', f'''
+            <div class="moon" aria-hidden="true"></div>
+            <div class="stars" aria-hidden="true">{''.join(f'<i style="left:{x}%;top:{y}%;--d:{k}"></i>' for k, (x, y) in enumerate([(8, 14), (30, 30), (52, 9), (18, 44), (66, 36), (40, 52), (84, 54), (12, 62)]))}</div>
+            <p class="lead">Between midnight and 5am, you were on the phone with</p>
+            <div class="hero name">{esc(owl[0])}</div>
+            <p class="after">{num(owl[1])} late-night calls. Go to sleep.</p>''', 'night-owl')
+
+    # Missed call king
+    if d['missed_kings']:
+        king = d['missed_kings'][0]
+        ago = ['now', '12m ago', '1h ago']
+        banners = ''.join(f'<div style="--k:{k}"><span>{MISSED_SVG}</span><p><b>{esc(king[0])}</b><em>Missed call</em></p><small>{ago[k]}</small></div>' for k in range(min(king[1], 3)))
+        if king[1] > 3:
+            banners += f'<div class="more-n" style="--k:3">+{king[1] - 3:,} more</div>'
+        slide('pink', f'''
+            <div class="notes" aria-hidden="true">{banners}</div>
+            <p class="lead">The calls you missed most came from</p>
+            <div class="hero name">{esc(king[0])}</div>
+            <p class="after">{num(king[1])} missed calls. Maybe check your phone?</p>''', 'missed-king')
+
+    # Ghost protocol
     if d['ghosts']:
-        ghost_html = ''.join([
-            f'<div class="rank-item"><span class="rank-num">👻</span><span class="rank-name">{name}</span><span class="rank-count red">{count}</span></div>'
-            for name, count in d['ghosts'][:5]
-        ])
-        slides.append(f'''
-        <div class="slide red-bg">
-            <div class="slide-label">// GHOST PROTOCOL</div>
-            <div class="slide-text">missed calls you never returned</div>
-            <div class="rank-list">{ghost_html}</div>
-            <div class="roast" style="margin-top:16px;">they're still waiting...</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_ghost_protocol.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        gh = d['ghosts'][:5]
+        gmx = gh[0][1] or 1
+        slide('lav', f'''
+            <div class="sticker" aria-hidden="true">👻</div>
+            <p class="lead">Missed calls you never returned</p>
+            {rows([(esc(nm), f'{c:,}', c / gmx) for nm, c in gh])}
+            <p class="after">They're still waiting.</p>''', 'ghosts')
 
-    # Slide: Callback Speed
+    # Callback speed
     if d['avg_callback_time']:
         cb_time = d['avg_callback_time']
-        if cb_time < 5:
-            cb_label = "LIGHTNING"
-            cb_class = "green"
-        elif cb_time < 30:
-            cb_label = "RESPONSIVE"
-            cb_class = "cyan"
-        elif cb_time < 120:
-            cb_label = "EVENTUALLY"
-            cb_class = "yellow"
-        else:
-            cb_label = "WHENEVER"
-            cb_class = "red"
-
+        cb_label, cb_roast = (('Lightning', 'They barely hung up.') if cb_time < 5 else
+                              ('Responsive', 'Respectable.') if cb_time < 30 else
+                              ('Eventually', 'They had moved on by then.') if cb_time < 120 else
+                              ('Whenever', 'Whenever you get around to it.'))
         cb_display = f"{cb_time}m" if cb_time < 60 else f"{cb_time // 60}h {cb_time % 60}m"
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// CALLBACK SPEED</div>
-            <div class="slide-text">avg time to return missed calls</div>
-            <div class="big-number {cb_class}">{cb_display}</div>
-            <div class="badge {cb_class}">{cb_label}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_callback_speed.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        cb_hero = num(cb_time) + '<small>min</small>' if cb_time < 60 else f'{cb_time // 60}<small>h</small> {cb_time % 60}<small>m</small>'
+        slide('white', f'''
+            <div class="lag" aria-hidden="true">
+              <div><span>{MISSED_SVG}</span>Missed call</div>
+              <p>{cb_display} later</p>
+              <div><span>{PHONE_SVG}</span>You called back</div>
+            </div>
+            <p class="lead">You return a missed call in</p>
+            <div class="hero">{cb_hero}</div>
+            <p class="after">on average. Verdict: <b>{cb_label.lower()}</b>. {cb_roast}</p>''', 'callback')
 
-    # Slide: Calling Personality
+    # First call of the year
+    if d['first_call']:
+        fc = d['first_call']
+        fdt = datetime.fromtimestamp(fc['timestamp'])
+        fc_direction = "to" if fc['outgoing'] else "from"
+        slide('cobalt', f'''
+            <div class="cal" aria-hidden="true"><span>{fdt.strftime('%b')}</span><b>{fdt.day}</b><small>{fdt.strftime('%-I:%M %p')}</small></div>
+            <p class="lead">Your {esc(year)} started with a call {fc_direction}</p>
+            <div class="hero name">{esc(fc['name'])}</div>
+            <p class="after">{fdt.strftime('%b %-d at %-I:%M %p')}. Good start.</p>''', 'first-call')
+
+    # Biggest fan
+    if d['biggest_fans']:
+        fan = d['biggest_fans'][0]
+        slide('lilac', f'''
+            {ringing(fan[0])}
+            <p class="lead">The person who calls you most</p>
+            <div class="hero name">{esc(fan[0])}</div>
+            <p class="after">{num(fan[1])} incoming calls. Someone really wants to hear your voice.</p>''', 'biggest-fan')
+
+    # Longest streak
+    if d['longest_streak']:
+        streak_name, streak_days = d['longest_streak']
+        cols_n = 7 if streak_days <= 28 else 15
+        slide('white', f'''
+            <div class="chain" style="grid-template-columns:repeat({cols_n},1fr)" aria-hidden="true">{'<i></i>' * min(streak_days, 120)}</div>
+            <p class="lead">You called <b>{esc(streak_name)}</b> every day for</p>
+            <div class="hero">{num(streak_days)}<small>days</small></div>
+            <p class="after">in a row. Commitment level: high.</p>''', 'streak')
+
+    # Weekday vs weekend
+    ww = d['weekday_weekend']
+    weekday_pct = round(ww['weekday'] / max(stats['total'], 1) * 100)
+    weekend_pct = 100 - weekday_pct
+    per_wd, per_we = ww['weekday'] / 5, ww['weekend'] / 2
+    wk_mx = max(per_wd, per_we) or 1
+    week = ''.join(f'<div><i class="{"hi" if (k >= 5) == (per_we > per_wd) else ""}" style="--h:{max(3, (per_we if k >= 5 else per_wd) / wk_mx * 100):.1f}%;--k:{k}"></i><span>{dn}</span></div>' for k, dn in enumerate(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']))
+    slide('lav', f'''
+        <div class="cols" aria-hidden="true">{week}</div>
+        <p class="lead">Weekdays got</p>
+        <div class="hero">{num(weekday_pct, 'int', '%')}</div>
+        <p class="after">of your calls. Weekends got {weekend_pct}%. {"Work-life balance is a myth." if weekday_pct >= 72 else "Your phone comes alive on weekends." if per_we > per_wd else "Pretty even, honestly."}</p>''', 'weekday-weekend')
+
+    # Personality
     ptype, proast = d['personality']
-    slides.append(f'''
-    <div class="slide purple-bg">
-        <div class="slide-label">// DIAGNOSIS</div>
-        <div class="slide-text">your calling personality</div>
-        <div class="personality-type">{ptype}</div>
-        <div class="roast">"{proast}"</div>
-        <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_personality.png', this)">📸 Save</button>
-        <div class="slide-watermark">wrap2026.com</div>
-    </div>''')
+    glyph = {'SPEED': '⚡', 'CHATTY': '🗣️', 'SCREENER': '📵', 'INITIATOR': '📲', 'POPULAR': '💅', 'RESPONSIVE': '🏃', 'PHOBIC': '🙈', 'WEEKEND': '🎉', 'BALANCED': '🧘'}
+    g = next((v for k, v in glyph.items() if k in ptype), '📞')
+    slide('night', f'''
+        <div class="sticker" aria-hidden="true">{g}</div>
+        <p class="lead">Your calling diagnosis</p>
+        <div class="hero diag">{esc(sentence(ptype.lower()).rstrip('.'))}</div>
+        <p class="after">{esc(sentence(proast.replace(' - ', ', ')))}</p>''', 'personality')
 
-    # Slide 17: Heating Up
+    # Heating up / cooling down
     if d['heating_up']:
-        heat_html = ''.join([
-            f'<div class="rank-item"><span class="rank-num">🔥</span><span class="rank-name">{name}</span><span class="rank-count green">+{h2-h1}</span></div>'
-            for name, h1, h2 in d['heating_up'][:5]
-        ])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// HEATING UP</div>
-            <div class="slide-text">calling more in H2</div>
-            <div class="rank-list">{heat_html}</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_heating_up.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
-
-    # Slide 18: Cooling Down
+        ht = d['heating_up'][:5]
+        hmx = max(h2 - h1 for _, h1, h2 in ht) or 1
+        slide('pink', f'''
+            <div class="sticker" aria-hidden="true">🔥</div>
+            <p class="lead">Calling more since June</p>
+            {rows([(esc(nm), f'+{h2 - h1:,}', (h2 - h1) / hmx) for nm, h1, h2 in ht])}''', 'heating-up')
     if d['cooling_down']:
-        cool_html = ''.join([
-            f'<div class="rank-item"><span class="rank-num">🧊</span><span class="rank-name">{name}</span><span class="rank-count"><span class="green">{h1}</span> → <span class="red">{h2}</span></span></div>'
-            for name, h1, h2 in d['cooling_down'][:5]
-        ])
-        slides.append(f'''
-        <div class="slide">
-            <div class="slide-label">// COOLING DOWN</div>
-            <div class="slide-text">calling less in H2</div>
-            <div class="rank-list">{cool_html}</div>
-            <div class="roast" style="margin-top:16px;">H1 → H2</div>
-            <button class="slide-save-btn" onclick="saveSlide(this.parentElement, 'wrapped_cooling_down.png', this)">📸 Save</button>
-            <div class="slide-watermark">wrap2026.com</div>
-        </div>''')
+        cd = d['cooling_down'][:5]
+        cmx = max(h1 for _, h1, _ in cd) or 1
+        slide('lilac', f'''
+            <div class="sticker" aria-hidden="true">🧊</div>
+            <p class="lead">They went quiet after June</p>
+            {rows([(esc(nm), f'{h1:,} <i>to</i> {h2:,}', h1 / cmx) for nm, h1, h2 in cd])}
+            <p class="after">Calls before June, then after.</p>''', 'cooling-down')
 
-    # Final slide: Summary
-    top3_names = ', '.join([name for name, _ in d['top_count'][:3]]) if d['top_count'] else "No contacts"
-
-    # Platform breakdown for summary - use colored labels
-    platform_summary = []
-    for platform in ['Phone', 'FaceTime', 'WhatsApp']:
-        if platform in d['platforms']:
-            # Use colored labels for clarity
-            if platform == 'Phone':
-                color = '#4ade80'
-                label = 'Phone'
-            elif platform == 'FaceTime':
-                color = '#22d3ee'
-                label = 'FaceTime'
-            else:  # WhatsApp
-                color = '#25d366'
-                label = 'WhatsApp'
-            count = d["platforms"][platform]["count"]
-            platform_summary.append(f'<span style="color:{color}">{label}</span> {count:,}')
-    platform_summary_html = ' <span style="color:#666;margin:0 8px">·</span> '.join(platform_summary)
-
+    # Summary
+    top3 = ', '.join(esc(nm) for nm, _ in d['top_count'][:3]) if d['top_count'] else "No contacts"
+    plat_line = ' · '.join(f"{p} {d['platforms'][p]['count']:,}" for p in ['Phone', 'FaceTime', 'WhatsApp'] if p in d['platforms'])
     slides.append(f'''
-    <div class="slide summary-slide">
-        <div class="summary-card" id="summaryCard">
-            <div class="summary-header">
-                <span class="summary-logo">📞</span>
-                <span class="summary-title">CALLS WRAPPED {year}</span>
-            </div>
-            <div class="summary-hero">
-                <div class="summary-big-stat">
-                    <span class="summary-big-num">{stats['total']:,}</span>
-                    <span class="summary-big-label">calls</span>
-                </div>
-            </div>
-            <div class="summary-platform-split">
-                {platform_summary_html}
-            </div>
-            <div class="summary-stats">
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{d['unique_contacts']}</span>
-                    <span class="summary-stat-lbl">people</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{format_duration_short(stats['total_duration'])}</span>
-                    <span class="summary-stat-lbl">talk time</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{stats['answered']}</span>
-                    <span class="summary-stat-lbl">answered</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="summary-stat-val">{stats['missed']}</span>
-                    <span class="summary-stat-lbl">missed</span>
-                </div>
-            </div>
-            <div class="summary-personality">
-                <span class="summary-personality-type">{d['personality'][0]}</span>
-            </div>
-            <div class="summary-top3">
-                <span class="summary-top3-label">TOP 3:</span>
-                <span class="summary-top3-names">{top3_names}</span>
-            </div>
-            <div class="summary-footer">
-                <span>wrap2026.com</span>
-            </div>
+    <section class="slide t-stage" data-name="summary">
+      <div class="tilt">
+        <div class="card summary" id="summaryCard">
+          <div class="sheen" aria-hidden="true"></div>
+          <div class="body">
+            <p class="lead">My {esc(year)} on the phone</p>
+            <div class="hero">{stats['total']:,}</div>
+            <p class="after">calls · {plat_line}</p>
+            <dl class="grid4">
+              <div><dt>People</dt><dd>{d['unique_contacts']:,}</dd></div>
+              <div><dt>Talk time</dt><dd>{format_duration_short(stats['total_duration'])}</dd></div>
+              <div><dt>Answered</dt><dd>{stats['answered']:,}</dd></div>
+              <div><dt>Missed</dt><dd>{stats['missed']:,}</dd></div>
+            </dl>
+            <p class="diag-sm">{esc(sentence(ptype.lower()).rstrip('.'))}</p>
+            <p class="top3">{top3}</p>
+          </div>
+          <footer class="mark"><span>wrap2026.com</span><span>Calls · {esc(year)}</span></footer>
         </div>
-        <button class="screenshot-btn" onclick="takeScreenshot()">
-            <span class="btn-icon">📸</span>
-            <span>Save Screenshot</span>
-        </button>
-        <div class="share-hint">share your call stats</div>
-    </div>''')
+      </div>
+    </section>''')
 
-    slides_html = ''.join(slides)
-    num_slides = len(slides)
-
-    favicon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>"
-
-    html = f'''<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Calls Wrapped {year}</title>
-<link rel="icon" href="{favicon}">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Azeret+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-
-:root {{
-    --bg: #08080f;
-    --bg-card: #0d0d18;
-    --text: #f5f5f7;
-    --muted: #6b7280;
-    --green: #34d399;
-    --yellow: #fbbf24;
-    --red: #f87171;
-    --cyan: #22d3ee;
-    --pink: #f472b6;
-    --orange: #fb923c;
-    --purple: #a78bfa;
-    --phone: #34d399;
-    --facetime: #22d3ee;
-    --whatsapp: #25D366;
-    --glow-cyan: rgba(34,211,238,0.15);
-    --font-pixel: 'Silkscreen', cursive;
-    --font-mono: 'Azeret Mono', monospace;
-    --font-body: 'Space Grotesk', sans-serif;
-}}
-
-* {{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }}
-html, body {{ height:100%; overflow:hidden; }}
-body {{ font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); font-feature-settings:'ss01' on,'ss02' on; -webkit-font-smoothing:antialiased; }}
-
-.gallery {{
-    display:flex;
-    height:100%;
-    transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
-}}
-
-.slide {{
-    position:relative;
-    min-width:100vw;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    padding:48px 24px 88px;
-    text-align:center;
-    background:var(--bg);
-}}
-
-.slide.intro {{ background:radial-gradient(ellipse at 50% 0%,#151525 0%,#08080f 70%); }}
-.slide.gradient-bg {{ background:radial-gradient(ellipse at 50% 100%,#0a1f1a 0%,#08080f 70%); }}
-.slide.purple-bg {{ background:radial-gradient(ellipse at 50% 100%,#151020 0%,#08080f 70%); }}
-.slide.orange-bg {{ background:radial-gradient(ellipse at 50% 100%,#1a1008 0%,#08080f 70%); }}
-.slide.red-bg {{ background:radial-gradient(ellipse at 50% 100%,#1a0a0a 0%,#08080f 70%); }}
-.slide.summary-slide {{ background:radial-gradient(ellipse at 50% 50%,#101820 0%,#08080f 70%); }}
-.slide.contrib-slide {{ background:var(--bg); padding:32px 16px 88px; }}
-.slide.platform-breakdown {{ background:radial-gradient(ellipse at 50% 100%,#0a1a15 0%,#08080f 70%); }}
-
-.coverage-warning {{ font-size:12px; color:var(--yellow); margin-top:12px; opacity:0.8; }}
-
-/* Contribution graph */
-.contrib-graph {{ display:flex; flex-direction:column; align-items:center; margin:20px auto; padding:0 8px; }}
-.contrib-container {{ display:flex; gap:4px; }}
-.contrib-days {{ display:flex; flex-direction:column; gap:2px; font-size:9px; color:var(--muted); padding-top:20px; min-width:28px; text-align:right; padding-right:4px; }}
-.contrib-days span {{ height:10px; line-height:10px; }}
-.contrib-main {{ display:flex; flex-direction:column; }}
-.contrib-months {{ position:relative; height:16px; margin-bottom:4px; font-size:10px; color:var(--muted); }}
-.contrib-months span {{ position:absolute; white-space:nowrap; }}
-.contrib-grid {{ display:flex; gap:2px; }}
-.contrib-week {{ display:flex; flex-direction:column; gap:2px; }}
-.contrib-cell {{ width:10px; height:10px; border-radius:2px; background:rgba(255,255,255,0.05); }}
-.contrib-cell.empty {{ background:transparent; }}
-.contrib-cell.level-0 {{ background:rgba(255,255,255,0.12); }}
-.contrib-cell.level-1 {{ background:rgba(34,211,238,0.25); }}
-.contrib-cell.level-2 {{ background:rgba(34,211,238,0.45); }}
-.contrib-cell.level-3 {{ background:rgba(34,211,238,0.70); }}
-.contrib-cell.level-4 {{ background:var(--cyan); }}
-.contrib-cell:not(.empty) {{ cursor:pointer; position:relative; }}
-.contrib-tooltip {{ position:fixed; background:rgba(20,20,30,0.95); color:var(--text); padding:8px 12px; border-radius:6px; font-size:12px; pointer-events:none; z-index:1000; white-space:nowrap; border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 12px rgba(0,0,0,0.3); }}
-.contrib-tooltip .tooltip-count {{ font-family:var(--font-mono); color:var(--cyan); font-weight:600; }}
-.contrib-tooltip .tooltip-date {{ color:var(--muted); font-size:11px; margin-top:2px; }}
-.contrib-legend {{ display:flex; align-items:center; justify-content:center; gap:4px; margin-top:12px; font-size:10px; color:var(--muted); }}
-.contrib-legend .contrib-cell {{ cursor:default; }}
-.contrib-stats {{ display:flex; gap:32px; margin-top:24px; justify-content:center; }}
-.contrib-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.contrib-stat-num {{ font-family:var(--font-mono); font-size:28px; font-weight:600; color:var(--cyan); }}
-.contrib-stat-lbl {{ font-size:11px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }}
-.activity-note {{ font-size:11px; color:var(--yellow); margin-top:16px; opacity:0.85; }}
-
-/* Platform breakdown - stacked bar design */
-.stacked-bar {{ display:flex; width:100%; max-width:340px; height:40px; border-radius:20px; overflow:hidden; margin:32px 0 28px; box-shadow:0 8px 24px rgba(0,0,0,0.3); }}
-.bar-segment {{ height:100%; transition:all 0.3s; position:relative; }}
-.bar-segment.phone {{ background:linear-gradient(90deg, #34d399, #10b981); }}
-.bar-segment.facetime {{ background:linear-gradient(90deg, #22d3ee, #06b6d4); }}
-.bar-segment.whatsapp {{ background:linear-gradient(90deg, #25d366, #128c7e); }}
-.platform-details {{ display:flex; gap:16px; justify-content:center; margin-top:12px; }}
-.platform-detail {{ display:flex; flex-direction:column; align-items:center; padding:14px 18px; border-radius:10px; background:rgba(255,255,255,0.02); }}
-.platform-detail.phone {{ border-left:2px solid #34d399; }}
-.platform-detail.facetime {{ border-left:2px solid #22d3ee; }}
-.platform-detail.whatsapp {{ border-left:2px solid #25d366; }}
-.platform-detail .platform-pct {{ font-family:var(--font-mono); font-size:28px; font-weight:700; letter-spacing:-1px; }}
-.platform-detail.phone .platform-pct {{ color:#34d399; }}
-.platform-detail.facetime .platform-pct {{ color:#22d3ee; }}
-.platform-detail.whatsapp .platform-pct {{ color:#25d366; }}
-.platform-detail .platform-name {{ font-size:12px; color:var(--muted); margin-top:2px; }}
-.platform-detail .platform-count {{ font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:6px; opacity:0.6; }}
-
-/* Dual stats (video vs voice) */
-.dual-stats {{ display:flex; gap:40px; margin:28px 0; }}
-.dual-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.dual-icon {{ font-size:40px; margin-bottom:8px; }}
-.dual-num {{ font-family:var(--font-mono); font-size:40px; font-weight:600; }}
-.dual-label {{ font-size:12px; color:var(--muted); margin-top:6px; }}
-
-/* Duration buckets */
-.duration-buckets {{ display:flex; gap:20px; margin:28px 0; justify-content:center; }}
-.bucket {{ display:flex; flex-direction:column; align-items:center; padding:16px 20px; background:rgba(255,255,255,0.03); border-radius:12px; min-width:90px; }}
-.bucket-icon {{ font-size:28px; margin-bottom:6px; }}
-.bucket-num {{ font-family:var(--font-mono); font-size:32px; font-weight:600; }}
-.bucket-label {{ font-size:11px; color:var(--muted); margin-top:6px; text-align:center; line-height:1.2; }}
-
-/* Personality type */
-.personality-type {{ font-family:var(--font-pixel); font-size:16px; font-weight:400; line-height:1.2; color:var(--purple); margin:20px 0; text-transform:uppercase; letter-spacing:0.5px; text-shadow:0 0 20px rgba(167,139,250,0.3); }}
-
-.slide h1 {{ font-family:var(--font-pixel); font-size:32px; font-weight:400; line-height:1.15; margin:16px 0; }}
-.slide-label {{ font-family:var(--font-pixel); font-size:11px; font-weight:400; color:var(--cyan); letter-spacing:1px; margin-bottom:12px; text-shadow:0 0 20px var(--glow-cyan); }}
-.slide-icon {{ font-size:64px; margin-bottom:12px; }}
-.slide-text {{ font-size:16px; color:var(--muted); margin:6px 0; letter-spacing:0.2px; }}
-.subtitle {{ font-size:16px; color:var(--muted); margin-top:6px; }}
-.subtitle2 {{ font-size:14px; color:var(--muted); margin-top:4px; opacity:0.6; }}
-
-.big-number {{ font-family:var(--font-mono); font-size:72px; font-weight:600; line-height:1; letter-spacing:-3px; }}
-.big-number.gradient {{ background:linear-gradient(135deg, var(--cyan) 0%, var(--green) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 30px var(--glow-cyan)); }}
-.pct {{ font-family:var(--font-body); font-size:44px; }}
-.huge-name {{ font-family:var(--font-body); font-size:28px; font-weight:600; line-height:1.2; word-break:break-word; max-width:85%; margin:12px 0; }}
-.roast {{ font-style:italic; color:var(--muted); font-size:15px; margin-top:14px; max-width:360px; line-height:1.4; }}
-
-.green {{ color:var(--green); }}
-.yellow {{ color:var(--yellow); }}
-.red {{ color:var(--red); }}
-.cyan {{ color:var(--cyan); }}
-.pink {{ color:var(--pink); }}
-.orange {{ color:var(--orange); }}
-.purple {{ color:var(--purple); }}
-
-.source-badge {{ font-size:16px; margin-left:4px; }}
-
-.stat-grid {{ display:flex; gap:32px; margin-top:24px; }}
-.stat-item {{ display:flex; flex-direction:column; align-items:center; }}
-.stat-num {{ font-family:var(--font-mono); font-size:22px; font-weight:600; color:var(--cyan); }}
-.stat-lbl {{ font-size:10px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }}
-
-.rank-list {{ width:100%; max-width:380px; margin-top:16px; }}
-.rank-item {{ display:flex; align-items:center; padding:12px 16px; gap:14px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,0.02); transition:background 0.2s; }}
-.rank-item:hover {{ background:rgba(255,255,255,0.04); }}
-.rank-item:first-child {{ background:linear-gradient(90deg, var(--glow-cyan) 0%, transparent 100%); border:1px solid rgba(34,211,238,0.2); }}
-.rank-item:first-child .rank-name {{ font-weight:600; color:var(--cyan); }}
-.rank-item:first-child .rank-count {{ font-size:18px; color:var(--cyan); }}
-.rank-num {{ font-family:var(--font-mono); font-size:16px; font-weight:600; color:var(--cyan); width:28px; text-align:center; opacity:0.7; }}
-.rank-item:first-child .rank-num {{ opacity:1; }}
-.rank-name {{ flex:1; font-size:15px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.rank-count {{ font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--yellow); }}
-
-.tap-hint {{ position:absolute; bottom:60px; font-size:16px; color:var(--muted); animation:pulse 2s infinite; }}
-@keyframes pulse {{ 0%,100%{{opacity:0.4}} 50%{{opacity:1}} }}
-
-/* Animations */
-.slide .slide-label,
-.slide .slide-text,
-.slide .slide-icon,
-.slide .big-number,
-.slide .huge-name,
-.slide .roast,
-.slide .stat-grid,
-.slide .rank-item,
-.slide h1,
-.slide .subtitle,
-.slide .subtitle2,
-.slide .summary-card,
-.slide .contrib-graph,
-.slide .contrib-stats,
-.slide .stacked-bar,
-.slide .platform-details,
-.slide .dual-stats,
-.slide .duration-buckets,
-.slide .personality-type {{
-    opacity: 0;
-    transform: translateY(20px);
-}}
-
-.gallery {{ transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }}
-
-.slide.active .slide-label {{ animation: textFade 0.4s ease-out forwards; }}
-.slide.active .slide-text {{ animation: textFade 0.4s ease-out 0.1s forwards; }}
-.slide.active .slide-icon {{ animation: iconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s forwards; }}
-.slide.active h1 {{ animation: titleReveal 0.5s ease-out 0.12s forwards; }}
-.slide.active .subtitle {{ animation: textFade 0.4s ease-out 0.25s forwards; }}
-.slide.active .subtitle2 {{ animation: textFade 0.4s ease-out 0.35s forwards; }}
-.slide.active .big-number {{ animation: numberFlip 0.6s ease-out 0.18s forwards; }}
-.slide.active .huge-name {{ animation: nameBlur 0.5s ease-out 0.2s forwards; }}
-.slide.active .roast {{ animation: roastType 0.6s ease-out 0.4s forwards; }}
-.slide.active .stat-grid {{ animation: none; opacity: 1; transform: none; }}
-.slide.active .stat-item {{ animation: statFade 0.35s ease-out forwards; }}
-.slide.active .stat-item:nth-child(1) {{ animation-delay: 0.3s; }}
-.slide.active .stat-item:nth-child(2) {{ animation-delay: 0.38s; }}
-.slide.active .stat-item:nth-child(3) {{ animation-delay: 0.46s; }}
-.slide.active .rank-list {{ animation: none; opacity: 1; transform: none; }}
-.slide.active .rank-item {{ animation: rankSlide 0.35s ease-out forwards; }}
-.slide.active .rank-item:nth-child(1) {{ animation-delay: 0.1s; }}
-.slide.active .rank-item:nth-child(2) {{ animation-delay: 0.18s; }}
-.slide.active .rank-item:nth-child(3) {{ animation-delay: 0.26s; }}
-.slide.active .rank-item:nth-child(4) {{ animation-delay: 0.34s; }}
-.slide.active .rank-item:nth-child(5) {{ animation-delay: 0.42s; }}
-.slide.active .summary-card {{ animation: cardRise 0.6s ease-out 0.1s forwards; }}
-.slide.active .screenshot-btn {{ opacity: 0; animation: buttonSlide 0.4s ease-out 0.5s forwards; }}
-.slide.active .share-hint {{ opacity: 0; animation: hintFade 0.4s ease-out 0.7s forwards; }}
-.slide.active .contrib-graph {{ animation: graphReveal 0.8s ease-out 0.15s forwards; }}
-.slide.active .contrib-stats {{ animation: none; opacity: 1; transform: none; }}
-.slide.active .contrib-stat {{ animation: statFade 0.35s ease-out forwards; }}
-.slide.active .contrib-stat:nth-child(1) {{ animation-delay: 0.5s; }}
-.slide.active .contrib-stat:nth-child(2) {{ animation-delay: 0.6s; }}
-.slide.active .contrib-stat:nth-child(3) {{ animation-delay: 0.7s; }}
-.slide.active .stacked-bar {{ animation: barGrow 0.6s ease-out 0.2s forwards; }}
-.slide.active .platform-details {{ animation: textFade 0.5s ease-out 0.5s forwards; }}
-@keyframes barGrow {{ 0% {{ opacity: 0; transform: scaleX(0); }} 100% {{ opacity: 1; transform: scaleX(1); }} }}
-.slide.active .dual-stats {{ animation: textFade 0.5s ease-out 0.2s forwards; }}
-.slide.active .duration-buckets {{ animation: textFade 0.5s ease-out 0.2s forwards; }}
-.slide.active .personality-type {{ animation: glitchReveal 0.8s ease-out 0.15s forwards; }}
-
-@keyframes glitchReveal {{ 0% {{ opacity: 0; transform: translateY(15px); filter: blur(4px); }} 50% {{ opacity: 0.8; transform: translateY(3px) skewX(-3deg); filter: blur(1px); }} 100% {{ opacity: 1; transform: translateY(0) skewX(0); filter: blur(0); }} }}
-
-@keyframes textFade {{ 0% {{ opacity: 0; transform: translateY(15px); }} 100% {{ opacity: 1; transform: translateY(0); }} }}
-@keyframes titleReveal {{ 0% {{ opacity: 0; transform: translateY(25px) scale(0.95); }} 70% {{ transform: translateY(-3px) scale(1.01); }} 100% {{ opacity: 1; transform: translateY(0) scale(1); }} }}
-@keyframes iconPop {{ 0% {{ opacity: 0; transform: translateY(20px) scale(0.4) rotate(-15deg); }} 50% {{ transform: translateY(-8px) scale(1.15) rotate(8deg); }} 75% {{ transform: translateY(2px) scale(0.95) rotate(-3deg); }} 100% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0); }} }}
-@keyframes numberFlip {{ 0% {{ opacity: 0; transform: perspective(400px) rotateX(-60deg) translateY(20px); }} 60% {{ transform: perspective(400px) rotateX(10deg); }} 100% {{ opacity: 1; transform: perspective(400px) rotateX(0) translateY(0); }} }}
-@keyframes nameBlur {{ 0% {{ opacity: 0; transform: translateY(20px); filter: blur(8px); }} 100% {{ opacity: 1; transform: translateY(0); filter: blur(0); }} }}
-@keyframes roastType {{ 0% {{ opacity: 0; clip-path: inset(0 100% 0 0); }} 100% {{ opacity: 1; clip-path: inset(0 0 0 0); }} }}
-@keyframes statFade {{ 0% {{ opacity: 0; transform: translateY(12px); }} 100% {{ opacity: 1; transform: translateY(0); }} }}
-@keyframes rankSlide {{ 0% {{ opacity: 0; transform: translateX(-20px); }} 100% {{ opacity: 1; transform: translateX(0); }} }}
-@keyframes cardRise {{ 0% {{ opacity: 0; transform: translateY(40px); }} 100% {{ opacity: 1; transform: translateY(0); }} }}
-@keyframes graphReveal {{ 0% {{ opacity: 0; transform: translateY(30px) scale(0.95); }} 100% {{ opacity: 1; transform: translateY(0) scale(1); }} }}
-@keyframes buttonSlide {{ 0% {{ opacity: 0; transform: translateY(15px); }} 100% {{ opacity: 1; transform: translateY(0); }} }}
-@keyframes hintFade {{ 0% {{ opacity: 0; }} 100% {{ opacity: 1; }} }}
-
-.summary-card {{
-    background:linear-gradient(160deg,#0f1218 0%,#121820 50%,#0f1218 100%);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:20px;
-    padding:28px 24px;
-    width:100%;
-    max-width:380px;
-    text-align:center;
-    box-shadow:0 20px 40px rgba(0,0,0,0.4);
-}}
-.summary-header {{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.06); }}
-.summary-logo {{ font-size:24px; }}
-.summary-title {{ font-family:var(--font-pixel); font-size:10px; font-weight:400; color:var(--text); letter-spacing:0.5px; }}
-.summary-hero {{ margin:20px 0; }}
-.summary-big-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.summary-big-num {{ font-family:var(--font-mono); font-size:52px; font-weight:600; background:linear-gradient(135deg, var(--cyan), var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; letter-spacing:-2px; }}
-.summary-big-label {{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-top:6px; }}
-.summary-platform-split {{ display:flex; justify-content:center; flex-wrap:wrap; gap:6px 12px; margin:14px 0; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.04); font-family:var(--font-mono); font-size:11px; }}
-.summary-stats {{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:18px 0; padding:16px 0; border-top:1px solid rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.06); }}
-.summary-stat {{ display:flex; flex-direction:column; align-items:center; }}
-.summary-stat-val {{ font-family:var(--font-mono); font-size:18px; font-weight:600; color:var(--cyan); white-space:nowrap; }}
-.summary-stat-lbl {{ font-size:8px; color:var(--muted); text-transform:uppercase; margin-top:3px; letter-spacing:0.3px; }}
-.summary-personality {{ margin:14px 0; }}
-.summary-personality-type {{ font-family:var(--font-pixel); font-size:10px; font-weight:400; color:var(--purple); text-transform:uppercase; letter-spacing:0.5px; }}
-.summary-top3 {{ margin:12px 0; display:flex; flex-direction:column; gap:4px; }}
-.summary-top3-label {{ font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }}
-.summary-top3-names {{ font-size:12px; color:var(--text); opacity:0.9; }}
-.summary-footer {{ margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:var(--cyan); font-family:var(--font-pixel); font-weight:400; opacity:0.8; }}
-
-.screenshot-btn {{
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    font-family:var(--font-pixel); font-size:9px; font-weight:400; text-transform:uppercase; letter-spacing:0.5px;
-    background:linear-gradient(135deg, var(--cyan), var(--green)); color:#000; border:none;
-    padding:14px 28px; border-radius:10px; margin-top:24px;
-    cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;
-    box-shadow:0 4px 16px rgba(34,211,238,0.3);
-}}
-.screenshot-btn:hover {{ transform:scale(1.02); box-shadow:0 6px 20px rgba(34,211,238,0.4); }}
-.screenshot-btn:active {{ transform:scale(0.98); }}
-.btn-icon {{ font-size:18px; }}
-.share-hint {{ font-size:13px; color:var(--muted); margin-top:14px; }}
-
-.slide-save-btn {{
-    position:absolute; bottom:56px; left:50%; transform:translateX(-50%);
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    font-family:var(--font-pixel); font-size:8px; font-weight:400; text-transform:uppercase; letter-spacing:0.5px;
-    background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2);
-    padding:8px 16px; border-radius:6px;
-    cursor:pointer; transition:all 0.2s; opacity:0;
-}}
-.slide.active .slide-save-btn {{ opacity:0.7; }}
-.slide-save-btn:hover {{ opacity:1; background:rgba(34,211,238,0.15); border-color:rgba(34,211,238,0.4); }}
-
-.slide.capturing, .slide.capturing * {{
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
-    clip-path: none !important;
-}}
-.slide-watermark {{
-    position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
-    font-family:var(--font-pixel); font-size:10px; color:var(--cyan); opacity:0.6;
-    display:none;
-}}
-
-.progress {{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:100; }}
-.dot {{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.15); transition:all 0.3s; cursor:pointer; }}
-.dot:hover {{ background:rgba(255,255,255,0.3); }}
-.dot.active {{ background:var(--cyan); transform:scale(1.4); box-shadow:0 0 8px var(--cyan); }}
-
-.nav {{ position:fixed; top:50%; transform:translateY(-50%); font-size:28px; color:rgba(255,255,255,0.15); cursor:pointer; z-index:100; padding:20px; transition:color 0.2s; user-select:none; }}
-.nav:hover {{ color:rgba(255,255,255,0.4); }}
-.nav.prev {{ left:4px; }}
-.nav.next {{ right:4px; }}
-.nav.hidden {{ opacity:0; pointer-events:none; }}
-</style>
-</head>
-<body>
-
-<div class="gallery" id="gallery">{slides_html}</div>
-<div class="progress" id="progress"></div>
-<div class="nav prev" id="prev">‹</div>
-<div class="nav next" id="next">›</div>
-
-<script>
-const gallery = document.getElementById('gallery');
-const progressEl = document.getElementById('progress');
-const prevBtn = document.getElementById('prev');
-const nextBtn = document.getElementById('next');
-const total = {num_slides};
-let current = 0;
-
-for (let i = 0; i < total; i++) {{
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (i === 0 ? ' active' : '');
-    dot.onclick = () => goTo(i);
-    progressEl.appendChild(dot);
-}}
-const dots = progressEl.querySelectorAll('.dot');
-const slides = gallery.querySelectorAll('.slide');
-
-function goTo(idx) {{
-    if (idx < 0 || idx >= total) return;
-    slides.forEach(s => s.classList.remove('active'));
-    current = idx;
-    gallery.style.transform = `translateX(-${{current * 100}}vw)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
-    prevBtn.classList.toggle('hidden', current === 0);
-    nextBtn.classList.toggle('hidden', current === total - 1);
-    setTimeout(() => slides[current].classList.add('active'), 50);
-}}
-
-document.addEventListener('click', (e) => {{
-    if (e.target.closest('.nav, button, .dot')) return;
-    const x = e.clientX / window.innerWidth;
-    if (x < 0.3) goTo(current - 1);
-    else goTo(current + 1);
-}});
-
-document.addEventListener('keydown', (e) => {{
-    if (e.key === 'ArrowRight' || e.key === ' ') {{ e.preventDefault(); goTo(current + 1); }}
-    if (e.key === 'ArrowLeft') {{ e.preventDefault(); goTo(current - 1); }}
-}});
-
-prevBtn.onclick = (e) => {{ e.stopPropagation(); goTo(current - 1); }};
-nextBtn.onclick = (e) => {{ e.stopPropagation(); goTo(current + 1); }};
-
-async function takeScreenshot() {{
-    const card = document.getElementById('summaryCard');
-    const btn = document.querySelector('.screenshot-btn');
-    btn.innerHTML = '<span>Saving...</span>';
-    btn.disabled = true;
-    card.style.opacity = '1';
-    card.style.transform = 'none';
-    await new Promise(r => setTimeout(r, 100));
-    try {{
-        const canvas = await html2canvas(card, {{ backgroundColor:'#1a2f2f', scale:2, logging:false, useCORS:true }});
-        const link = document.createElement('a');
-        link.download = 'calls_wrapped_{year}_summary.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        btn.innerHTML = '<span class="btn-icon">✓</span><span>Saved!</span>';
-        setTimeout(() => {{ btn.innerHTML = '<span class="btn-icon">📸</span><span>Save Screenshot</span>'; btn.disabled = false; }}, 2000);
-    }} catch (err) {{
-        btn.innerHTML = '<span class="btn-icon">📸</span><span>Save Screenshot</span>';
-        btn.disabled = false;
-    }}
-}}
-
-async function saveSlide(slideEl, filename, btn) {{
-    btn.innerHTML = '⏳';
-    btn.disabled = true;
-    const watermark = slideEl.querySelector('.slide-watermark');
-    if (watermark) watermark.style.display = 'block';
-    btn.style.visibility = 'hidden';
-    slideEl.classList.add('capturing');
-    await new Promise(r => setTimeout(r, 50));
-    const computedBg = getComputedStyle(slideEl).backgroundColor;
-    const bgColor = computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#0a0a12';
-    try {{
-        const canvas = await html2canvas(slideEl, {{ backgroundColor: bgColor, scale: 2, logging: false, useCORS: true, width: slideEl.offsetWidth, height: slideEl.offsetHeight }});
-        const size = Math.min(canvas.width, canvas.height);
-        const squareCanvas = document.createElement('canvas');
-        squareCanvas.width = size;
-        squareCanvas.height = size;
-        const ctx = squareCanvas.getContext('2d');
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, size, size);
-        const srcX = (canvas.width - size) / 2;
-        const srcY = (canvas.height - size) / 2;
-        ctx.drawImage(canvas, srcX, srcY, size, size, 0, 0, size, size);
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = squareCanvas.toDataURL('image/png');
-        link.click();
-        btn.innerHTML = '✓';
-        setTimeout(() => {{ btn.innerHTML = '📸 Save'; btn.disabled = false; btn.style.visibility = 'visible'; }}, 2000);
-    }} catch (err) {{
-        btn.innerHTML = '📸 Save';
-        btn.disabled = false;
-        btn.style.visibility = 'visible';
-    }}
-    slideEl.classList.remove('capturing');
-    if (watermark) watermark.style.display = 'none';
-}}
-
-// Contribution graph tooltip
-const tooltip = document.createElement('div');
-tooltip.className = 'contrib-tooltip';
-tooltip.style.display = 'none';
-document.body.appendChild(tooltip);
-
-document.querySelectorAll('.contrib-cell[data-date]').forEach(cell => {{
-    cell.addEventListener('mouseenter', (e) => {{
-        const count = cell.dataset.count;
-        const date = cell.dataset.date;
-        const msgText = cell.dataset.msgText;
-        tooltip.innerHTML = `<div class="tooltip-count">${{count}} ${{msgText}}</div><div class="tooltip-date">${{date}}</div>`;
-        tooltip.style.display = 'block';
-    }});
-    cell.addEventListener('mousemove', (e) => {{
-        tooltip.style.left = (e.clientX + 12) + 'px';
-        tooltip.style.top = (e.clientY - 10) + 'px';
-    }});
-    cell.addEventListener('mouseleave', () => {{
-        tooltip.style.display = 'none';
-    }});
-}});
-
-goTo(0);
-</script>
-</body></html>'''
-
-    with open(path, 'w') as f:
-        f.write(html)
+    html_out = TEMPLATE.replace('</style>', CALL_CSS + '</style>', 1) \
+                       .replace('__TITLE__', f'Calls Wrapped {esc(year)}') \
+                       .replace('__FILE__', f'call_wrapped_{esc(year)}') \
+                       .replace('__SLIDES__', ''.join(slides))
+    with open(path, 'w') as fh:
+        fh.write(html_out)
     return path
 
 
