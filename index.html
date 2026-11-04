@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wrapped 2026 · Your year in texts and calls</title>
+<meta name="description" content="Your 2026 in messages and calls. See who you text most, how fast you reply, who texts first, and your texting personality. iMessage, WhatsApp and Phone. Runs on your Mac in about 30 seconds. Nothing leaves your computer.">
+<link rel="canonical" href="https://wrap2026.com">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wrap2026.com">
+<meta property="og:title" content="Wrapped 2026 · Your year in texts and calls">
+<meta property="og:description" content="Who you text most, how fast you reply, and your texting personality. Runs on your Mac. Nothing leaves your computer.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@nikunj">
+<meta name="theme-color" content="#EEE8FF">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#241038;
+  --ink-2:#5B4A78;
+  --paper:#EEE8FF;
+  --paper-2:#E3DAFF;
+  --sent:#2F4BFF;
+  --recv:#DCD3F5;
+  --peach:#FFB38A;
+  --white:#FFFFFF;
+  --display:'Anybody',system-ui,sans-serif;
+  --body:'Onest',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --gutter:clamp(16px,4vw,56px);
+  --max:1240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--sent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
+
+/* top bar */
+.bar{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.mark{font-family:var(--display);font-weight:800;font-stretch:120%;font-size:20px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:10px}
+.mark svg{width:26px;height:26px}
+.bar nav{display:flex;gap:28px;font-size:15px;font-weight:500}
+.bar nav a{text-decoration:none;color:var(--ink-2)}
+.bar nav a:hover{color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,5vw,80px);padding:clamp(28px,6vw,72px) 0 clamp(56px,8vw,120px);align-items:start}
+.hero h1{font-family:var(--display);line-height:.82;letter-spacing:-.035em}
+.hero h1 .w{display:block;font-weight:800;font-stretch:62%;font-size:clamp(64px,10.5vw,148px)}
+.hero h1 .y{display:block;font-weight:900;font-stretch:150%;font-size:clamp(84px,15vw,212px);color:var(--sent);margin-left:-.04em}
+.lede{font-size:clamp(19px,1.7vw,22px);line-height:1.45;max-width:30ch;margin:28px 0 32px;color:var(--ink)}
+.cmd{background:var(--ink);color:var(--paper);border-radius:18px;padding:18px 18px 18px 22px;display:flex;align-items:center;gap:14px;max-width:560px}
+.cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.cmd code::-webkit-scrollbar{display:none}
+.cmd code .p{color:var(--peach);user-select:none}
+.copy{font:600 14px var(--body);background:var(--paper);color:var(--ink);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;flex-shrink:0;min-width:74px}
+.copy:hover{background:var(--white)}
+.copy.done{background:var(--peach)}
+.hint{font-size:15px;color:var(--ink-2);margin-top:14px;max-width:52ch}
+.hint a{font-weight:600;color:var(--ink)}
+.send-mac{display:none;margin-top:14px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
+
+/* the thread */
+.thread{display:flex;flex-direction:column;gap:6px;padding-top:clamp(0px,2vw,24px)}
+.stamp{align-self:center;font-size:12px;color:var(--ink-2);margin:4px 0 8px;font-weight:500}
+.b{max-width:86%;padding:10px 15px;border-radius:22px;font-size:16px;line-height:1.35;position:relative;opacity:0;transform:translateY(10px) scale(.96);transform-origin:bottom left;animation:pop .42s cubic-bezier(.2,.9,.25,1.2) forwards;animation-delay:calc(var(--i) * 520ms + 300ms)}
+.b.r{align-self:flex-start;background:var(--recv);color:var(--ink);border-bottom-left-radius:6px}
+.b.s{align-self:flex-end;background:var(--sent);color:var(--white);border-bottom-right-radius:6px;transform-origin:bottom right}
+.b.big{padding:16px 20px 18px;border-radius:26px;border-bottom-left-radius:6px}
+.b.big .n{display:block;font-family:var(--display);font-weight:800;font-stretch:130%;font-size:clamp(44px,4.6vw,64px);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.b.big .l{display:block;font-size:15px;color:var(--ink-2);margin-top:6px}
+.b.late{background:var(--peach)}
+.b.diag .n{font-stretch:75%;font-size:clamp(36px,3.6vw,48px);line-height:1}
+.gap{height:10px}
+.typing{align-self:flex-start;background:var(--recv);border-radius:22px;border-bottom-left-radius:6px;padding:14px 16px;display:flex;gap:5px;opacity:0;animation:pop .3s ease forwards;animation-delay:calc(var(--i) * 520ms + 300ms)}
+.typing i{width:8px;height:8px;border-radius:50%;background:var(--ink-2);opacity:.5;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+.sample{font-size:12px;color:var(--ink-2);margin-top:14px;align-self:flex-start}
+@keyframes pop{to{opacity:1;transform:none}}
+@keyframes blink{0%,60%,100%{opacity:.35}30%{opacity:1}}
+
+/* sections */
+section{padding:clamp(64px,9vw,128px) 0}
+h2{font-family:var(--display);font-weight:800;font-stretch:72%;font-size:clamp(44px,6.4vw,88px);line-height:.9;letter-spacing:-.03em;max-width:14ch}
+.sub{font-size:19px;max-width:46ch;margin-top:18px;color:var(--ink-2)}
+
+/* install */
+.install{background:var(--ink);color:var(--paper);border-radius:clamp(28px,4vw,48px);margin:0 clamp(8px,1.4vw,20px)}
+.install .sub{color:#B9ADD6}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:44px 0 0}
+.tab{font:600 16px var(--body);color:var(--paper);background:transparent;border:1.5px solid #4A3A68;border-radius:999px;padding:11px 20px;cursor:pointer}
+.tab:hover{border-color:var(--paper)}
+.tab[aria-selected=true]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.panel{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(28px,5vw,72px);margin-top:44px}
+.panel[hidden]{display:none}
+.panel .what{font-size:clamp(22px,2.2vw,28px);line-height:1.3;font-weight:500;max-width:24ch}
+.panel .what small{display:block;font-size:16px;font-weight:400;color:#B9ADD6;margin-top:16px;line-height:1.5;max-width:40ch}
+.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:26px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 16px}
+.steps li::before{content:counter(s);font-family:var(--display);font-weight:800;font-stretch:120%;font-size:18px;width:36px;height:36px;border-radius:50%;background:#3A2A58;color:var(--paper);display:grid;place-items:center;grid-row:span 2}
+.steps h3{font-size:18px;font-weight:600;line-height:36px}
+.steps p{color:#B9ADD6;font-size:16px}
+.steps .cmd{background:#130A22;margin-top:10px;max-width:none}
+kbd{font-family:var(--body);font-weight:600;color:var(--paper)}
+
+/* slides strip */
+.strip{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:48px var(--gutter) 24px;margin-top:8px;scrollbar-width:thin;scrollbar-color:var(--ink-2) transparent}
+.slide{flex:0 0 auto;width:min(300px,76vw);aspect-ratio:9/16;border-radius:28px;padding:26px 24px;scroll-snap-align:start;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.slide .k{font-size:14px;font-weight:600;opacity:.75}
+.slide .n{font-family:var(--display);font-weight:900;font-stretch:120%;font-size:76px;line-height:.85;letter-spacing:-.04em;margin-top:auto;font-variant-numeric:tabular-nums}
+.slide .t{font-size:16px;line-height:1.35;margin-top:12px;max-width:22ch}
+.slide .foot{font-family:var(--display);font-weight:700;font-stretch:120%;font-size:12px;margin-top:22px;opacity:.6}
+.s-cobalt{background:var(--sent);color:var(--white)}
+.s-peach{background:var(--peach);color:var(--ink)}
+.s-ink{background:var(--ink);color:var(--paper)}
+.s-lav{background:var(--recv);color:var(--ink)}
+.s-white{background:var(--white);color:var(--ink)}
+.slide .name{font-family:var(--display);font-weight:800;font-stretch:65%;font-size:64px;line-height:.88;letter-spacing:-.03em;margin-top:auto}
+.slide .diag{font-family:var(--display);font-weight:900;font-stretch:58%;font-size:72px;line-height:.84;letter-spacing:-.03em;margin-top:auto;text-transform:lowercase}
+.slide ol{list-style:none;margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.slide ol li{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(36,16,56,.15);padding-bottom:8px;font-weight:500}
+.slide ol li span:last-child{font-family:var(--display);font-weight:800;font-stretch:120%;font-variant-numeric:tabular-nums}
+.slide ol li:first-child{font-size:22px;font-weight:600}
+.grid365{margin-top:auto;display:grid;grid-template-columns:repeat(26,1fr);gap:2px}
+.grid365 i{aspect-ratio:1;border-radius:2px;background:rgba(238,232,255,.12)}
+.grid365 i.a{background:rgba(238,232,255,.35)}.grid365 i.b{background:rgba(238,232,255,.65)}.grid365 i.c{background:var(--peach)}
+.split{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.split .bub{padding:10px 14px;border-radius:20px;font-weight:500;font-size:15px;max-width:90%}
+.split .r{background:rgba(255,255,255,.18);align-self:flex-start;border-bottom-left-radius:6px}
+.split .s{background:var(--white);color:var(--sent);align-self:flex-end;border-bottom-right-radius:6px}
+.bar2{height:14px;border-radius:999px;background:rgba(36,16,56,.15);overflow:hidden;margin-top:14px}
+.bar2 i{display:block;height:100%;background:var(--ink);border-radius:999px}
+.emo{font-size:46px;line-height:1.1;margin-top:auto;letter-spacing:.04em}
+.strip-note{font-size:14px;color:var(--ink-2);padding:0 var(--gutter)}
+
+/* privacy */
+.privacy .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:start}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0;border-top:1.5px solid var(--ink)}
+.facts dt,.facts dd{padding:18px 0;border-bottom:1px solid rgba(36,16,56,.18)}
+.facts dt{font-weight:600;padding-right:28px;white-space:nowrap}
+.facts dd{color:var(--ink-2)}
+.ghost{margin-top:28px;font:600 16px var(--body);background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:13px 22px;cursor:pointer}
+.ghost:hover{background:var(--ink);color:var(--paper)}
+.ghost.done{background:var(--ink);color:var(--paper)}
+
+footer{padding:40px 0 56px}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font-size:15px;color:var(--ink-2)}
+footer a{text-decoration:none;font-weight:500;color:var(--ink)}
+footer a:hover{text-decoration:underline}
+footer .links{display:flex;gap:22px}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .thread{max-width:440px}
+  .panel{grid-template-columns:1fr}
+  .privacy .wrap{grid-template-columns:1fr}
+  .bar nav a:not(.go){display:none}
+}
+@media (max-width:600px){
+  body{font-size:16px}
+  .facts{grid-template-columns:1fr}
+  .facts dt{border-bottom:0;padding-bottom:2px}
+  .facts dd{padding-top:0}
+  .steps li{grid-template-columns:36px minmax(0,1fr);gap:0 12px}
+}
+@media (hover:none) and (max-width:900px){ .send-mac{display:inline-block} }
+@media (prefers-reduced-motion:reduce){
+  .b,.typing{animation:none;opacity:1;transform:none}
+  .typing i{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="bar">
+    <a class="mark" href="/" aria-label="wrap2026 home"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="10" width="56" height="40" rx="20" fill="#2F4BFF"/><path d="M14 44 L8 58 L26 48Z" fill="#2F4BFF"/></svg>wrap2026</a>
+    <nav><a href="#inside">What you get</a><a href="#privacy">Privacy</a><a class="go" href="#install">Get it</a></nav>
+  </header>
+
+  <main>
+  <div class="hero">
+    <div>
+      <h1><span class="w">Wrapped</span><span class="y">2026</span></h1>
+      <p class="lede">Your year in texts and calls. Who you talk to most, how fast you reply, and what that says about you.</p>
+      <div class="cmd">
+        <code id="hero-cmd"><span class="p">$ </span>curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code>
+        <button class="copy" data-copy="hero-cmd">Copy</button>
+      </div>
+      <p class="hint">Paste in Terminal on your Mac. Covers iMessage and WhatsApp. First time? <a href="#install">See the two-minute setup</a>.</p>
+      <button class="send-mac" id="send-mac">Send this link to my Mac</button>
+    </div>
+
+    <div class="thread" aria-label="Example of what Wrapped tells you">
+      <span class="stamp">Dec 31, 11:58 PM</span>
+      <div class="b s" style="--i:0">ok be honest. how bad was it this year</div>
+      <div class="b r big" style="--i:1"><span class="n">47,832</span><span class="l">messages. About 131 a day.</span></div>
+      <div class="b r" style="--i:2">Your #1 was Mom. 6,204 texts.</div>
+      <div class="b r" style="--i:3">You start 62% of conversations and reply in 4 minutes.</div>
+      <div class="b s" style="--i:4">that's not that bad</div>
+      <div class="b r late" style="--i:5">You also texted Jordan at 3am on 41 different nights.</div>
+      <div class="b r big diag" style="--i:6"><span class="l" style="margin:0 0 6px">Diagnosis</span><span class="n">Nocturnal menace</span></div>
+      <div class="typing" style="--i:7" aria-hidden="true"><i></i><i></i><i></i></div>
+      <span class="sample">Sample data. Yours stays on your Mac.</span>
+    </div>
+  </div>
+  </main>
+</div>
+
+<section class="install" id="install">
+  <div class="wrap">
+    <h2>Two minutes, one Terminal window.</h2>
+    <p class="sub">Pick what you want wrapped. Each one is a single Python file. Your Mac already has Python.</p>
+
+    <div class="tabs" role="tablist" aria-label="Choose a wrap">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="p-combined" id="t-combined">iMessage + WhatsApp</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-imessage" id="t-imessage" tabindex="-1">iMessage</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-whatsapp" id="t-whatsapp" tabindex="-1">WhatsApp</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-calls" id="t-calls" tabindex="-1">Calls</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-people" id="t-people" tabindex="-1">People, with Claude</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-combined" aria-labelledby="t-combined">
+      <p class="what">Both apps in one wrap. Contacts are matched across them, so Mom is one person, not two.<small>Works with only one app installed too. This is the one most people should run.</small></p>
+      <ol class="steps">
+        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal (or iTerm, Warp, Ghostty).</p></li>
+        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-combined">curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code><button class="copy" data-copy="c-combined">Copy</button></div></li>
+        <li><h3>Watch it open</h3><p>About 30 seconds later your wrap opens in the browser. Each slide has a save button for sharing.</p></li>
+      </ol>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-imessage" aria-labelledby="t-imessage" hidden>
+      <p class="what">Just iMessage and SMS, from the Messages app on your Mac.<small>Needs Messages in iCloud turned on so your Mac has your full history.</small></p>
+      <ol class="steps">
+        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
+        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-imessage">curl -sO https://wrap2026.com/imessage_wrapped.py &amp;&amp; python3 imessage_wrapped.py</code><button class="copy" data-copy="c-imessage">Copy</button></div></li>
+        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
+      </ol>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-whatsapp" aria-labelledby="t-whatsapp" hidden>
+      <p class="what">Just WhatsApp, from the WhatsApp desktop app.<small>The desktop app only has what it has synced. Open it and let it catch up first.</small></p>
+      <ol class="steps">
+        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
+        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-whatsapp">curl -sO https://wrap2026.com/whatsapp_wrapped.py &amp;&amp; python3 whatsapp_wrapped.py</code><button class="copy" data-copy="c-whatsapp">Copy</button></div></li>
+        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
+      </ol>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-calls" aria-labelledby="t-calls" hidden>
+      <p class="what">Phone, FaceTime and WhatsApp calls. Minutes on the phone, who you call most, and who never calls back.<small>Phone calls show up when your iPhone shares call history with your Mac.</small></p>
+      <ol class="steps">
+        <li><h3>Give Terminal access to your call history</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
+        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-calls">curl -sO https://wrap2026.com/call_wrapped.py &amp;&amp; python3 call_wrapped.py</code><button class="copy" data-copy="c-calls">Copy</button></div></li>
+        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
+      </ol>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-people" aria-labelledby="t-people" hidden>
+      <p class="what">A written portrait of each of your top 25 people: inside jokes, how things changed, the quotes that sum it up.<small>Claude Code reads the conversations on your Mac and writes the summaries. Takes about 10 minutes. This is the only wrap that reads message text.</small></p>
+      <ol class="steps">
+        <li><h3>Install Claude Code</h3><p>Get it at <a href="https://claude.com/claude-code">claude.com/claude-code</a> if you don't have it.</p></li>
+        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
+        <li><h3>Download the script</h3><div class="cmd"><code id="c-people-dl">curl -sO https://wrap2026.com/people_wrapped.py</code><button class="copy" data-copy="c-people-dl">Copy</button></div></li>
+        <li><h3>Start Claude Code</h3><p>It writes 25 files, so start it without permission prompts.</p><div class="cmd"><code id="c-people-cc">claude --dangerously-skip-permissions</code><button class="copy" data-copy="c-people-cc">Copy</button></div></li>
+        <li><h3>Ask it to run</h3><div class="cmd"><code id="c-people-run">Run python3 people_wrapped.py</code><button class="copy" data-copy="c-people-run">Copy</button></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="inside" id="inside">
+  <div class="wrap">
+    <h2>Twenty-odd slides about you.</h2>
+    <p class="sub">A swipeable story you can screenshot, send to the group chat, and regret.</p>
+  </div>
+  <div class="strip" tabindex="0" aria-label="Example slides">
+    <article class="slide s-cobalt"><span class="k">Total damage</span><span class="n">47,832</span><p class="t">messages this year. 892,410 words. A short novel, mostly "lol".</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-peach"><span class="k">Your #1</span><span class="name">Mom</span><p class="t">6,204 messages. She starts 71% of your chats.</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-ink"><span class="k">Diagnosis</span><span class="diag">Nocturnal menace</span><p class="t">Peak hour 11PM. Peak day Sunday. You reply in 4 minutes.</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-lav"><span class="k">Inner circle</span><ol><li><span>Mom</span><span>6,204</span></li><li><span>Jordan</span><span>4,918</span></li><li><span>Alex</span><span>3,377</span></li><li><span>Sam</span><span>2,940</span></li><li><span>Priya</span><span>2,102</span></li></ol><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-cobalt"><span class="k">Who texts first</span><div class="split"><div class="bub r">hey</div><div class="bub s">hey!! ok so</div><div class="bub s">also</div></div><span class="n" style="margin-top:22px">62%</span><p class="t">of conversations started by you.</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-ink"><span class="k">Your year</span><div class="grid365" id="g365" aria-hidden="true"></div><p class="t">Busiest day: Mar 14. 612 messages, 4.7× your normal.</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-white"><span class="k">Who texts first</span><span class="k" style="margin-top:auto;opacity:1">Heating up</span><span class="name" style="margin-top:6px">Priya</span><div class="bar2"><i style="width:82%"></i></div><p class="t">Up 340% since June.</p><span class="foot">wrap2026.com</span></article>
+    <article class="slide s-peach"><span class="k">Your emoji</span><span class="emo">😭💀🙏<br>😂❤️</span><p class="t">😭 alone: 2,811 times.</p><span class="foot">wrap2026.com</span></article>
+  </div>
+  <p class="strip-note">Sample slides with made-up data.</p>
+</section>
+
+<section class="privacy" id="privacy">
+  <div class="wrap">
+    <div>
+      <h2>Nothing leaves your Mac.</h2>
+      <p class="sub">The script reads the message database already on your computer, writes one HTML file, and opens it. That's all it does.</p>
+      <button class="ghost" id="copy-src">Copy the script to check it yourself</button>
+      <p class="hint">Paste it into Claude or ChatGPT and ask if it's safe.</p>
+    </div>
+    <dl class="facts">
+      <dt>What it reads</dt><dd>Timestamps, who sent what to whom, counts, and emoji. Not the words in your messages.</dd>
+      <dt>Network</dt><dd>None. No servers, no uploads, no analytics.</dd>
+      <dt>Dependencies</dt><dd>Python's standard library. Nothing to install.</dd>
+      <dt>Output</dt><dd>One HTML file, saved next to the script.</dd>
+      <dt>The exception</dt><dd>People, with Claude reads message text so Claude Code can write about it. It runs in your own Claude Code session.</dd>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Made by <a href="https://x.com/nikunj">@nikunj</a>. Not affiliated with Apple, Meta or Spotify.</span>
+    <span class="links"><a href="https://wrap2025.com">Last year's wrap</a><a href="/combined_wrapped.py">Source</a></span>
+  </div>
+</footer>
+
+<script>
+// copy buttons
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);return true}catch(e){
+    const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    const ok=document.execCommand('copy');ta.remove();return ok}
+}
+function flash(btn,label){const o=btn.textContent;btn.textContent=label;btn.classList.add('done');setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800)}
+document.querySelectorAll('[data-copy]').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const el=document.getElementById(btn.dataset.copy);
+    const txt=[...el.childNodes].filter(n=>!(n.classList&&n.classList.contains('p'))).map(n=>n.textContent).join('').trim();
+    flash(btn,(await copyText(txt))?'Copied':'Select it');
+  });
+});
+
+// tabs
+const tabs=[...document.querySelectorAll('.tab')];
+function selectTab(t){
+  tabs.forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute('aria-controls')).hidden=!on});
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener('click',()=>selectTab(t));
+  t.addEventListener('keydown',e=>{
+    const d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;
+    if(d){e.preventDefault();const n=tabs[(i+d+tabs.length)%tabs.length];selectTab(n);n.focus()}
+  });
+});
+
+// copy full source
+document.getElementById('copy-src').addEventListener('click',async e=>{
+  const btn=e.currentTarget;
+  try{const r=await fetch('/combined_wrapped.py');if(!r.ok)throw 0;flash(btn,(await copyText(await r.text()))?'Copied the full script':'Copy failed')}
+  catch(_){flash(btn,'Could not load the script')}
+});
+
+// send to Mac (phones)
+const sm=document.getElementById('send-mac');
+sm.addEventListener('click',async()=>{
+  if(navigator.share){try{await navigator.share({title:'Wrapped 2026',text:'Run this on my Mac',url:'https://wrap2026.com'})}catch(_){}}
+  else{flash(sm,(await copyText('https://wrap2026.com'))?'Link copied':'wrap2026.com')}
+});
+
+// sample year grid (deterministic, not real data)
+const g=document.getElementById('g365');let s=7;
+for(let i=0;i<364;i++){s=(s*9301+49297)%233280;const r=s/233280;const w=(i%7===0||i%7===6)?.15:0;
+  const v=r+w+(i>60&&i<80?.25:0)+(i>300?.15:0);
+  const c=document.createElement('i');if(i===72)c.className='c';else if(v>.9)c.className='b';else if(v>.55)c.className='a';g.appendChild(c)}
+</script>
+</body>
+</html>
