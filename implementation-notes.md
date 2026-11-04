@@ -18,6 +18,20 @@
 - Save-as-image switched from html2canvas to modern-screenshot (html2canvas drops variable-font width axes).
 - Site privacy copy changed from "zero network" to "script makes no network calls; the wrap page loads fonts + image-save library" (accurate).
 
+- Sound feature removed (owner request); top bar is brand + one action pill. Action is "Share" where navigator.canShare({files}) is true, else "Save image"; summary slide repeats it as a full-width CTA.
+- Share text uses `My ${document.title} — wrap2026.com` (e.g. "My iMessage Wrapped 2026 — wrap2026.com") instead of a hard-coded year, so 2025-fallback wraps stay correct.
+- who-reaches-out: first 5 qualifying rows in data order, then sorted by % desc (not top-5 by %), so high-volume people aren't displaced by 1-message 100% contacts. Bubbles drop when >6 rows.
+- Combined summary lost its iMessage/WhatsApp share bars (pbar) to make room for the poster; the psum line keeps the split.
+- Muted text opacity raised to the existing .85 (.after) value everywhere it failed 4.5:1; unvisited progress bars (.25) still fail 3:1 non-text — left as is (raising them erases the done/undone distinction).
+
 ## Gotchas
 - fit(): a block element's scrollWidth can't report text narrower than itself; measure as inline-block with animations off.
 - browser-harness tabs run in background; rAF-based libs (modern-screenshot) stall there. Test captures in headless Chrome instead.
+- Save/share renders an offscreen clone with --cw:360px/--ch:640px at scale 3, so every device yields exactly 1080x1920 (live card is 100dvh tall on phones, and fractional widths gave 1079x1918).
+- fit() must freeze descendant animations too (.fitting *): the stretch keyframe narrows the 2026 span mid-animation and the title overflowed after it finished.
+- .spark with 1px gaps and ~306 bars leaves sub-pixel bars at 360px; modern-screenshot drops them. gap:0.
+- gen_html has a local `pl = d['priority_list']`; the plural helper is named `plural`.
+- people_wrapped.py splices PEOPLE_JS/PEOPLE_TAP_GUARD after exact TEMPLATE lines (PEOPLE_JS_ANCHOR, PEOPLE_TAP_ANCHOR); editing the tap comment or tap-guard line in template_shell.py must update both anchors.
+- Under reduced motion, keep the slide visibility transition at 0s or focus() lands on a still-hidden slide.
+- Reply time is now a median (SQLite `median` aggregate registered in `_connect`). Combined pools raw gaps from both apps; `merge_data` still needs `im_weight/wa_weight/total_weight` for starter %. `dev/test_merge.py` covers merge_data (fixtures skip it).
+- A crash in combined `main()` hangs instead of exiting: the spinner thread is non-daemon. Look in stderr, not at the exit code.

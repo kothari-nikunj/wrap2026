@@ -4,6 +4,7 @@ iMessage Wrapped 2026 - Your texting habits, exposed.
 Usage: python3 imessage_wrapped.py
 """
 
+import re, os, plistlib
 import sqlite3, os, sys, re, subprocess, argparse, glob, threading, time
 from datetime import datetime
 
@@ -180,14 +181,74 @@ def check_access():
         subprocess.run(['open', 'x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles'])
         sys.exit(1)
 
+class _Median:
+    def __init__(self): self.v = []
+    def step(self, x):
+        if x is not None: self.v.append(x)
+    def finalize(self):
+        if not self.v: return None
+        s = sorted(self.v); n = len(s)
+        return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
+
+OWN_IDS, OWN_DIGITS = set(), set()
+
+def _add_own(i):
+    i = re.sub(r'^[EePp]:', '', (i or '').strip()).lower()
+    if not i: return
+    if '@' in i and not i.endswith('@s.whatsapp.net'): OWN_IDS.add(i); return
+    dg = re.sub(r'\D', '', i.split('@')[0])
+    if len(dg) >= 7: OWN_DIGITS.add(dg[-10:])
+
+def is_person(h):
+    """A real person: an email or a phone number. Not a short code, business sender ID, bot or yourself."""
+    if not h: return 0
+    l = h.strip().lower()
+    if l.startswith('urn:') or l in OWN_IDS: return 0
+    if '@' in l:
+        dom = l.rsplit('@', 1)[1]
+        return int('.' in dom and not dom.endswith('rbm.goog'))
+    num = re.sub(r'\([^)]*\)$', '', l)
+    if re.search(r'[a-z]', num): return 0
+    dg = re.sub(r'\D', '', num)
+    return int(len(dg) >= 7 and dg[-10:] not in OWN_DIGITS)
+
+def is_own(jid):
+    dg = re.sub(r'\D', '', (jid or '').split('@')[0])
+    return int(len(dg) >= 7 and dg[-10:] in OWN_DIGITS)
+
+def _connect(path):
+    conn = sqlite3.connect(path)
+    conn.create_aggregate('median', 1, _Median)
+    conn.create_function('is_person', 1, is_person, deterministic=True)
+    conn.create_function('is_own', 1, is_own, deterministic=True)
+    return conn
+
+def load_own_imessage():
+    try:
+        conn = sqlite3.connect(IMESSAGE_DB)
+        for (i,) in conn.execute("SELECT DISTINCT destination_caller_id FROM message WHERE destination_caller_id IS NOT NULL UNION SELECT DISTINCT account_login FROM chat WHERE account_login IS NOT NULL"):
+            _add_own(i)
+        conn.close()
+    except sqlite3.Error:
+        pass
+
+def load_own_whatsapp():
+    p = os.path.expanduser('~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Library/Preferences/group.net.whatsapp.WhatsApp.shared.plist')
+    try:
+        with open(p, 'rb') as f:
+            _add_own(plistlib.load(f).get('OwnJabberID'))
+    except (OSError, plistlib.InvalidFileException):
+        pass
+
 def q(sql):
-    conn = sqlite3.connect(IMESSAGE_DB)
+    conn = _connect(IMESSAGE_DB)
     r = conn.execute(sql).fetchall()
     conn.close()
     return r
 
 def analyze(ts_start, ts_end, ts_jun, contacts):
     d = {}
+    load_own_imessage(); load_own_whatsapp()
 
     # === IDENTIFY 1:1 vs GROUP CHATS ===
     # 1:1 chats have exactly 1 participant in chat_handle_join
@@ -225,8 +286,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id ORDER BY t DESC LIMIT 20
     """)
     d['top'] = aggregate_contacts(top_handles, contacts)
@@ -237,8 +297,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
     """)
     unique_contact_keys = {contact_key_and_label(row[0], contacts)[0] for row in all_handles}
     stats[3] = len(unique_contact_keys)
@@ -250,8 +309,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND CAST(strftime('%H',datetime((m.date/1000000000+978307200),'unixepoch','localtime')) AS INT)<5
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id HAVING n>5 ORDER BY n DESC LIMIT 5
     """)
     
@@ -267,8 +325,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id HAVING b>10 AND a<3 ORDER BY b DESC LIMIT 5
     """)
 
@@ -278,8 +335,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id HAVING h1>20 AND h2>h1*1.5 ORDER BY (h2-h1) DESC LIMIT 5
     """)
 
@@ -289,9 +345,8 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
-        GROUP BY h.id HAVING t>y*2 AND (t+y)>100 ORDER BY (t*1.0/NULLIF(y,0)) DESC LIMIT 5
+        AND is_person(h.id)
+        GROUP BY h.id HAVING t>y*2 AND y>0 AND (t+y)>100 ORDER BY (t*1.0/NULLIF(y,0)) DESC LIMIT 5
     """)
 
     # Simp (1:1 only, excluding shortcodes)
@@ -300,9 +355,8 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
-        GROUP BY h.id HAVING y>t*2 AND (t+y)>100 ORDER BY (y*1.0/NULLIF(t,0)) DESC LIMIT 5
+        AND is_person(h.id)
+        GROUP BY h.id HAVING y>t*2 AND t>0 AND (t+y)>100 ORDER BY (y*1.0/NULLIF(t,0)) DESC LIMIT 5
     """)
     
     # Response time: partition by handle_id so we measure per-conversation (1:1 only)
@@ -327,10 +381,10 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
             WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
             AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
         )
-        SELECT AVG(ts-pt)/60.0 FROM g
+        SELECT MEDIAN(ts-pt)/60.0 FROM g
         WHERE is_from_me=1 AND pf=0 AND (ts-pt)<86400 AND (ts-pt)>10
     """)
-    d['resp'] = int(r[0][0] or 30)
+    d['resp'] = round(r[0][0], 1) if r[0][0] is not None else 30
 
     # Per-person response time: who you reply to fastest (YOUR PRIORITY LIST)
     d['priority_list'] = q(f"""
@@ -355,13 +409,12 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
             WHERE (m.date/1000000000+978307200) > {ts_start} AND (m.date/1000000000+978307200) < {ts_end}
             AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
         )
-        SELECT h.id, AVG(rp.ts - rp.pt)/60.0 as avg_resp_min, COUNT(*) as reply_count
+        SELECT h.id, MEDIAN(rp.ts - rp.pt)/60.0 as avg_resp_min, COUNT(*) as reply_count
         FROM response_pairs rp
         JOIN handle h ON rp.handle_id = h.ROWID
         WHERE rp.is_from_me = 1 AND rp.pf = 0
         AND (rp.ts - rp.pt) BETWEEN 10 AND 86400
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id
         HAVING reply_count >= 50
         ORDER BY avg_resp_min ASC
@@ -391,13 +444,12 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
             WHERE (m.date/1000000000+978307200) > {ts_start} AND (m.date/1000000000+978307200) < {ts_end}
             AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
         )
-        SELECT h.id, AVG(rp.ts - rp.pt)/60.0 as avg_resp_min, COUNT(*) as reply_count
+        SELECT h.id, MEDIAN(rp.ts - rp.pt)/60.0 as avg_resp_min, COUNT(*) as reply_count
         FROM response_pairs rp
         JOIN handle h ON rp.handle_id = h.ROWID
         WHERE rp.is_from_me = 0 AND rp.pf = 1
         AND (rp.ts - rp.pt) BETWEEN 10 AND 86400
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id
         HAVING reply_count >= 50
         ORDER BY avg_resp_min ASC
@@ -432,12 +484,11 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         FROM conversation_starts cs
         JOIN handle h ON cs.handle_id = h.ROWID
         WHERE (cs.prev_ts IS NULL OR (cs.ts - cs.prev_ts) > 14400)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id
         HAVING total_convos >= 5
         ORDER BY total_convos DESC
-        LIMIT 20
+        LIMIT 60
     """)
 
     emojis = ['😂','❤️','😭','🔥','💀','✨','🙏','👀','💯','😈']
@@ -485,8 +536,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
             WHERE DATE(datetime((m.date/1000000000+978307200),'unixepoch','localtime')) = '{busiest_date}'
             AND (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
             AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-            AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+            AND is_person(h.id)
             GROUP BY h.id
             ORDER BY t DESC
             LIMIT 10
@@ -536,8 +586,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         JOIN handle h ON m.handle_id = h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id, d
         ORDER BY h.id, d
     """)
@@ -576,8 +625,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
         JOIN handle h ON m.handle_id = h.ROWID
         WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
-        AND NOT (LENGTH(REPLACE(REPLACE(h.id, '+', ''), '-', '')) BETWEEN 5 AND 6 AND REPLACE(REPLACE(h.id, '+', ''), '-', '') GLOB '[0-9]*')
-        AND h.id NOT LIKE 'urn:%'
+        AND is_person(h.id)
         GROUP BY h.id, d
         ORDER BY c DESC
         LIMIT 1
@@ -593,8 +641,8 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
     s = d['stats']
     ratio = s[1] / (s[2] + 1)
     if d['hour'] < 5 or d['hour'] > 22: d['personality'] = ("NOCTURNAL MENACE", "terrorizes people at ungodly hours")
-    elif d['resp'] < 5: d['personality'] = ("TERMINALLY ONLINE", "has never touched grass")
-    elif d['resp'] > 120: d['personality'] = ("TOO COOL TO REPLY", "leaves everyone on read")
+    elif d['resp'] < 1: d['personality'] = ("TERMINALLY ONLINE", "has never touched grass")
+    elif d['resp'] > 30: d['personality'] = ("TOO COOL TO REPLY", "leaves everyone on read")
     elif ratio < 0.5: d['personality'] = ("POPULAR (ALLEGEDLY)", "everyone wants a piece")
     elif ratio > 2: d['personality'] = ("THE YAPPER", "carries every conversation alone")
     elif d['starter_pct'] > 65: d['personality'] = ("CONVERSATION STARTER", "always making the first move")
@@ -793,7 +841,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
 .card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
 .body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
-.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.85;padding-top:1.6em;letter-spacing:.01em}
 
 /* type */
 .lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
@@ -801,15 +849,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero.fit{white-space:nowrap;overflow-wrap:normal}
 .hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
 .hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
-.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
-.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance;overflow-wrap:normal}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance;overflow-wrap:normal}
 .hero.sm{font-size:3.4em}
-.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
+.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
-.after .count{font-weight:600}
+.after .count{font-weight:600;font-variant-numeric:tabular-nums}
 
 /* stat split */
-.split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
 .split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
 
@@ -819,25 +867,30 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
 .row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
 .row>*{position:relative;z-index:1}
-.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.85;font-size:.85em}
 .row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
-.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
+.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.85;font-size:.85em}
 .row:first-child{font-size:1.15em}
 .row:last-child{border-bottom-color:transparent}
 .row.extra{display:none}
 .rows.all .row.extra{display:grid}
-.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.7;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
-.more:hover{opacity:1}
+.rows.tight{margin-top:.5em;gap:.1em}
+.rows.tight .row{padding:.4em 0}
+.rows.tight .row:first-child{font-size:1em}
+.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.85;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
+@media (hover:hover){.more:hover{opacity:1}}
 
 /* avatars: five colorways, swapped where one would vanish into the slide */
 .a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
 .t-cobalt .a0,.t-stage .a0{--ab:var(--white);--af:var(--cobalt)}.t-cobalt .a4{--ab:var(--lilac);--af:var(--ink)}
-.t-pink .a1{--ab:var(--white);--af:var(--pink)}
+.t-pink .a1{--ab:var(--white);--af:var(--ink)}
 .t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
-.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
+.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--cobalt);--af:var(--white)}
 /* avatars */
-.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg);flex:none}
+.av .ae{font-size:1.15em;letter-spacing:0}
+.av .ag{width:1.15em;height:1.15em}
 .av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
 .stack{display:flex;margin-bottom:auto;padding-left:.7em}
 .stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
@@ -864,7 +917,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
 /* year sparkline */
-.spark{display:flex;align-items:flex-end;gap:1px;height:9em;margin-bottom:auto;padding-bottom:1.4em}
+.spark{display:flex;align-items:flex-end;gap:0;height:9em;margin-bottom:auto;padding-bottom:1.4em}
 .spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
 .spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
 
@@ -886,9 +939,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* versus */
 .vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
-.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
+.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(11em, calc(var(--w) * 100%));max-width:100%;transform-origin:left}
+.vs span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vs div:last-child{background:var(--soft);color:var(--fg)}
-.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
+.vs b{flex:none;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
 
 /* bubbles */
 .thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
@@ -904,7 +958,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
 .stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
 .intro .thread{margin:0 0 1.2em}
-.hint{font-size:.85em;opacity:.7;font-weight:500}
+.hint{font-size:.85em;opacity:.85;font-weight:500}
 
 /* year dots */
 .year{display:flex;flex-direction:column;gap:.34em;margin:1em 0 .2em}
@@ -934,11 +988,30 @@ button{font:inherit;color:inherit;cursor:pointer}
 .summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
 .summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
 .summary .hero{font-size:4.2em}
-.grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
-.grid4 dt{font-size:.7em;opacity:.7}
+.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
+.grid4 dt{font-size:.7em;opacity:.85}
 .grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
 .top3{font-size:.85em;opacity:.85;margin-top:.5em}
+/* summary poster: the slide people post */
+.ptitle{font-family:var(--display);font-weight:800;line-height:.9;letter-spacing:-.03em;white-space:nowrap;margin-bottom:auto;font-size:2.4em}
+.ptitle span:first-child{font-stretch:58%;font-variation-settings:"wdth" 58}
+.ptitle span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;margin-left:.12em}
+.poster .hero small{opacity:.85}
+.wave{height:5.5em;padding:0}
+.wave i{background:var(--white);opacity:.4}
+.wave i.pk{background:var(--pink);opacity:1;box-shadow:none}
+.one{display:flex;align-items:center;gap:.7em;margin-top:1.2em}
+.one .av{width:2.9em;height:2.9em;flex:none;box-shadow:none}
+.one b{display:block;font-family:var(--display);font-weight:800;font-stretch:75%;font-variation-settings:"wdth" 75;font-size:1.7em;line-height:1;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.one div{min-width:0}
+.one span{font-size:.8em;opacity:.85}
+.poster .diag-sm{margin-top:.6em}
+.poster .mark{opacity:1;gap:1em}
+.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.9em 1em;background:var(--white);color:var(--cobalt);font-weight:600;font-size:.95em;transition:transform .15s ease-out}
+.cta:not(:disabled):active{transform:scale(.96)}
+.cta:focus-visible{outline-color:var(--white)}
+.cta svg{width:1.1em;height:1.1em}
 
 /* chrome: progress + controls, sized to the card */
 .top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
@@ -949,15 +1022,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
-.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
-.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
-.pill:active{transform:scale(.94)}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .15s ease-out,background .2s}
+@media (hover:hover){.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}}
+.pill:not(:disabled):active{transform:scale(.96)}
 .pill svg{width:14px;height:14px}
-.eq{display:inline-flex;gap:2px;align-items:center;height:12px}
-.eq i{width:2px;height:4px;background:currentColor;border-radius:1px;transition:height .2s}
-.sound-on .eq i{animation:eq .9s infinite ease-in-out}
-.sound-on .eq i:nth-child(2){animation-delay:.15s}.sound-on .eq i:nth-child(3){animation-delay:.3s}
-@keyframes eq{0%,100%{height:3px}50%{height:12px}}
 
 /* entrance choreography, replayed on each slide */
 .on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
@@ -986,6 +1054,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .on .clock b{animation:hand 1.6s var(--spring) both}
 .on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
 .on .vs div:last-child{animation-delay:.65s}
+.on .ptitle span:first-child{animation:rise .8s var(--ease) both}
+.on .ptitle span:last-child{animation:stretch 1.4s var(--ease) both}
+.on .one{animation:rise .7s var(--ease) both;animation-delay:.7s}
+.on .cta{animation:rise .7s var(--ease) both;animation-delay:.9s}
 @keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
 @keyframes hand{from{transform:rotate(180deg)}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
@@ -1001,29 +1073,28 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* saving: freeze everything at its final frame */
 .capturing *, .capturing *::before{animation:none !important;transition:none !important}
 .card.saving{border-radius:0;box-shadow:none}
+.fitting *{animation:none !important}
 
 @media (max-width:540px){
   :root{--cw:100vw;--ch:100dvh}
   .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
   .top{padding-top:max(10px, env(safe-area-inset-top))}
 }
-@media (max-width:400px){
-  .ctl .brand{display:none}
-  .ctl{justify-content:flex-end}
-}
 @media (prefers-reduced-motion:reduce){
   *,*::before{animation:none !important;transition-duration:.01s !important}
+  .slide,.slide.past{transform:none}
+  .slide,.slide.on{transition-duration:.3s,.3s,0s !important}
 }
+.slide:focus{outline:none}
 </style>
 </head>
 <body>
 <div class="top" id="top">
-  <div class="bars" id="bars" role="tablist" aria-label="Slides"></div>
+  <nav class="bars" id="bars" aria-label="Slides"></nav>
   <div class="ctl">
     <span class="brand">wrap2026</span>
     <div class="pills">
-      <button class="pill" id="sound" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
-      <button class="pill" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="saveLbl">Save image</span></button>
+      <button class="pill" id="save" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
     </div>
   </div>
 </div>
@@ -1044,15 +1115,26 @@ let cur = -1;
 // fit text to the card width (numbers and the intro title)
 function fit(el, max) {
   const anim = el.style.animation, disp = el.style.display;
-  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content'; el.classList.add('fitting');
   const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
   const ratio = w / el.getBoundingClientRect().width;
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
-  el.style.animation = anim; el.style.display = disp; el.style.width = '';
+  el.style.animation = anim; el.style.display = disp; el.style.width = ''; el.classList.remove('fitting');
+}
+// long names shrink until every word fits and they take at most three lines; they never split mid-word
+function fitName(el) {
+  el.style.fontSize = '';
+  if (/\p{Extended_Pictographic}/u.test(el.textContent)) el.style.lineHeight = '1.08';
+  const cs = () => getComputedStyle(el);
+  for (let k = 0; k < 16 && (el.scrollWidth > el.clientWidth + 1 || el.offsetHeight > parseFloat(cs().lineHeight) * 3.2); k++)
+    el.style.fontSize = parseFloat(cs().fontSize) * .9 + 'px';
 }
 function fitAll() {
   document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
   document.querySelectorAll('.hero.fit').forEach(e => fit(e));
+  document.querySelectorAll('.ptitle').forEach(e => fit(e, 3));
+  document.querySelectorAll('.split b, .grid4 dd').forEach(e => fit(e));
+  document.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
 }
 document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
 document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
@@ -1067,39 +1149,11 @@ document.querySelectorAll('.mrow').forEach((r, i) => r.querySelectorAll('i').for
 
 slides.forEach((s, i) => {
   const b = document.createElement('button');
-  b.setAttribute('aria-label', 'Slide ' + (i + 1));
+  b.setAttribute('aria-label', 'Slide ' + (i + 1) + ' of ' + slides.length);
+  s.tabIndex = -1; s.setAttribute('aria-label', (i + 1) + ' of ' + slides.length);
   b.addEventListener('click', e => { e.stopPropagation(); go(i); });
   bars.appendChild(b);
 });
-
-// sound: one soft note per slide, climbing a pentatonic scale
-let ctx = null, soundOn = false;
-try { soundOn = localStorage.getItem('wrap-sound') === '1'; } catch (_) {}
-const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
-function note(i) {
-  if (!soundOn) return;
-  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-  const t = ctx.currentTime, f = 392 * Math.pow(2, scale[i % scale.length] / 12);
-  [1, 2].forEach((h, k) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = k ? 'triangle' : 'sine'; o.frequency.value = f * h;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(k ? .012 : .05, t + .012);
-    g.gain.exponentialRampToValueAtTime(.0001, t + .5);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
-  });
-}
-const soundBtn = document.getElementById('sound');
-function paintSound() {
-  document.body.classList.toggle('sound-on', soundOn);
-  soundBtn.setAttribute('aria-pressed', soundOn);
-  document.getElementById('soundLbl').textContent = soundOn ? 'Sound on' : 'Sound off';
-}
-soundBtn.addEventListener('click', e => {
-  e.stopPropagation(); soundOn = !soundOn; paintSound();
-  try { localStorage.setItem('wrap-sound', soundOn ? '1' : '0'); } catch (_) {}
-  note(cur); buzz();
-});
-paintSound();
 
 // haptics: Android vibrate, iOS switch-toggle tick
 const hap = document.querySelector('#hapticLbl');
@@ -1113,7 +1167,7 @@ function countUp(el) {
   const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
   const t0 = performance.now(), dur = 1300;
-  const fmt = v => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + sfx;
+  const fmt = v => (dec ? v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(v).toLocaleString('en-US')) + sfx;
   (function f(t) {
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
     el.textContent = fmt(p >= 1 ? to : to * e);
@@ -1130,19 +1184,19 @@ function go(i, quiet) {
   const theme = [...s.classList].find(c => c.startsWith('t-'));
   top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
   s.querySelectorAll('.count').forEach(countUp);
-  if (!quiet) { note(i); buzz(); }
+  if (!quiet) { buzz(); if (!document.activeElement || document.activeElement === document.body || document.activeElement.classList.contains('slide')) s.focus({ preventScroll: true }); }
   try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
 }
 
-// tap left third to go back, the rest to go forward; swipe works too
+// tap left half of the card to go back, right half to go forward; swipe works too
 let sx = null, sy = null;
 deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
 deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-  if (e.target.closest('button, a, .tilt')) return;
+  if (e.target.closest('button, a')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
-  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) go(e.clientX < innerWidth * .3 ? cur - 1 : cur + 1);
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
 document.addEventListener('keydown', e => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
@@ -1170,7 +1224,7 @@ document.querySelectorAll('.dots i[data-tip]').forEach(d => {
 
 // summary card tilts toward the pointer
 const tilt = document.querySelector('.tilt');
-if (tilt) {
+if (tilt && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const card = tilt.querySelector('.card');
   tilt.addEventListener('pointermove', e => {
     const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
@@ -1181,27 +1235,62 @@ if (tilt) {
   tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
 }
 
-// save the current slide as a 1080x1920 image
-const saveBtn = document.getElementById('save'), saveLbl = document.getElementById('saveLbl');
-saveBtn.addEventListener('click', async e => {
+// save or share the current slide as a 1080x1920 image; one action, named for what it does here
+const actBtns = [...document.querySelectorAll('[data-act]')];
+let canShare = false;
+try { canShare = !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch (_) {}
+const ACT = canShare ? 'Share' : 'Save image';
+const label = t => actBtns.forEach(b => b.querySelector('.lbl').textContent = t);
+const busy = on => actBtns.forEach(b => b.disabled = on);
+if (canShare) actBtns.forEach(b => b.querySelector('path').setAttribute('d', 'M12 15V4M8 8l4-4 4 4M6 12v7h12v-7'));
+label(ACT);
+let ready = null, resetT = 0;
+function flash(t, ms) { label(t); clearTimeout(resetT); resetT = setTimeout(() => { label(ACT); busy(false); }, ms || 1800); }
+async function render(s) {
+  // capture a clone at a fixed 360x640 so every device gets exactly 1080x1920, final frame, no chrome
+  const box = document.createElement('section');
+  box.className = [...s.classList].find(c => c.startsWith('t-')) + ' capturing';
+  box.setAttribute('aria-hidden', 'true');
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;--cw:360px;--ch:640px';
+  const card = s.querySelector('.card').cloneNode(true);
+  card.removeAttribute('id'); card.style.transform = 'none'; card.classList.add('saving');
+  card.querySelectorAll('.chrome').forEach(n => n.remove());
+  box.appendChild(card); document.body.appendChild(box);
+  card.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
+  card.querySelectorAll('.hero.fit, .split b, .grid4 dd').forEach(e => fit(e));
+  card.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
+  card.querySelectorAll('.ptitle, .stretch span').forEach(e => fit(e, 3));
+  try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
+  finally { box.remove(); }
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
-  const s = slides[cur], card = s.querySelector('.card');
-  if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
-  saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
-  const prev = card.style.transform; card.style.transform = 'none';
-  s.classList.add('capturing'); card.classList.add('saving');
-  s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
-  try {
-    const url = await modernScreenshot.domToPng(card, {
-      scale: 1080 / card.offsetWidth,
-      filter: n => !(n.classList && n.classList.contains('chrome')),
-    });
-    const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
-    saveLbl.textContent = 'Saved'; buzz();
-  } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
-  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
-  setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
-});
+  const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
+  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
+  const held = ready && ready.slide === s ? ready.blob : null; ready = null;
+  let blob = held;
+  if (!blob) {
+    label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
+  }
+  if (canShare) {
+    try {
+      await navigator.share({ files: [new File([blob], name, { type: 'image/png' })], text: `My ${document.title} — wrap2026.com` });
+      buzz(); label(ACT); busy(false);
+    } catch (err) {
+      if (err.name === 'AbortError') { label(ACT); busy(false); return; }
+      // the share sheet needs a fresh tap after a slow render; keep the image for it
+      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Share now'); busy(false); return; }
+      download(blob, name); flash('Saved');
+    }
+    return;
+  }
+  download(blob, name); buzz(); flash('Saved');
+}));
 
 if (location.search.includes('still')) document.body.classList.add('capturing');
 const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
@@ -1237,17 +1326,20 @@ def gen_html(d, contacts, path):
         bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
         busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-        busiest_mult = round(busiest_count / max(msgs_per_day, 1), 1)
+        busiest_mult = busiest_count / max(s[0] / days_elapsed, 1e-9)
+        busiest_vs = f", {busiest_mult:,.1f}".rstrip('0').rstrip('.') + '× a normal day' if busiest_mult >= 1.5 else ''
 
     def num(v, fmt='int', suffix=''):
         """Big number that counts up when its slide opens."""
-        shown = f"{v:,}" if fmt == 'int' else str(v)
+        shown = f"{v:,}" if fmt == 'int' else f"{v:,.1f}"
         return f'<span class="count" data-to="{v}" data-fmt="{fmt}" data-suffix="{esc(suffix)}">{shown}{esc(suffix)}</span>'
 
+    def plural(v, one, many=None):
+        return one if v == 1 else (many or one + 's')
     def mins(m):
-        if m < 1: return "under a minute"
-        if m < 60: return f"{int(m)} min"
-        return f"{m/60:.1f} hr"
+        if m < 1: return "&lt;1 min"
+        if m < 60: return f"{round(m)} min"
+        return f"{m/60:,.1f} hr"
 
     def rows(items, hide_after=5):
         """items: list of (label_html, value_html, weight 0..1)"""
@@ -1257,9 +1349,18 @@ def gen_html(d, contacts, path):
             out.append(f'<li class="row{hidden}" style="--w:{max(0.04, min(1, w)):.3f};--d:{i}"><span class="rk">{i}</span><span class="nm">{label}</span><span class="vl">{value}</span></li>')
         return '<ol class="rows">' + ''.join(out) + '</ol>'
 
+    def avatar_glyph(name):
+        """First emoji of a name, or a person silhouette for numbers and symbols."""
+        t = str(name).strip()
+        if t and ord(t[0]) >= 0x2190 and not t[0].isalnum():
+            k = 1
+            while k < len(t) and (t[k] in '\u200d\ufe0f' or 0x1F3FB <= ord(t[k]) <= 0x1F3FF or t[k - 1] == '\u200d'):
+                k += 1
+            return f'<span class="ae">{esc(t[:k])}</span>'
+        return '<svg class="ag" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4.2"/><path d="M3.5 21a8.5 8.5 0 0 1 17 0z"/></svg>'
     def initials(name):
         parts = [p for p in str(name).replace('+', ' ').split() if p[:1].isalpha()]
-        return esc(''.join(p[0] for p in parts[:2]).upper() or '#')
+        return esc(''.join(p[0] for p in parts[:2]).upper()) if parts else avatar_glyph(name)
     def avatar(name, cls=''):
         return f'<span class="av a{sum(map(ord, str(name))) % 5} {cls}">{initials(name)}</span>'
 
@@ -1287,25 +1388,27 @@ def gen_html(d, contacts, path):
         </div>''', 'intro'))
 
     # Total messages
+    per_day = f" That's about {msgs_per_day:,} a day, one bubble each." if msgs_per_day else ''
     slides.append(slide('lilac', f'''
         <div class="pile" aria-hidden="true">{''.join('<i class="s"></i>' if (k * s[1]) % max(s[0],1) < s[1] else '<i></i>' for k in range(min(msgs_per_day, 240)))}</div>
         <p class="lead">This year you sent and received</p>
         <div class="hero">{num(s[0])}</div>
-        <p class="after">messages. That's about {msgs_per_day:,} a day, one bubble each.</p>
+        <p class="after">{plural(s[0], 'message')}.{per_day}</p>
         <div class="split">
           <div><b>{s[1]:,}</b><span>you sent</span></div>
           <div><b>{s[2]:,}</b><span>you got</span></div>
-          <div><b>{s[3]:,}</b><span>people</span></div>
+          <div><b>{s[3]:,}</b><span>{plural(s[3], 'person', 'people')}</span></div>
         </div>''', 'total'))
 
     # Words
     words = d['words']
     pages = max(1, words // 250)
-    slides.append(slide('white', f'''
+    novels = max(1, round(pages / 300))
+    if words: slides.append(slide('white', f'''
         <div class="redact" aria-hidden="true">{''.join(f'<i style="--w:{w}%"></i>' for w in (92, 64, 81, 100, 47, 88, 73, 95, 58, 84, 69))}</div>
         <p class="lead">You typed</p>
         <div class="hero">{num(words)}</div>
-        <p class="after">words. About {pages:,} pages, or {max(1, round(pages/300))} {"novel" if round(pages/300) <= 1 else "novels"} nobody asked for.</p>''', 'words'))
+        <p class="after">{plural(words, 'word')}. About {pages:,} {plural(pages, 'page')}, or {novels:,} {plural(novels, 'novel')} nobody asked for.</p>''', 'words'))
 
     # Year in dots: 12 rows (months) x 31 columns (days)
     if d['daily_counts']:
@@ -1332,9 +1435,9 @@ def gen_html(d, contacts, path):
             <p class="lead">Your year, one dot per day.</p>
             <div class="year">{"".join(month_rows)}</div>
             <div class="split">
-              <div><b>{d['avg_daily']}</b><span>a day, on average</span></div>
+              <div><b>{d['avg_daily']:,}</b><span>a day, on average</span></div>
               <div><b>{esc(d['busiest_month'])}</b><span>busiest month</span></div>
-              <div><b>{d['quiet_days']}</b><span>days of silence</span></div>
+              <div><b>{d['quiet_days']:,}</b><span>{plural(d['quiet_days'], 'day')} of silence</span></div>
             </div>''', 'year'))
 
     # Your #1 and inner circle
@@ -1343,7 +1446,7 @@ def gen_html(d, contacts, path):
             {avatar(top[0]["name"], 'xl')}
             <p class="lead">The person you texted most</p>
             <div class="hero name">{esc(top[0]["name"])}</div>
-            <p class="after">{num(top[0]["count"])} messages. {round(top[0]["count"] / max(s[0], 1) * 100)}% of your whole year.</p>''', 'number-one'))
+            <p class="after">{num(top[0]["count"])} {plural(top[0]["count"], 'message')}. {round(top[0]["count"] / max(s[0], 1) * 100)}% of your whole year.</p>''', 'number-one'))
         mx = top[0]['count'] or 1
         slides.append(slide('lilac', f'''
             <div class="stack" aria-hidden="true">{''.join(avatar(c["name"]) for c in top[:5])}</div>
@@ -1353,7 +1456,7 @@ def gen_html(d, contacts, path):
 
     # Groups
     gs = d['group_stats']
-    if gs['count'] > 0:
+    if gs['count'] > 0 and gs['total'] > 0 and d['group_leaderboard']:
         yours = round(gs['sent'] / max(gs['total'], 1) * 100)
         role = "a lurker" if yours < 40 else "the main character" if yours > 60 else "a solid contributor"
         def gname(gc):
@@ -1361,12 +1464,12 @@ def gen_html(d, contacts, path):
                 return esc(gc['name'])
             names = [n(h[0]) for h in gc['name'][:2]]
             extra = gc['participant_count'] - len(names)
-            return ', '.join(names) + (f" +{extra}" if extra > 0 else '')
+            return ', '.join(f'<bdi>{x}</bdi>' for x in names) + (f" +{extra}" if extra > 0 else '')
         lb = d['group_leaderboard'][:10]
         gmx = lb[0]['msg_count'] if lb else 1
         slides.append(slide('cobalt', f'''
             <div class="stack groups" aria-hidden="true">{''.join(avatar(gname(gc)) for gc in lb[:5])}</div>
-            <p class="lead">You were in {num(gs['count'])} group chats and wrote {yours}% of what they said. You're {role}.</p>
+            <p class="lead">You were in {num(gs['count'])} {plural(gs['count'], 'group chat')} and wrote {yours}% of what they said. You're {role}.</p>
             {rows([(gname(gc), f'{gc["msg_count"]:,}', gc["msg_count"] / gmx) for gc in lb]) if lb else ''}
             {more_btn(len(lb))}''', 'groups'))
 
@@ -1392,33 +1495,36 @@ def gen_html(d, contacts, path):
 
     # Response time
     r = d['resp']
-    verdict = "Basically instant." if r < 10 else "Respectable." if r < 60 else "People have moved on by then."
+    verdict = "Basically instant." if r < 2 else "Respectable." if r < 15 else "People have moved on by then."
     slides.append(slide('white', f'''
         <div class="thread"><div class="bub r typing"><i></i><i></i><i></i></div></div>
-        <p class="lead">Your average reply takes</p>
-        <div class="hero">{num(r)}<small>min</small></div>
-        <p class="after">{verdict}</p>''', 'response'))
+        <p class="lead">Your typical reply takes</p>
+        <div class="hero">{num(round(r * 60)) if r < 1 else num(round(r))}<small>{"sec" if r < 1 else "min"}</small></div>
+        <p class="after">{verdict} Half your replies are faster than that.</p>''', 'response'))
 
     # Peak hours
+    peak_day = f'<p class="after">on {esc(d["day"])}s.</p>' if d.get('day') not in (None, '', '???') else ''
     slides.append(slide('night', f'''
         <div class="clock" style="--a:{(hr % 12) * 30 + 0}deg" aria-hidden="true">{''.join(f'<i style="--t:{k*30}deg"></i>' for k in range(12))}<b></b><u></u></div>
         <p class="lead">You text most at</p>
         <div class="hero">{hr_str}</div>
-        <p class="after">on {esc(d['day'])}s.</p>''', 'peak'))
+        {peak_day}''', 'peak'))
 
     # Streak + marathon
-    if d.get('streak') or d.get('marathon'):
+    streak = d['streak'] if d.get('streak') and d['streak']['length'] > 1 else None
+    if streak or d.get('marathon'):
         parts = []
-        if d.get('streak'):
-            st = d['streak']
+        if streak:
+            st = streak
             parts.append(f'''<div class="duo"><div class="hero sm">{num(st['length'])}</div><p class="after">days in a row with <b>{n(st['handle'])}</b>, {st['start'].strftime('%b %-d')} to {st['end'].strftime('%b %-d')}.</p></div>''')
         if d.get('marathon'):
             mm = d['marathon']
             mdate = dt.strptime(mm['date'], '%Y-%m-%d').strftime('%b %-d')
-            parts.append(f'''<div class="duo"><div class="hero sm">{num(mm['count'])}</div><p class="after">messages with <b>{n(mm['handle'])}</b> on {mdate}, over {mm['hours']} hours.</p></div>''')
+            over = f", over {mm['hours']:,} {plural(mm['hours'], 'hour')}" if mm['hours'] >= 1 else ''
+            parts.append(f'''<div class="duo"><div class="hero sm">{num(mm['count'])}</div><p class="after">{plural(mm['count'], 'message')} with <b>{n(mm['handle'])}</b> on {mdate}{over}.</p></div>''')
         chain = ''
-        if d.get('streak'):
-            chain = '<div class="chain" aria-hidden="true">' + '<i></i>' * min(d['streak']['length'], 120) + '</div>'
+        if streak:
+            chain = '<div class="chain" aria-hidden="true">' + '<i></i>' * min(streak['length'], 120) + '</div>'
         slides.append(slide('lilac', chain + '<p class="lead">Your longest runs</p>' + ''.join(parts), 'streaks'))
 
     # 3am bestie
@@ -1429,7 +1535,7 @@ def gen_html(d, contacts, path):
             <div class="stars" aria-hidden="true">{''.join(f'<i style="left:{x}%;top:{y}%;--d:{k}"></i>' for k, (x, y) in enumerate([(8, 14), (30, 30), (52, 9), (18, 44), (66, 36), (40, 52), (84, 54), (12, 62)]))}</div>
             <p class="lead">Between midnight and 5am, you texted</p>
             <div class="hero name">{n(ln[0])}</div>
-            <p class="after">{num(ln[1])} times. Go to sleep.</p>''', 'three-am'))
+            <p class="after">{num(ln[1])} {plural(ln[1], 'time')}. Go to sleep.</p>''', 'three-am'))
 
     # Busiest day
     if d['busiest_day']:
@@ -1445,7 +1551,7 @@ def gen_html(d, contacts, path):
             {spark}
             <p class="lead">Your most unhinged day</p>
             <div class="hero">{busiest_str}</div>
-            <p class="after">{num(busiest_count)} messages, {busiest_mult}× a normal day. What happened?</p>
+            <p class="after">{num(busiest_count)} {plural(busiest_count, 'message')}{busiest_vs}. What happened?</p>
             {rows([(n(h), f'{c:,}', c / bmx) for h, c in busiest_top[:10]]) if busiest_top else ''}
             {more_btn(len(busiest_top[:10]))}''', 'busiest-day'))
 
@@ -1456,7 +1562,7 @@ def gen_html(d, contacts, path):
             {avatar(get_name(f[0], contacts), 'xl')}
             <p class="lead">Your biggest fan</p>
             <div class="hero name">{n(f[0])}</div>
-            <p class="after">texts you {num(round(f[1]/(f[2]+1), 1), 'dec', '×')} more than you text them.</p>
+            <p class="after">texts you {num(round(f[1]/f[2], 1), 'dec', '×')} more than you text them.</p>
             <div class="vs"><div style="--w:1"><span>{n(f[0])}</span><b>{f[1]:,}</b></div><div style="--w:{f[2]/max(f[1],1):.3f}"><span>You</span><b>{f[2]:,}</b></div></div>''', 'biggest-fan'))
     if d['simp']:
         si = d['simp'][0]
@@ -1464,7 +1570,7 @@ def gen_html(d, contacts, path):
             {avatar(get_name(si[0], contacts), 'xl')}
             <p class="lead">You're down bad for</p>
             <div class="hero name">{n(si[0])}</div>
-            <p class="after">You text them {num(round(si[1]/(si[2]+1), 1), 'dec', '×')} more than they text you.</p>
+            <p class="after">You text them {num(round(si[1]/si[2], 1), 'dec', '×')} more than they text you.</p>
             <div class="vs"><div style="--w:1"><span>You</span><b>{si[1]:,}</b></div><div style="--w:{si[2]/max(si[1],1):.3f}"><span>{n(si[0])}</span><b>{si[2]:,}</b></div></div>''', 'down-bad'))
 
     # Reply speed lists
@@ -1485,14 +1591,16 @@ def gen_html(d, contacts, path):
     # Who reaches out
     if d.get('initiation_breakdown'):
         ib = d['initiation_breakdown']
-        you_out = [(h, y, tc) for h, y, t, tc in ib if tc > 0 and y / tc > 0.7][:3]
-        they_in = [(h, t, tc) for h, y, t, tc in ib if tc > 0 and t / tc > 0.7][:3]
+        pct_desc = lambda xs: sorted(xs, key=lambda x: x[1] / x[2], reverse=True)
+        you_out = pct_desc([(h, y, tc) for h, y, t, tc in ib if tc > 0 and y / tc > 0.7][:5])
+        they_in = pct_desc([(h, t, tc) for h, y, t, tc in ib if tc > 0 and t / tc > 0.7][:5])
         if you_out or they_in:
-            body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>'
+            tight = lambda r: r.replace('class="rows"', 'class="rows tight"', 1)
+            body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>' if len(you_out) + len(they_in) <= 6 else ''
             if you_out:
-                body += '<p class="lead">You always text first</p>' + rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out])
+                body += '<p class="lead">You always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out]))
             if they_in:
-                body += '<p class="lead gap">They always text first</p>' + rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in])
+                body += '<p class="lead gap">They always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in]))
             slides.append(slide('cobalt', body, 'who-reaches-out'))
 
     # Heating up / ghosted
@@ -1518,28 +1626,30 @@ def gen_html(d, contacts, path):
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            <div class="emoji">{"".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))}</div>
-            <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} times.</p>''', 'emoji'))
+            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
-    # Summary
-    top3 = ', '.join(esc(c["name"]) for c in top[:3]) if top else "Nobody yet"
+    # Summary: the poster people post
+    wave = spark.replace('class="spark"', 'class="spark wave"', 1) if d['busiest_day'] else ''
+    one = f'<div class="one">{avatar(top[0]["name"])}<div><b>{esc(top[0]["name"])}</b><span>My #1, {top[0]["count"]:,} {plural(top[0]["count"], 'message')}</span></div></div>' if top else ''
     slides.append(f'''
     <section class="slide t-stage" data-name="summary">
       <div class="tilt">
-        <div class="card summary" id="summaryCard">
+        <div class="card summary poster" id="summaryCard">
           <div class="sheen" aria-hidden="true"></div>
           <div class="body">
-            <p class="lead">My {year} in texts</p>
-            <div class="hero">{s[0]:,}</div>
-            <p class="after">messages</p>
+            <h2 class="ptitle"><span>Wrapped</span> <span>{year}</span></h2>
+            {wave}
+            <div class="hero">{s[0]:,}<small>{plural(s[0], 'text')}</small></div>
             <dl class="grid4">
               <div><dt>People</dt><dd>{s[3]:,}</dd></div>
               <div><dt>Words</dt><dd>{words:,}</dd></div>
               <div><dt>I start</dt><dd>{d['starter_pct']}%</dd></div>
-              <div><dt>Reply</dt><dd>{d['resp']} min</dd></div>
+              <div><dt>Reply</dt><dd>{mins(d['resp'])}</dd></div>
             </dl>
+            {one}
             <p class="diag-sm">{esc(ptype.lower())}</p>
-            <p class="top3">{top3}</p>
+            <button class="cta chrome" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
           </div>
           <footer class="mark"><span>wrap2026.com</span><span>iMessage · {year}</span></footer>
         </div>

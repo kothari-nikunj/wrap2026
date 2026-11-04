@@ -32,7 +32,7 @@ data = {
   'fan': [('Aunt Rina', 640, 120)], 'simp': [('Priya Natarajan', 1500, 602)],
   'priority_list': [('Mom', .6, 0), ('Priya Natarajan', 1.4, 0), ('Jordan Lee', 2, 0), ('Maya', 3.5, 0), ('Theo', 7, 0)],
   'fast_responders': [('Dad', .4, 0), ('Alex Chen', 1.2, 0), ('Sam Martinez', 4, 0), ('Chris O.', 9, 0), ('Mom', 14, 0)],
-  'initiation_breakdown': [('Theo', 90, 10, 100), ('Maya', 40, 5, 45), ('Aunt Rina', 4, 60, 64), ('Dad', 10, 70, 80)],
+  'initiation_breakdown': [('Theo', 72, 28, 100), ('Maya', 45, 0, 45), ('Sam Martinez', 80, 10, 90), ('Chris O.', 33, 3, 36), ('Alex Chen', 60, 15, 75), ('Kelsey', 50, 4, 54), ('Aunt Rina', 4, 60, 64), ('Dad', 10, 70, 80), ('Jordan Lee', 0, 41, 41), ('Priya Natarajan', 9, 51, 60), ('Mom', 12, 88, 100), ('Roommate Ben', 2, 30, 32)],
   'heating': [('Priya Natarajan', 120, 1980), ('Theo', 200, 780), ('Maya', 90, 520)],
   'ghosted': [('Chris O.', 640, 12), ('Roommate Ben', 300, 0), ('Kelsey', 210, 4)],
   'emoji': [('😭', 2811), ('💀', 1990), ('🙏', 1204), ('😂', 990), ('❤️', 870), ('🥲', 400)],

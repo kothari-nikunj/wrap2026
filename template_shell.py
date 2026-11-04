@@ -43,7 +43,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
 .card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
 .body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
-.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.55;padding-top:1.6em;letter-spacing:.01em}
+.mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.85;padding-top:1.6em;letter-spacing:.01em}
 
 /* type */
 .lead{font-size:1.15em;font-weight:500;line-height:1.3;text-wrap:balance;max-width:20ch}
@@ -51,15 +51,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero.fit{white-space:nowrap;overflow-wrap:normal}
 .hero{font-family:var(--display);font-weight:900;font-stretch:125%;font-variation-settings:"wdth" 125;font-size:4.6em;line-height:.86;letter-spacing:-.045em;font-variant-numeric:tabular-nums;margin:.12em 0 .08em -.04em;overflow-wrap:anywhere}
 .hero small{font-size:.32em;font-stretch:100%;font-variation-settings:"wdth" 100;font-weight:700;letter-spacing:0;margin-left:.15em}
-.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance}
-.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance}
+.hero.name{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.4em;line-height:.88;letter-spacing:-.03em;text-wrap:balance;overflow-wrap:normal}
+.hero.diag{font-weight:800;font-stretch:62%;font-variation-settings:"wdth" 62;font-size:4.6em;line-height:.86;letter-spacing:-.015em;color:var(--tint);text-wrap:balance;overflow-wrap:normal}
 .hero.sm{font-size:3.4em}
-.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty}
+.after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
-.after .count{font-weight:600}
+.after .count{font-weight:600;font-variant-numeric:tabular-nums}
 
 /* stat split */
-.split{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
 .split b{display:block;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.35em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .split span{font-size:.72em;opacity:.7;line-height:1.2;display:block;margin-top:.2em}
 
@@ -69,25 +69,30 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row{border-bottom:1.5px solid var(--soft);border-radius:0;padding:.6em 0}
 .row::before{content:"";position:absolute;left:0;bottom:-1.5px;height:2.5px;width:calc(var(--w) * 100%);background:var(--tint);border-radius:2px;transform-origin:left;z-index:0}
 .row>*{position:relative;z-index:1}
-.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.5;font-size:.85em}
+.row .rk{font-family:var(--display);font-weight:700;font-stretch:110%;font-variation-settings:"wdth" 110;opacity:.85;font-size:.85em}
 .row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .vl{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums}
-.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.6;font-size:.85em}
+.row .vl i{font-style:normal;font-family:var(--body);font-weight:400;opacity:.85;font-size:.85em}
 .row:first-child{font-size:1.15em}
 .row:last-child{border-bottom-color:transparent}
 .row.extra{display:none}
 .rows.all .row.extra{display:grid}
-.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.7;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
-.more:hover{opacity:1}
+.rows.tight{margin-top:.5em;gap:.1em}
+.rows.tight .row{padding:.4em 0}
+.rows.tight .row:first-child{font-size:1em}
+.more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.85;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
+@media (hover:hover){.more:hover{opacity:1}}
 
 /* avatars: five colorways, swapped where one would vanish into the slide */
 .a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
 .t-cobalt .a0,.t-stage .a0{--ab:var(--white);--af:var(--cobalt)}.t-cobalt .a4{--ab:var(--lilac);--af:var(--ink)}
-.t-pink .a1{--ab:var(--white);--af:var(--pink)}
+.t-pink .a1{--ab:var(--white);--af:var(--ink)}
 .t-ink .a2,.t-night .a2{--ab:var(--lilac);--af:var(--ink)}
-.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--lilac);--af:var(--cobalt)}
+.t-lav .a3,.t-lilac .a3{--ab:var(--white);--af:var(--ink)}.t-lilac .a4,.t-white .a4{--ab:var(--cobalt);--af:var(--white)}
 /* avatars */
-.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg)}
+.av{display:inline-grid;place-items:center;width:2.6em;height:2.6em;border-radius:50%;background:var(--ab);color:var(--af);font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1em;letter-spacing:-.02em;box-shadow:0 0 0 .18em var(--bg);flex:none}
+.av .ae{font-size:1.15em;letter-spacing:0}
+.av .ag{width:1.15em;height:1.15em}
 .av.xl{width:5.2em;height:5.2em;font-size:1.5em;margin-bottom:auto;box-shadow:0 1em 2.4em -1em rgba(36,16,56,.45)}
 .stack{display:flex;margin-bottom:auto;padding-left:.7em}
 .stack .av{width:3.6em;height:3.6em;margin-left:-.7em;font-size:1.05em}
@@ -114,7 +119,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
 /* year sparkline */
-.spark{display:flex;align-items:flex-end;gap:1px;height:9em;margin-bottom:auto;padding-bottom:1.4em}
+.spark{display:flex;align-items:flex-end;gap:0;height:9em;margin-bottom:auto;padding-bottom:1.4em}
 .spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
 .spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
 
@@ -136,9 +141,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* versus */
 .vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
-.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(9em, calc(var(--w) * 100%));transform-origin:left}
+.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(11em, calc(var(--w) * 100%));max-width:100%;transform-origin:left}
+.vs span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vs div:last-child{background:var(--soft);color:var(--fg)}
-.vs b{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
+.vs b{flex:none;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
 
 /* bubbles */
 .thread{display:flex;flex-direction:column;gap:.3em;margin-bottom:auto}
@@ -154,7 +160,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .stretch span:first-child{font-weight:800;font-stretch:58%;font-variation-settings:"wdth" 58;font-size:3.6em;white-space:nowrap}
 .stretch span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;font-size:3.4em;margin-left:-.05em;white-space:nowrap}
 .intro .thread{margin:0 0 1.2em}
-.hint{font-size:.85em;opacity:.7;font-weight:500}
+.hint{font-size:.85em;opacity:.85;font-weight:500}
 
 /* year dots */
 .year{display:flex;flex-direction:column;gap:.34em;margin:1em 0 .2em}
@@ -184,11 +190,30 @@ button{font:inherit;color:inherit;cursor:pointer}
 .summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
 .summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
 .summary .hero{font-size:4.2em}
-.grid4{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
-.grid4 dt{font-size:.7em;opacity:.7}
+.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
+.grid4 dt{font-size:.7em;opacity:.85}
 .grid4 dd{font-family:var(--display);font-weight:800;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:1.5em;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
 .top3{font-size:.85em;opacity:.85;margin-top:.5em}
+/* summary poster: the slide people post */
+.ptitle{font-family:var(--display);font-weight:800;line-height:.9;letter-spacing:-.03em;white-space:nowrap;margin-bottom:auto;font-size:2.4em}
+.ptitle span:first-child{font-stretch:58%;font-variation-settings:"wdth" 58}
+.ptitle span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;margin-left:.12em}
+.poster .hero small{opacity:.85}
+.wave{height:5.5em;padding:0}
+.wave i{background:var(--white);opacity:.4}
+.wave i.pk{background:var(--pink);opacity:1;box-shadow:none}
+.one{display:flex;align-items:center;gap:.7em;margin-top:1.2em}
+.one .av{width:2.9em;height:2.9em;flex:none;box-shadow:none}
+.one b{display:block;font-family:var(--display);font-weight:800;font-stretch:75%;font-variation-settings:"wdth" 75;font-size:1.7em;line-height:1;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.one div{min-width:0}
+.one span{font-size:.8em;opacity:.85}
+.poster .diag-sm{margin-top:.6em}
+.poster .mark{opacity:1;gap:1em}
+.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.9em 1em;background:var(--white);color:var(--cobalt);font-weight:600;font-size:.95em;transition:transform .15s ease-out}
+.cta:not(:disabled):active{transform:scale(.96)}
+.cta:focus-visible{outline-color:var(--white)}
+.cta svg{width:1.1em;height:1.1em}
 
 /* chrome: progress + controls, sized to the card */
 .top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
@@ -199,15 +224,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
-.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--spring),background .2s}
-.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
-.pill:active{transform:scale(.94)}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .15s ease-out,background .2s}
+@media (hover:hover){.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}}
+.pill:not(:disabled):active{transform:scale(.96)}
 .pill svg{width:14px;height:14px}
-.eq{display:inline-flex;gap:2px;align-items:center;height:12px}
-.eq i{width:2px;height:4px;background:currentColor;border-radius:1px;transition:height .2s}
-.sound-on .eq i{animation:eq .9s infinite ease-in-out}
-.sound-on .eq i:nth-child(2){animation-delay:.15s}.sound-on .eq i:nth-child(3){animation-delay:.3s}
-@keyframes eq{0%,100%{height:3px}50%{height:12px}}
 
 /* entrance choreography, replayed on each slide */
 .on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
@@ -236,6 +256,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .on .clock b{animation:hand 1.6s var(--spring) both}
 .on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
 .on .vs div:last-child{animation-delay:.65s}
+.on .ptitle span:first-child{animation:rise .8s var(--ease) both}
+.on .ptitle span:last-child{animation:stretch 1.4s var(--ease) both}
+.on .one{animation:rise .7s var(--ease) both;animation-delay:.7s}
+.on .cta{animation:rise .7s var(--ease) both;animation-delay:.9s}
 @keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
 @keyframes hand{from{transform:rotate(180deg)}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
@@ -251,29 +275,28 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* saving: freeze everything at its final frame */
 .capturing *, .capturing *::before{animation:none !important;transition:none !important}
 .card.saving{border-radius:0;box-shadow:none}
+.fitting *{animation:none !important}
 
 @media (max-width:540px){
   :root{--cw:100vw;--ch:100dvh}
   .card{border-radius:0;box-shadow:none;padding-top:max(5.4em, calc(env(safe-area-inset-top) + 4.6em));padding-bottom:max(1.3em, env(safe-area-inset-bottom))}
   .top{padding-top:max(10px, env(safe-area-inset-top))}
 }
-@media (max-width:400px){
-  .ctl .brand{display:none}
-  .ctl{justify-content:flex-end}
-}
 @media (prefers-reduced-motion:reduce){
   *,*::before{animation:none !important;transition-duration:.01s !important}
+  .slide,.slide.past{transform:none}
+  .slide,.slide.on{transition-duration:.3s,.3s,0s !important}
 }
+.slide:focus{outline:none}
 </style>
 </head>
 <body>
 <div class="top" id="top">
-  <div class="bars" id="bars" role="tablist" aria-label="Slides"></div>
+  <nav class="bars" id="bars" aria-label="Slides"></nav>
   <div class="ctl">
     <span class="brand">wrap2026</span>
     <div class="pills">
-      <button class="pill" id="sound" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
-      <button class="pill" id="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="saveLbl">Save image</span></button>
+      <button class="pill" id="save" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
     </div>
   </div>
 </div>
@@ -294,15 +317,26 @@ let cur = -1;
 // fit text to the card width (numbers and the intro title)
 function fit(el, max) {
   const anim = el.style.animation, disp = el.style.display;
-  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content';
+  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content'; el.classList.add('fitting');
   const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
   const ratio = w / el.getBoundingClientRect().width;
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
-  el.style.animation = anim; el.style.display = disp; el.style.width = '';
+  el.style.animation = anim; el.style.display = disp; el.style.width = ''; el.classList.remove('fitting');
+}
+// long names shrink until every word fits and they take at most three lines; they never split mid-word
+function fitName(el) {
+  el.style.fontSize = '';
+  if (/\p{Extended_Pictographic}/u.test(el.textContent)) el.style.lineHeight = '1.08';
+  const cs = () => getComputedStyle(el);
+  for (let k = 0; k < 16 && (el.scrollWidth > el.clientWidth + 1 || el.offsetHeight > parseFloat(cs().lineHeight) * 3.2); k++)
+    el.style.fontSize = parseFloat(cs().fontSize) * .9 + 'px';
 }
 function fitAll() {
   document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
   document.querySelectorAll('.hero.fit').forEach(e => fit(e));
+  document.querySelectorAll('.ptitle').forEach(e => fit(e, 3));
+  document.querySelectorAll('.split b, .grid4 dd').forEach(e => fit(e));
+  document.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
 }
 document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
 document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
@@ -317,39 +351,11 @@ document.querySelectorAll('.mrow').forEach((r, i) => r.querySelectorAll('i').for
 
 slides.forEach((s, i) => {
   const b = document.createElement('button');
-  b.setAttribute('aria-label', 'Slide ' + (i + 1));
+  b.setAttribute('aria-label', 'Slide ' + (i + 1) + ' of ' + slides.length);
+  s.tabIndex = -1; s.setAttribute('aria-label', (i + 1) + ' of ' + slides.length);
   b.addEventListener('click', e => { e.stopPropagation(); go(i); });
   bars.appendChild(b);
 });
-
-// sound: one soft note per slide, climbing a pentatonic scale
-let ctx = null, soundOn = false;
-try { soundOn = localStorage.getItem('wrap-sound') === '1'; } catch (_) {}
-const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
-function note(i) {
-  if (!soundOn) return;
-  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-  const t = ctx.currentTime, f = 392 * Math.pow(2, scale[i % scale.length] / 12);
-  [1, 2].forEach((h, k) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = k ? 'triangle' : 'sine'; o.frequency.value = f * h;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(k ? .012 : .05, t + .012);
-    g.gain.exponentialRampToValueAtTime(.0001, t + .5);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
-  });
-}
-const soundBtn = document.getElementById('sound');
-function paintSound() {
-  document.body.classList.toggle('sound-on', soundOn);
-  soundBtn.setAttribute('aria-pressed', soundOn);
-  document.getElementById('soundLbl').textContent = soundOn ? 'Sound on' : 'Sound off';
-}
-soundBtn.addEventListener('click', e => {
-  e.stopPropagation(); soundOn = !soundOn; paintSound();
-  try { localStorage.setItem('wrap-sound', soundOn ? '1' : '0'); } catch (_) {}
-  note(cur); buzz();
-});
-paintSound();
 
 // haptics: Android vibrate, iOS switch-toggle tick
 const hap = document.querySelector('#hapticLbl');
@@ -363,7 +369,7 @@ function countUp(el) {
   const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
   const t0 = performance.now(), dur = 1300;
-  const fmt = v => (dec ? v.toFixed(1) : Math.round(v).toLocaleString('en-US')) + sfx;
+  const fmt = v => (dec ? v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(v).toLocaleString('en-US')) + sfx;
   (function f(t) {
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
     el.textContent = fmt(p >= 1 ? to : to * e);
@@ -380,19 +386,19 @@ function go(i, quiet) {
   const theme = [...s.classList].find(c => c.startsWith('t-'));
   top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
   s.querySelectorAll('.count').forEach(countUp);
-  if (!quiet) { note(i); buzz(); }
+  if (!quiet) { buzz(); if (!document.activeElement || document.activeElement === document.body || document.activeElement.classList.contains('slide')) s.focus({ preventScroll: true }); }
   try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
 }
 
-// tap left third to go back, the rest to go forward; swipe works too
+// tap left half of the card to go back, right half to go forward; swipe works too
 let sx = null, sy = null;
 deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
 deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-  if (e.target.closest('button, a, .tilt')) return;
+  if (e.target.closest('button, a')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
-  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) go(e.clientX < innerWidth * .3 ? cur - 1 : cur + 1);
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
 document.addEventListener('keydown', e => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
@@ -420,7 +426,7 @@ document.querySelectorAll('.dots i[data-tip]').forEach(d => {
 
 // summary card tilts toward the pointer
 const tilt = document.querySelector('.tilt');
-if (tilt) {
+if (tilt && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const card = tilt.querySelector('.card');
   tilt.addEventListener('pointermove', e => {
     const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
@@ -431,27 +437,62 @@ if (tilt) {
   tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
 }
 
-// save the current slide as a 1080x1920 image
-const saveBtn = document.getElementById('save'), saveLbl = document.getElementById('saveLbl');
-saveBtn.addEventListener('click', async e => {
+// save or share the current slide as a 1080x1920 image; one action, named for what it does here
+const actBtns = [...document.querySelectorAll('[data-act]')];
+let canShare = false;
+try { canShare = !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch (_) {}
+const ACT = canShare ? 'Share' : 'Save image';
+const label = t => actBtns.forEach(b => b.querySelector('.lbl').textContent = t);
+const busy = on => actBtns.forEach(b => b.disabled = on);
+if (canShare) actBtns.forEach(b => b.querySelector('path').setAttribute('d', 'M12 15V4M8 8l4-4 4 4M6 12v7h12v-7'));
+label(ACT);
+let ready = null, resetT = 0;
+function flash(t, ms) { label(t); clearTimeout(resetT); resetT = setTimeout(() => { label(ACT); busy(false); }, ms || 1800); }
+async function render(s) {
+  // capture a clone at a fixed 360x640 so every device gets exactly 1080x1920, final frame, no chrome
+  const box = document.createElement('section');
+  box.className = [...s.classList].find(c => c.startsWith('t-')) + ' capturing';
+  box.setAttribute('aria-hidden', 'true');
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;--cw:360px;--ch:640px';
+  const card = s.querySelector('.card').cloneNode(true);
+  card.removeAttribute('id'); card.style.transform = 'none'; card.classList.add('saving');
+  card.querySelectorAll('.chrome').forEach(n => n.remove());
+  box.appendChild(card); document.body.appendChild(box);
+  card.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
+  card.querySelectorAll('.hero.fit, .split b, .grid4 dd').forEach(e => fit(e));
+  card.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
+  card.querySelectorAll('.ptitle, .stretch span').forEach(e => fit(e, 3));
+  try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
+  finally { box.remove(); }
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
-  const s = slides[cur], card = s.querySelector('.card');
-  if (!window.modernScreenshot) { saveLbl.textContent = 'Offline. Take a screenshot'; setTimeout(() => saveLbl.textContent = 'Save image', 2400); return; }
-  saveLbl.textContent = 'Saving'; saveBtn.disabled = true;
-  const prev = card.style.transform; card.style.transform = 'none';
-  s.classList.add('capturing'); card.classList.add('saving');
-  s.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toFixed(1) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
-  try {
-    const url = await modernScreenshot.domToPng(card, {
-      scale: 1080 / card.offsetWidth,
-      filter: n => !(n.classList && n.classList.contains('chrome')),
-    });
-    const a = document.createElement('a'); a.href = url; a.download = `${FILE}_${s.dataset.name}.png`; a.click();
-    saveLbl.textContent = 'Saved'; buzz();
-  } catch (err) { console.error(err); saveLbl.textContent = 'Could not save'; }
-  s.classList.remove('capturing'); card.classList.remove('saving'); card.style.transform = prev;
-  setTimeout(() => { saveLbl.textContent = 'Save image'; saveBtn.disabled = false; }, 1800);
-});
+  const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
+  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
+  const held = ready && ready.slide === s ? ready.blob : null; ready = null;
+  let blob = held;
+  if (!blob) {
+    label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
+  }
+  if (canShare) {
+    try {
+      await navigator.share({ files: [new File([blob], name, { type: 'image/png' })], text: `My ${document.title} — wrap2026.com` });
+      buzz(); label(ACT); busy(false);
+    } catch (err) {
+      if (err.name === 'AbortError') { label(ACT); busy(false); return; }
+      // the share sheet needs a fresh tap after a slow render; keep the image for it
+      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Share now'); busy(false); return; }
+      download(blob, name); flash('Saved');
+    }
+    return;
+  }
+  download(blob, name); buzz(); flash('Saved');
+}));
 
 if (location.search.includes('still')) document.body.classList.add('capturing');
 const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
