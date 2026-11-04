@@ -20,6 +20,7 @@ Your texting habits, exposed. A Spotify Wrapped-style visualization of your iMes
 - **Peak hours** – most active day/hour
 - **Contribution graph** – GitHub-style activity heatmap
 - **Top emojis** – your most-used emoji lineup
+- **Share** – one tap opens your phone's share sheet with a 1080×1920 image of any slide
 
 ## Installation
 
@@ -104,6 +105,17 @@ The combined script will:
 
 ---
 
+### Calls Wrapped
+
+Your phone calls and FaceTime from your Mac's call history. Your Mac only has the calls your iPhone shared with it, so this wrap can miss part of the year.
+
+```bash
+curl -O https://wrap2026.com/call_wrapped.py
+python3 call_wrapped.py
+```
+
+---
+
 Your wrapped will open in your browser automatically.
 
 ## Options
@@ -127,9 +139,9 @@ If you don't have enough 2026 messages yet, the script will automatically fall b
 **100% Local** - Your data never leaves your computer
 
 - No servers, no uploads, no tracking
-- No external dependencies (Python stdlib only)
+- The script uses only the Python standard library and makes no network calls
 - All analysis happens locally
-- Output is a single HTML file
+- Output is a single HTML file. It loads two fonts and a small image-saving library when you open it
 
 You can read the entire source code yourself.
 
