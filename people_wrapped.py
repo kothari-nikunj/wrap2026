@@ -74,8 +74,7 @@ Use /model sonnet for larger context. After all summaries: python3 people_wrappe
 """
 
 import sqlite3, os, sys, re, subprocess, argparse, glob, threading, time, base64, json
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 
 # Database paths
 IMESSAGE_DB = os.path.expanduser("~/Library/Messages/chat.db")
@@ -109,7 +108,7 @@ class Spinner:
         if message:
             self.message = message
         self.spinning = True
-        self.thread = threading.Thread(target=self.spin)
+        self.thread = threading.Thread(target=self.spin, daemon=True)
         self.thread.start()
 
     def stop(self, final_message=None):
@@ -281,7 +280,7 @@ def get_name_imessage(handle, contacts):
         if digits[1:] in contacts: return contacts[digits[1:]]
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
-    if len(digits) >= 7 and digits[-7:] in contacts:
+    if len(digits) == 7 and digits in contacts:
         return contacts[digits[-7:]]
     return handle
 
@@ -303,8 +302,8 @@ def get_record_id_for_handle(handle, contact_record_ids):
             return contact_record_ids[digits[1:]]
     if len(digits) >= 10 and digits[-10:] in contact_record_ids:
         return contact_record_ids[digits[-10:]]
-    if len(digits) >= 7 and digits[-7:] in contact_record_ids:
-        return contact_record_ids[digits[-7:]]
+    if len(digits) == 7 and digits in contact_record_ids:
+        return contact_record_ids[digits]
     return None
 
 def get_name_whatsapp(jid, contacts):
@@ -517,21 +516,6 @@ def get_messages_for_contact(contact, timestamps, has_imessage, has_whatsapp):
     ts_start_wa = timestamps['start_whatsapp']
     ts_end_wa = timestamps['end_whatsapp']
 
-    one_on_one_cte = """
-        WITH chat_participants AS (
-            SELECT chat_id, COUNT(*) as participant_count
-            FROM chat_handle_join
-            GROUP BY chat_id
-        ),
-        one_on_one_messages AS (
-            SELECT m.ROWID as msg_id
-            FROM message m
-            JOIN chat_message_join cmj ON m.ROWID = cmj.message_id
-            JOIN chat_participants cp ON cmj.chat_id = cp.chat_id
-            WHERE cp.participant_count = 1
-        )
-    """
-
     if has_imessage and 'imessage' in contact['handles']:
         handle = contact['handles']['imessage']
         handle_escaped = handle.replace("'", "''")
@@ -649,7 +633,7 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js" integrity="sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y" crossorigin="anonymous"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1414,7 +1398,7 @@ def generate_html(contacts_with_summaries, year, output_path):
     page = page.replace('__TITLE__', f'People Wrapped {esc(year)}') \
                .replace('__FILE__', f'people_wrapped_{esc(year)}') \
                .replace('__SLIDES__', ''.join(slides))
-    with open(output_path, 'w') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write(page)
     return output_path
 
@@ -1486,7 +1470,7 @@ def extract_messages(year='2026', top_n=25):
         }
 
         json_path = os.path.join(DATA_DIR, f"{i+1:02d}_{safe_name}.json")
-        with open(json_path, 'w') as f:
+        with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
         print(f"  [{i+1}/{len(top_contacts)}] {name}: {len(messages)} messages")

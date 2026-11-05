@@ -8,7 +8,7 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js" integrity="sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y" crossorigin="anonymous"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;

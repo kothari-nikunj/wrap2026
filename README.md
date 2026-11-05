@@ -1,30 +1,10 @@
 # Wrapped 2026
 
-Your texting habits, exposed. A Spotify Wrapped-style visualization of your iMessage and WhatsApp history.
+Spotify Wrapped for your texts. See who you text most, how fast you reply, who texts first, and your texting personality, from iMessage and WhatsApp on your Mac.
 
-**[-> wrap2026.com](https://wrap2026.com)**
+**[wrap2026.com](https://wrap2026.com)** · Free · MIT · Nothing leaves your Mac
 
-## Features
-
-- **Total messages + words** – sent, received, per day
-- **Inner circle** – top person + top 10 contacts (expandable)
-- **Group chats** – overview + expandable top 10 groups on one slide
-- **Personality** – diagnosis with starter %, reply time, sent/recv ratio, peak day/hour
-- **Who texts first** – conversation initiator %
-- **Response time** – how fast you reply
-- **3AM bestie** – late night conversations (midnight–5am)
-- **Busiest day** – your wildest day with top 10 people from that day (expandable)
-- **Grind + marathon** – longest streak of daily texting and biggest single-day 1:1 marathon
-- **Vibe check** – who’s heating up (H2 > H1) vs ghosted (dropped after June)
-- **Biggest fan / Down bad** – who texts you most vs who you text most
-- **Peak hours** – most active day/hour
-- **Contribution graph** – GitHub-style activity heatmap
-- **Top emojis** – your most-used emoji lineup
-- **Share** – one tap opens your phone's share sheet with a 1080×1920 image of any slide
-
-## Installation
-
-### The easy way: ask Claude Code or Codex
+## Run it
 
 Paste this into Claude Code or Codex on your Mac:
 
@@ -32,228 +12,64 @@ Paste this into Claude Code or Codex on your Mac:
 Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
 ```
 
-The agent sees only the script's progress lines (counts, no names or messages). For a single app, swap in `imessage_wrapped.py`, `whatsapp_wrapped.py` or `call_wrapped.py`.
-
-### Or run it yourself in Terminal
-
-
-### iMessage Wrapped
-
-#### 1. Download the script
+Or run it yourself. First turn on Full Disk Access for your terminal app (System Settings > Privacy & Security > Full Disk Access), then:
 
 ```bash
-curl -O https://wrap2026.com/imessage_wrapped.py
+curl -sO https://wrap2026.com/combined_wrapped.py && python3 combined_wrapped.py
 ```
 
-#### 2. Grant Terminal access
+Your wrap opens in your browser as one HTML file, saved next to the script.
 
-The script needs to read your Messages database:
+| Script | What it wraps |
+|---|---|
+| `combined_wrapped.py` | iMessage and WhatsApp in one wrap, contacts matched across both. Works with only one app too. |
+| `imessage_wrapped.py` | iMessage and SMS. Turn on Messages in iCloud so your Mac has the full year. |
+| `whatsapp_wrapped.py` | WhatsApp desktop app. Open it first and let it sync. |
+| `call_wrapped.py` | Phone, FaceTime and WhatsApp calls. Your Mac only has calls your iPhone shared with it. |
+| `people_wrapped.py` | A written portrait of each of your top 25 people, by Claude Code. See below. |
 
-**System Settings -> Privacy & Security -> Full Disk Access -> Add Terminal**
+Options for the first four: `--use-2025` wraps 2025 instead, `-o file.html` sets the output path. With too few 2026 messages, the script falls back to 2025 on its own.
 
-(Or iTerm/Warp if you use those)
-
-#### 3. Run it
-
-```bash
-python3 imessage_wrapped.py
-```
-
----
-
-### WhatsApp Wrapped
-
-#### 1. Download the script
-
-```bash
-curl -O https://wrap2026.com/whatsapp_wrapped.py
-```
-
-#### 2. Grant Terminal access
-
-The script needs to read your WhatsApp database:
-
-**System Settings -> Privacy & Security -> Full Disk Access -> Add Terminal**
-
-(Or iTerm/Warp if you use those)
-
-#### 3. Run it
-
-```bash
-python3 whatsapp_wrapped.py
-```
-
----
-
-### Combined Wrapped (iMessage + WhatsApp)
-
-Merges stats from both platforms into a single unified report.
-
-#### 1. Download the script
-
-```bash
-curl -O https://wrap2026.com/combined_wrapped.py
-```
-
-#### 2. Grant Terminal access
-
-The script needs to read both message databases:
-
-**System Settings -> Privacy & Security -> Full Disk Access -> Add Terminal**
-
-(Or iTerm/Warp if you use those)
-
-#### 3. Run it
-
-```bash
-python3 combined_wrapped.py
-```
-
-The combined script will:
-- Analyze both iMessage and WhatsApp data
-- Use your AddressBook to reconcile contacts across platforms
-- Merge top contacts, group chats, and all other stats
-- Show a platform breakdown slide
-- Work even if you only have one platform installed
-
----
-
-### Calls Wrapped
-
-Your phone calls and FaceTime from your Mac's call history. Your Mac only has the calls your iPhone shared with it, so this wrap can miss part of the year.
-
-```bash
-curl -O https://wrap2026.com/call_wrapped.py
-python3 call_wrapped.py
-```
-
----
-
-Your wrapped will open in your browser automatically.
-
-## Options
-
-```bash
-# Use 2025 data instead of 2026
-python3 imessage_wrapped.py --use-2025
-python3 whatsapp_wrapped.py --use-2025
-python3 combined_wrapped.py --use-2025
-
-# Custom output filename
-python3 imessage_wrapped.py -o my_wrapped.html
-python3 whatsapp_wrapped.py -o my_wrapped.html
-python3 combined_wrapped.py -o my_wrapped.html
-```
-
-If you don't have enough 2026 messages yet, the script will automatically fall back to 2025.
+Needs macOS and the `python3` it ships with (3.9 or newer). No packages to install.
 
 ## Privacy
 
-**100% Local** - Your data never leaves your computer
+- The scripts read the message and call databases already on your Mac, write one HTML file, and open it. They make no network calls.
+- They read who, when and how many. Word and emoji totals are counted inside SQLite; message text is never printed, saved or sent.
+- Progress lines show counts only, so an agent running the script never sees names or messages.
+- The wrap page loads two Google Fonts and an image-saving library (for Share). No analytics.
+- The exception: `people_wrapped.py` reads message text so Claude Code can write about it, in your own Claude Code session.
 
-- No servers, no uploads, no tracking
-- The script uses only the Python standard library and makes no network calls
-- All analysis happens locally
-- Output is a single HTML file. It loads two fonts and a small image-saving library when you open it
+## People Wrapped
 
-You can read the entire source code yourself.
+Start Claude Code without permission prompts (it writes 25 files), then paste the prompt:
 
-## Requirements
-
-- macOS (uses local message databases)
-- Python 3 (pre-installed on macOS)
-- Full Disk Access for Terminal
-- For WhatsApp: WhatsApp desktop app installed with chat history
-
-## How it works
-
-### iMessage
-The script reads your local `chat.db` (iMessage database) and `AddressBook` (Contacts) using SQLite queries.
-
-### WhatsApp
-The script reads your local `ChatStorage.sqlite` (WhatsApp database) using SQLite queries. WhatsApp stores contact names directly in the database.
-
-### Combined
-The combined script reads both databases and merges the data:
-- Uses AddressBook contacts to reconcile names across platforms
-- Combines message counts, response times, and other stats
-- Merges top contacts (deduplicating by name when possible)
-- Shows platform breakdown with message counts per platform
-- Works even if only one platform is available
-
-All scripts analyze your message patterns, resolve identifiers to contact names, and generate a self-contained HTML file with an interactive gallery.
-
-## FAQ
-
-**Q: Is this safe?**
-A: Yes. The scripts only read local databases, write one HTML file, and make zero network requests. No data is sent anywhere.
-
-**Q: Why do I need Full Disk Access?**
-A: Apple protects message databases. Terminal needs permission to read them.
-
-**Q: Can I run this on iOS?**
-A: No, iOS doesn't allow access to message databases. macOS only.
-
-**Q: The names are showing as phone numbers**
-A: The script tries to match identifiers to contact names. Some may not resolve if the formatting differs.
-
-**Q: Where is the WhatsApp database?**
-A: WhatsApp stores its database at:
-- `~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite` (current version)
-- `~/Library/Containers/com.whatsapp/Data/Library/Application Support/WhatsApp/ChatStorage.sqlite` (older versions)
-
----
-
-## People Wrapped (AI-Powered)
-
-Get AI-generated summaries of your top 25 messaging relationships. Uses Claude Code to analyze your full message history and write personalized insights for each contact.
-
-### Quick Start
-
-1. Download the script:
-```bash
-curl -O https://wrap2026.com/people_wrapped.py
-```
-
-2. Start Claude Code with permissions disabled (needed for file writes):
 ```bash
 claude --dangerously-skip-permissions
 ```
 
-3. In Claude Code, say:
 ```
-Run python3 people_wrapped.py
+Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py and read it first. Then run python3 people_wrapped.py and follow the steps it prints. If it can't get access, tell me how to turn on Full Disk Access for this app.
 ```
 
-4. Wait ~10 minutes for extraction + AI summaries
+It takes about 10 minutes and opens `people_wrapped_2026.html`.
 
-5. Open `people_wrapped_2026.html` in your browser
+## Development
 
-### How It Works
+The scripts are single files on purpose: users download one with `curl`. Shared code lives in two source files and is copied in:
 
-The "trick" is that Claude Code itself generates the summaries - no API key needed:
+- `template_shell.py`: the wrap page's CSS and JS (`TEMPLATE`), embedded in every script.
+- `template_imessage.py`: iMessage `gen_html`, embedded in `imessage_wrapped.py`.
 
-1. Script extracts your top 25 contacts from iMessage/WhatsApp
-2. Script prints instructions for Claude Code
-3. Claude Code reads the message files and writes personalized summaries
-4. Script builds a swipeable HTML report
+```bash
+python3 dev/sync_template.py              # copy shared sources into the scripts
+python3 dev/fixture.py imessage out.html  # render a wrap from made-up data (also fixture_whatsapp/combined/call/people)
+dev/shots.sh out.html shots/              # contact sheet of every slide
+bin/check                                 # the gate: run before every PR
+```
 
-### What You Get
+`bin/check` compiles and renders everything with `/usr/bin/python3` (3.9), lints with ruff, and checks that the scripts and `demo.html` are in sync. Known traps are in `docs/solutions/` and `implementation-notes.md`.
 
-- Personalized 3-4 paragraph summaries for each contact
-- Direct quotes from your conversations
-- Themes, inside jokes, memorable moments
-- How the relationship evolved through the year
-- Tone matched to relationship type (family, partner, friend, colleague)
+The site (`index.html`, `demo.html`, `img/`) and the scripts are deployed to Vercel as static files.
 
----
-
-## Credits
-
-Made by [@nikunj](https://x.com/nikunj)
-
-Not affiliated with Apple, Meta, Spotify, or WhatsApp.
-
-## License
-
-MIT
+Made by [@nikunj](https://x.com/nikunj). Not affiliated with Apple, Meta, Spotify, Anthropic or OpenAI.
