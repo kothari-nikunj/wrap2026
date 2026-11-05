@@ -24,6 +24,19 @@ Your texting habits, exposed. A Spotify Wrapped-style visualization of your iMes
 
 ## Installation
 
+### The easy way: ask Claude Code or Codex
+
+Paste this into Claude Code or Codex on your Mac:
+
+```
+Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
+```
+
+The agent sees only the script's progress lines (counts, no names or messages). For a single app, swap in `imessage_wrapped.py`, `whatsapp_wrapped.py` or `call_wrapped.py`.
+
+### Or run it yourself in Terminal
+
+
 ### iMessage Wrapped
 
 #### 1. Download the script

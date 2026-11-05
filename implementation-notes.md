@@ -35,3 +35,15 @@
 - Under reduced motion, keep the slide visibility transition at 0s or focus() lands on a still-hidden slide.
 - Reply time is now a median (SQLite `median` aggregate registered in `_connect`). Combined pools raw gaps from both apps; `merge_data` still needs `im_weight/wa_weight/total_weight` for starter %. `dev/test_merge.py` covers merge_data (fixtures skip it).
 - A crash in combined `main()` hangs instead of exiting: the spinner thread is non-daemon. Look in stderr, not at the exit code.
+
+## Animation pass (Emil skills, 2026-11-04)
+### Deviations
+- Did not use clip-path for the versus-bar reveal (Emil allows it). The bar fill moved to `.vs div::before` with scaleX, so only transform/opacity animate and the label text no longer squashes.
+- Kept these non-transform animations on purpose: `heroIn` 6px blur (masks the entrance), and the `stretch` font-width keyframes on the intro and poster titles (the brand moment; it runs twice per wrap).
+- Slide navigation keeps its transition when you use the keyboard. In a deck, the motion shows direction; it is short (≤350ms) and can be interrupted.
+- iOS `touchstart` no-op listener (for `:active` press feedback) and per-slide `theme-color` are not verified on a real phone.
+### Gotchas
+- An entrance `animation` with fill `both` keeps its final transform and overrides `:active{transform}`. Pressable elements use fill `backwards` (`.cta`).
+- people: a horizontal swipe that starts on the scrollable `.story` becomes a scroll (pointercancel), so it does not change slides. This existed before this pass.
+- Landing: main action is "Copy prompt" (Claude + Codex icons, simple-icons 15.0.0 paths inlined); prompt text lives in hidden <p> elements, Terminal command is a <details> fallback. Phones/tablets ((hover:none) and (pointer:coarse)) get "runs on a Mac" + send-link instead. Slides strip moved directly under the hero.
+- Agent prompt tells the agent not to open messages or the wrap; script stdout is counts only, so nothing personal reaches the model.

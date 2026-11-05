@@ -356,7 +356,7 @@ def check_access():
 
     if not has_imessage and not has_whatsapp:
         print("\n[!] ACCESS DENIED - Neither iMessage nor WhatsApp accessible")
-        print("   System Settings -> Privacy & Security -> Full Disk Access -> Add Terminal")
+        print("   System Settings -> Privacy & Security -> Full Disk Access -> turn on the app running this (Terminal, iTerm, Ghostty, Codex), then reopen it")
         subprocess.run(['open', 'x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles'])
         sys.exit(1)
 
@@ -658,11 +658,12 @@ TEMPLATE = r'''<!DOCTYPE html>
   --ch:calc(var(--cw) * 16 / 9);
   --display:'Anybody',system-ui,sans-serif;
   --body:'Onest',system-ui,sans-serif;
-  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease:cubic-bezier(.23,1,.32,1);
   --spring:cubic-bezier(.3,1.4,.5,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none}
+html{-webkit-text-size-adjust:100%}
 body{background:var(--night);color:var(--white);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-y;transition:background .6s var(--ease)}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
@@ -679,9 +680,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* deck */
 .deck{position:fixed;inset:0}
-.slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;visibility:hidden;transform:translateX(5%) scale(.97);transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s .55s}
+.slide{position:absolute;inset:0;display:grid;place-items:center;opacity:0;visibility:hidden;transform:translateX(5%) scale(.97);transition:opacity .2s var(--ease),transform .3s var(--ease),visibility 0s .3s}
 .slide.past{transform:translateX(-5%) scale(.97)}
-.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease),transform .55s var(--ease),visibility 0s}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .3s var(--ease),transform .35s var(--ease),visibility 0s}
 .card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
 .body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
 .mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.85;padding-top:1.6em;letter-spacing:.01em}
@@ -722,7 +723,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rows.tight .row{padding:.4em 0}
 .rows.tight .row:first-child{font-size:1em}
 .more{align-self:flex-start;background:none;border:0;font-size:.75em;font-weight:600;opacity:.85;padding:.6em 0;text-decoration:underline;text-underline-offset:.25em}
-@media (hover:hover){.more:hover{opacity:1}}
+@media (hover:hover) and (pointer:fine){.more:hover{opacity:1}}
 
 /* avatars: five colorways, swapped where one would vanish into the slide */
 .a0{--ab:var(--cobalt);--af:var(--white)}.a1{--ab:var(--pink);--af:var(--ink)}.a2{--ab:var(--ink);--af:var(--lilac)}.a3{--ab:var(--lav);--af:var(--ink)}.a4{--ab:var(--white);--af:var(--cobalt)}
@@ -782,9 +783,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* versus */
 .vs{display:flex;flex-direction:column;gap:.5em;margin-top:1.2em}
-.vs div{display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;background:var(--fg);color:var(--bg);width:max(11em, calc(var(--w) * 100%));max-width:100%;transform-origin:left}
+.vs div{position:relative;isolation:isolate;display:flex;justify-content:space-between;align-items:center;font-weight:500;padding:.55em .8em;border-radius:.9em;color:var(--bg);width:max(11em, calc(var(--w) * 100%));max-width:100%}
+.vs div::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--fg);transform-origin:left}
 .vs span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vs div:last-child{background:var(--soft);color:var(--fg)}
+.vs div:last-child{color:var(--fg)}
+.vs div:last-child::before{background:var(--soft)}
 .vs b{flex:none;font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-variant-numeric:tabular-nums;margin-left:1em}
 
 /* bubbles */
@@ -851,13 +854,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .one span{font-size:.8em;opacity:.85}
 .poster .diag-sm{margin-top:.6em}
 .poster .mark{opacity:1;gap:1em}
-.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.9em 1em;background:var(--white);color:var(--cobalt);font-weight:600;font-size:.95em;transition:transform .15s ease-out}
+.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.9em 1em;background:var(--white);color:var(--cobalt);font-weight:600;font-size:.95em;transition:transform .15s var(--ease)}
 .cta:not(:disabled):active{transform:scale(.96)}
 .cta:focus-visible{outline-color:var(--white)}
 .cta svg{width:1.1em;height:1.1em}
 
 /* chrome: progress + controls, sized to the card */
-.top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .4s}
+.top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .3s ease}
 .bars{display:flex;gap:4px}
 .bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
 .bars button::after{content:"";position:absolute;inset:-10px 0}
@@ -865,26 +868,25 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
-.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .15s ease-out,background .2s}
-@media (hover:hover){.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:0;border-radius:999px;padding:7px 12px;background:color-mix(in srgb,currentColor 14%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .15s var(--ease),background .2s ease}
+@media (hover:hover) and (pointer:fine){.pill:hover{background:color-mix(in srgb,currentColor 22%,transparent)}}
 .pill:not(:disabled):active{transform:scale(.96)}
 .pill svg{width:14px;height:14px}
 
 /* entrance choreography, replayed on each slide */
-.on .lead,.on .after,.on .split,.on .more,.on .mark{animation:rise .7s var(--ease) both}
-.on .lead{animation-delay:.05s}
-.on .hero{animation:heroIn .8s var(--spring) both;animation-delay:.15s}
-.on .after{animation-delay:.45s}
-.on .split,.on .grid4{animation:rise .7s var(--ease) both;animation-delay:.6s}
-.on .row{animation:rowIn .55s var(--ease) both;animation-delay:calc(.2s + var(--d) * 70ms)}
-.on .row::before{animation:grow .9s var(--ease) both;animation-delay:calc(.35s + var(--d) * 70ms)}
+.on .lead,.on .after,.on .split,.on .more{animation:rise .5s var(--ease) both}
+.on .hero{animation:heroIn .6s var(--spring) both;animation-delay:.08s}
+.on .after{animation-delay:.3s}
+.on .split,.on .grid4,.on .more{animation:rise .5s var(--ease) both;animation-delay:.38s}
+.on .row{animation:rowIn .45s var(--ease) both;animation-delay:calc(.12s + var(--d) * 50ms)}
+.on .row::before{animation:grow .6s var(--ease) both;animation-delay:calc(.25s + var(--d) * 50ms)}
 .on .bub{animation:pop .45s var(--spring) both}
 .on .bub:nth-child(2){animation-delay:.55s}.on .bub:nth-child(3){animation-delay:1.1s}
 .on .intro .a1{animation-delay:.9s}.on .intro .a2{animation-delay:1.6s}.on .intro .a3{animation-delay:2.3s}
 .on .intro .a4{animation:rise .6s var(--ease) both;animation-delay:2.9s}
 .on .stretch span:last-child{animation:stretch 1.4s var(--ease) both}
 .on .stretch span:first-child{animation:rise .8s var(--ease) both}
-.on .emoji span{animation:pop .5s var(--spring) both;animation-delay:calc(.25s + var(--d) * 90ms)}
+.on .emoji span{animation:pop .5s var(--spring) both;animation-delay:calc(.15s + var(--d) * 60ms)}
 .on .dots i{animation:dot .5s var(--ease) both;animation-delay:calc(var(--r, 0) * 45ms)}
 .on .moon{animation:moon 1.4s var(--ease) both}
 .on .redact i{animation:grow .8s var(--ease) both;transform-origin:left;animation-delay:calc(var(--k, 0) * 60ms)}
@@ -892,15 +894,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .on .spark i{animation:barUp .7s var(--ease) both;transform-origin:bottom;animation-delay:calc(var(--k, 0) * 2ms)}
 @keyframes barUp{from{transform:scaleY(0)}}
 .on .pile i{animation:pop .35s var(--spring) both;animation-delay:calc(var(--d, 0) * 1ms)}
-.on .av{animation:pop .6s var(--spring) both;animation-delay:calc(.1s + var(--i, 0) * 90ms)}
+.on .av{animation:pop .5s var(--spring) both;animation-delay:calc(.08s + var(--i, 0) * 60ms)}
 .on .sticker{animation:sticker .8s var(--spring) both}
 .on .clock b{animation:hand 1.6s var(--spring) both}
-.on .vs div{animation:grow .9s var(--ease) both;animation-delay:.5s}
-.on .vs div:last-child{animation-delay:.65s}
+.on .vs div::before{animation:grow .6s var(--ease) both;animation-delay:.3s}
+.on .vs div:last-child::before{animation-delay:.38s}
+.on .vs div>*{animation:fade .3s var(--ease) both;animation-delay:.5s}
 .on .ptitle span:first-child{animation:rise .8s var(--ease) both}
 .on .ptitle span:last-child{animation:stretch 1.4s var(--ease) both}
-.on .one{animation:rise .7s var(--ease) both;animation-delay:.7s}
-.on .cta{animation:rise .7s var(--ease) both;animation-delay:.9s}
+.on .one{animation:rise .5s var(--ease) both;animation-delay:.4s}
+.on .cta{animation:rise .5s var(--ease) backwards;animation-delay:.5s}
 @keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
 @keyframes hand{from{transform:rotate(180deg)}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:var(--o,1);transform:none}}
@@ -909,7 +912,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
 @keyframes stretch{from{font-stretch:50%;font-variation-settings:"wdth" 50;opacity:0}30%{opacity:1}to{font-stretch:150%;font-variation-settings:"wdth" 150}}
-@keyframes dot{from{transform:scale(0)}to{transform:none}}
+@keyframes dot{from{opacity:0;transform:scale(.5)}}
+@keyframes fade{from{opacity:0}}
 @keyframes moon{from{opacity:0;transform:rotate(-60deg) translateY(1em)}to{opacity:1;transform:rotate(-20deg)}}
 .after{--o:.85}
 
@@ -954,6 +958,9 @@ const bars = document.getElementById('bars');
 const top = document.getElementById('top');
 const dark = new Set(['t-cobalt','t-ink','t-night','t-stage']);
 let cur = -1;
+const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = matchMedia('(max-width:540px)');
+// iOS Safari only applies :active (press feedback) on touch when a touchstart listener exists
+document.addEventListener('touchstart', () => {}, { passive: true });
 
 // fit text to the card width (numbers and the intro title)
 function fit(el, max) {
@@ -1009,9 +1016,10 @@ function buzz() {
 function countUp(el) {
   const to = parseFloat(el.dataset.to), dec = el.dataset.fmt === 'dec', sfx = el.dataset.suffix || '';
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('capturing')) return;
-  const t0 = performance.now(), dur = 1300;
+  const t0 = el._run = performance.now(), dur = 1300;
   const fmt = v => (dec ? v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : Math.round(v).toLocaleString('en-US')) + sfx;
   (function f(t) {
+    if (el._run !== t0) return;
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(2, -10 * p);
     el.textContent = fmt(p >= 1 ? to : to * e);
     if (p < 1 && el.closest('.slide.on')) requestAnimationFrame(f); else el.textContent = fmt(to);
@@ -1026,6 +1034,7 @@ function go(i, quiet) {
   const s = slides[i];
   const theme = [...s.classList].find(c => c.startsWith('t-'));
   top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
+  if (phone.matches) themeMeta.content = getComputedStyle(s).getPropertyValue('--bg').trim();
   s.querySelectorAll('.count').forEach(countUp);
   if (!quiet) { buzz(); if (!document.activeElement || document.activeElement === document.body || document.activeElement.classList.contains('slide')) s.focus({ preventScroll: true }); }
   try { history.replaceState(null, '', '#' + s.dataset.name); } catch (_) {}
@@ -1068,12 +1077,13 @@ document.querySelectorAll('.dots i[data-tip]').forEach(d => {
 // summary card tilts toward the pointer
 const tilt = document.querySelector('.tilt');
 if (tilt && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const card = tilt.querySelector('.card');
+  const card = tilt.querySelector('.card'), sheen = card.querySelector('.sheen');
   tilt.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
     const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
     card.style.transition = 'transform .08s linear';
     card.style.transform = `rotateY(${(x - .5) * 14}deg) rotateX(${(.5 - y) * 14}deg)`;
-    card.style.setProperty('--mx', x * 100 + '%'); card.style.setProperty('--my', y * 100 + '%');
+    sheen.style.setProperty('--mx', x * 100 + '%'); sheen.style.setProperty('--my', y * 100 + '%');
   });
   tilt.addEventListener('pointerleave', () => { card.style.transition = ''; card.style.transform = ''; });
 }
@@ -1159,8 +1169,8 @@ PEOPLE_CSS = r'''
 .story p:last-child{margin-bottom:.4em}
 .story q{quotes:none;font-weight:600;opacity:1}
 .story:focus-visible{outline-offset:2px}
-.on .story{animation:rise .7s var(--ease) both;animation-delay:.7s}
-.on .rank{animation:heroIn .8s var(--spring) both;animation-delay:.3s}
+.on .story{animation:rise .5s var(--ease) both;animation-delay:.4s}
+.on .rank{animation:heroIn .6s var(--spring) both;animation-delay:.2s}
 .closing .rows{margin-top:.5em}
 '''
 
