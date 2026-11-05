@@ -9,7 +9,7 @@ Spotify Wrapped for your texts. See who you text most, how fast you reply, who t
 Paste this into Claude Code or Codex on your Mac:
 
 ```
-Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and review it before running anything. Tell me in a few short bullets what it reads, what it writes, whether it sends anything over the network, and anything that looks risky. It should only read my iMessage and WhatsApp data on this Mac. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
+Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py. Before running it, do a quick check: search it for network calls, file writes or deletes, and commands it runs, then tell me in 3 short bullets what it reads, what it writes, and whether it sends anything anywhere. It should only read my iMessage and WhatsApp data on this Mac. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
 ```
 
 Or run it yourself. First turn on Full Disk Access for your terminal app (System Settings > Privacy & Security > Full Disk Access), then:
@@ -50,7 +50,7 @@ claude --dangerously-skip-permissions
 ```
 
 ```
-Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py and review it before running anything. Tell me in a few short bullets what it reads, what it writes, whether it sends anything over the network, and anything that looks risky. If it checks out, run python3 people_wrapped.py and follow the steps it prints. If it can't get access, tell me how to turn on Full Disk Access for this app.
+Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py. Before running it, do a quick check: search it for network calls, file writes or deletes, and commands it runs, then tell me in 3 short bullets what it reads, what it writes, and whether it sends anything anywhere. If it checks out, run python3 people_wrapped.py and follow the steps it prints. If it can't get access, tell me how to turn on Full Disk Access for this app.
 ```
 
 It takes about 10 minutes and opens `people_wrapped_2026.html`.
