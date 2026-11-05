@@ -1034,6 +1034,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
 .bars button::after{content:"";position:absolute;inset:-10px 0}
 .bars button.done{opacity:.9}
+/* stories-style autoplay (site demo only, ?autoplay): the current bar fills, then the deck moves on */
+.auto .bars button.now{opacity:1;background:color-mix(in srgb,currentColor 25%,transparent);overflow:hidden}
+.auto .bars button.now::before{content:"";position:absolute;inset:0;border-radius:inherit;background:currentColor;opacity:.9;transform-origin:left;transform:scaleX(0);animation:fill var(--dwell,5s) linear forwards}
+.auto.held .bars button.now::before{animation-play-state:paused}
+@keyframes fill{to{transform:scaleX(1)}}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
@@ -1132,13 +1137,19 @@ const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = ma
 document.addEventListener('touchstart', () => {}, { passive: true });
 
 // fit text to the card width (numbers and the intro title)
+// measures a hidden copy of the parent, so siblings keep their styles and the real element's entrance animation never restarts
 function fit(el, max) {
-  const anim = el.style.animation, disp = el.style.display;
-  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content'; el.classList.add('fitting');
-  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
-  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = '';
+  const p = el.parentElement, i = [...p.children].indexOf(el), pc = p.cloneNode(true);
+  pc.classList.add('fitting'); pc.setAttribute('aria-hidden', 'true'); pc.removeAttribute('id');
+  pc.style.cssText += ';position:absolute;visibility:hidden;left:0;top:0;animation:none;width:' + p.clientWidth + 'px';
+  p.after(pc);
+  const c = pc.children[i];
+  c.style.cssText += ';animation:none;display:inline-block;width:max-content';
+  const base = parseFloat(getComputedStyle(c).fontSize), w = p.clientWidth * .97;
+  const ratio = w / c.getBoundingClientRect().width;
+  pc.remove();
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
-  el.style.animation = anim; el.style.display = disp; el.style.width = ''; el.classList.remove('fitting');
 }
 // long names shrink until every word fits and they take at most three lines; they never split mid-word
 function fitName(el) {
@@ -1195,10 +1206,12 @@ function countUp(el) {
   })(t0);
 }
 
+const auto = /[?&]autoplay/.test(location.search) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function go(i, quiet) {
   if (i < 0 || i >= slides.length || i === cur) return;
   slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
-  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', auto ? k < i : k <= i); b.classList.toggle('now', auto && k === i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  if (auto) bars.children[i].style.setProperty('--dwell', (/^(intro|summary)$/.test(slides[i].dataset.name) ? 6.5 : 4.5) + 's');
   cur = i;
   const s = slides[i];
   const theme = [...s.classList].find(c => c.startsWith('t-'));
@@ -1210,14 +1223,14 @@ function go(i, quiet) {
 }
 
 // tap left half of the card to go back, right half to go forward; swipe works too
-let sx = null, sy = null;
-deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+let sx = null, sy = null, st = 0;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); });
 deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
   if (e.target.closest('button, a')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
-  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && performance.now() - st < 500) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
 document.addEventListener('keydown', e => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
@@ -1306,7 +1319,7 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
     } catch (err) {
       if (err.name === 'AbortError') { label(ACT); busy(false); return; }
       // the share sheet needs a fresh tap after a slow render; keep the image for it
-      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Share now'); busy(false); return; }
+      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Tap to share'); busy(false); return; }
       download(blob, name); flash('Saved');
     }
     return;
@@ -1315,6 +1328,13 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
 }));
 
 if (location.search.includes('still')) document.body.classList.add('capturing');
+if (auto) {
+  document.body.classList.add('auto');
+  bars.addEventListener('animationend', e => { if (e.animationName === 'fill') go(cur + 1 < slides.length ? cur + 1 : 0, true); });
+  // press and hold pauses, like stories
+  deck.addEventListener('pointerdown', () => document.body.classList.add('held'));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => deck.addEventListener(t, () => document.body.classList.remove('held')));
+}
 const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
 go(start > 0 ? start : 0, true);
 })();
@@ -1504,10 +1524,11 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
     # Intro
     platforms_text = []
     if has_phone:
-        platforms_text.append("Phone + FaceTime")
+        platforms_text.append("Phone and FaceTime" if not has_whatsapp else "Phone, FaceTime")
     if has_whatsapp:
         platforms_text.append("WhatsApp")
-    platform_str = " & ".join(platforms_text)
+    platform_str = " and ".join(platforms_text)
+    calls_word = lambda v: 'call' if v == 1 else 'calls'
     slide('cobalt', f'''
         <div class="intro">
           <h1 class="stretch"><span>Wrapped</span><span>{esc(year)}</span></h1>
@@ -1535,7 +1556,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
         {wave}
         <p class="lead">This year you made and took</p>
         <div class="hero">{num(stats['total'])}</div>
-        <p class="after">calls. That's <b>{format_duration_short(stats['total_duration'])}</b> of your life on the phone.</p>
+        <p class="after">{calls_word(stats['total'])}. That's <b>{format_duration_short(stats['total_duration'])}</b> of your life on the phone.</p>
         <div class="split">
           <div><b>{d['avg_daily']}</b><span>a day</span></div>
           <div><b>{stats['outgoing']:,}</b><span>outgoing</span></div>
@@ -1583,7 +1604,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             {avatar(name, 'xl')}
             <p class="lead">The person you called most</p>
             <div class="hero name">{esc(name)}</div>
-            <p class="after">{num(st['count'])} calls, {format_duration_short(st['duration'])} of talk time. {pf_icons(st['platforms'])}</p>''', 'number-one')
+            <p class="after">{num(st['count'])} {calls_word(st['count'])}, {format_duration_short(st['duration'])} of talk time. {pf_icons(st['platforms'])}</p>''', 'number-one')
         tc = d['top_count'][:10]
         mx = tc[0][1]['count'] or 1
         slide('lilac', f'''
@@ -1664,9 +1685,9 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
         mult = round(busiest_count / max(d['avg_daily'], 0.1), 1)
         slide('pink', f'''
             <div class="spark" aria-hidden="true">{bars}</div>
-            <p class="lead">Your phone would not stop on</p>
+            <p class="lead">Your phone wouldn't stop on</p>
             <div class="hero sm">{busiest_str}</div>
-            <p class="after">{num(busiest_count)} calls in one day, {mult}× your usual. Someone was popular.</p>''', 'busiest-day')
+            <p class="after">{num(busiest_count)} {calls_word(busiest_count)} in one day, {mult}× your usual. Someone was popular.</p>''', 'busiest-day')
 
     # Peak hours
     slide('night', f'''
@@ -1681,7 +1702,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
     if total_answered > 0:
         bk = [('quick', 'Under 2 min', 'Quick ones', 'under two minutes. In, out, done.'),
               ('normal', '2 to 15 min', 'Normal ones', 'between two and fifteen minutes. Civilized.'),
-              ('marathon', '15 min +', 'Marathons', 'over fifteen minutes. Pace yourself.')]
+              ('marathon', '15+ min', 'Marathons', 'over fifteen minutes. Pace yourself.')]
         win = max(bk, key=lambda b: buckets[b[0]])
         bmx = buckets[win[0]] or 1
         cols = ''.join(f'<div><b>{buckets[key]:,}</b><i class="{"hi" if key == win[0] else ""}" style="--h:{max(3, buckets[key] / bmx * 100):.1f}%;--k:{k}"></i><span>{lbl}</span></div>' for k, (key, lbl, _, _) in enumerate(bk))
@@ -1699,7 +1720,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             <div class="stars" aria-hidden="true">{''.join(f'<i style="left:{x}%;top:{y}%;--d:{k}"></i>' for k, (x, y) in enumerate([(8, 14), (30, 30), (52, 9), (18, 44), (66, 36), (40, 52), (84, 54), (12, 62)]))}</div>
             <p class="lead">Between midnight and 5am, you were on the phone with</p>
             <div class="hero name">{esc(owl[0])}</div>
-            <p class="after">{num(owl[1])} late-night calls. Go to sleep.</p>''', 'night-owl')
+            <p class="after">{num(owl[1])} late-night {calls_word(owl[1])}. Go to sleep.</p>''', 'night-owl')
 
     # Missed call king
     if d['missed_kings']:
@@ -1712,7 +1733,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             <div class="notes" aria-hidden="true">{banners}</div>
             <p class="lead">The calls you missed most came from</p>
             <div class="hero name">{esc(king[0])}</div>
-            <p class="after">{num(king[1])} missed calls. Maybe check your phone?</p>''', 'missed-king')
+            <p class="after">{num(king[1])} missed {calls_word(king[1])}. Maybe check your phone?</p>''', 'missed-king')
 
     # Ghost protocol
     if d['ghosts']:
@@ -1761,7 +1782,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             {ringing(fan[0])}
             <p class="lead">The person who calls you most</p>
             <div class="hero name">{esc(fan[0])}</div>
-            <p class="after">{num(fan[1])} incoming calls. Someone really wants to hear your voice.</p>''', 'biggest-fan')
+            <p class="after">{num(fan[1])} incoming {calls_word(fan[1])}. Someone really wants to hear your voice.</p>''', 'biggest-fan')
 
     # Longest streak
     if d['longest_streak']:
@@ -1803,7 +1824,8 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
         slide('pink', f'''
             <div class="sticker" aria-hidden="true">🔥</div>
             <p class="lead">Calling more since June</p>
-            {rows([(esc(nm), f'+{h2 - h1:,}', (h2 - h1) / hmx) for nm, h1, h2 in ht])}''', 'heating-up')
+            {rows([(esc(nm), f'+{h2 - h1:,}', (h2 - h1) / hmx) for nm, h1, h2 in ht])}
+            <p class="after">Extra calls since June, compared to before.</p>''', 'heating-up')
     if d['cooling_down']:
         cd = d['cooling_down'][:5]
         cmx = max(h1 for _, h1, _ in cd) or 1
@@ -1814,7 +1836,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             <p class="after">Calls before June, then after.</p>''', 'cooling-down')
 
     # Summary: the poster people post
-    one = f'<div class="one">{avatar(d["top_count"][0][0])}<div><b>{esc(d["top_count"][0][0])}</b><span>My #1, {d["top_count"][0][1]["count"]:,} calls</span></div></div>' if d['top_count'] else ''
+    one = f'<div class="one">{avatar(d["top_count"][0][0])}<div><b>{esc(d["top_count"][0][0])}</b><span>My #1, {d["top_count"][0][1]["count"]:,} {calls_word(d["top_count"][0][1]["count"])}</span></div></div>' if d['top_count'] else ''
     plat_line = ' · '.join(f"{p} {d['platforms'][p]['count']:,}" for p in ['Phone', 'FaceTime', 'WhatsApp'] if p in d['platforms'])
     slides.append(f'''
     <section class="slide t-stage" data-name="summary">
@@ -1823,7 +1845,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
           <div class="sheen" aria-hidden="true"></div>
           <div class="body">
             <h2 class="ptitle"><span>Wrapped</span> <span>{esc(year)}</span></h2>
-            <div class="hero">{stats['total']:,}<small>calls</small></div>
+            <div class="hero">{stats['total']:,}<small>{calls_word(stats['total'])}</small></div>
             <p class="after">{plat_line}</p>
             <dl class="grid4">
               <div><dt>People</dt><dd>{d['unique_contacts']:,}</dd></div>

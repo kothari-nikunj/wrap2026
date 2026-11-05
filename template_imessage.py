@@ -86,7 +86,7 @@ def gen_html(d, contacts, path):
         </div>''', 'intro'))
 
     # Total messages
-    per_day = f" That's about {msgs_per_day:,} a day, one bubble each." if msgs_per_day else ''
+    per_day = f" That's about {msgs_per_day:,} a day." if msgs_per_day else ''
     slides.append(slide('lilac', f'''
         <div class="pile" aria-hidden="true">{''.join('<i class="s"></i>' if (k * s[1]) % max(s[0],1) < s[1] else '<i></i>' for k in range(min(msgs_per_day, 240)))}</div>
         <p class="lead">This year you sent and received</p>
@@ -144,7 +144,7 @@ def gen_html(d, contacts, path):
             {avatar(top[0]["name"], 'xl')}
             <p class="lead">The person you texted most</p>
             <div class="hero name">{esc(top[0]["name"])}</div>
-            <p class="after">{num(top[0]["count"])} {plural(top[0]["count"], 'message')}. {round(top[0]["count"] / max(s[0], 1) * 100)}% of your whole year.</p>''', 'number-one'))
+            <p class="after">{num(top[0]["count"])} {plural(top[0]["count"], 'message')}. {(lambda p: f'{p}%' if p else 'Less than 1%')(round(top[0]["count"] / max(s[0], 1) * 100))} of all your messages.</p>''', 'number-one'))
         mx = top[0]['count'] or 1
         slides.append(slide('lilac', f'''
             <div class="stack" aria-hidden="true">{''.join(avatar(c["name"]) for c in top[:5])}</div>
@@ -167,7 +167,7 @@ def gen_html(d, contacts, path):
         gmx = lb[0]['msg_count'] if lb else 1
         slides.append(slide('cobalt', f'''
             <div class="stack groups" aria-hidden="true">{''.join(avatar(gname(gc)) for gc in lb[:5])}</div>
-            <p class="lead">You were in {num(gs['count'])} {plural(gs['count'], 'group chat')} and wrote {yours}% of what they said. You're {role}.</p>
+            <p class="lead">You were in {num(gs['count'])} {plural(gs['count'], 'group chat')} and sent {yours}% of the messages. You're {role}.</p>
             {rows([(gname(gc), f'{gc["msg_count"]:,}', gc["msg_count"] / gmx) for gc in lb]) if lb else ''}
             {more_btn(len(lb))}''', 'groups'))
 
@@ -284,7 +284,8 @@ def gen_html(d, contacts, path):
         slides.append(slide('lilac', f'''
             {stack([get_name(h, contacts) for h, _, _ in fr])}
             <p class="lead">These people drop everything for you</p>
-            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(fr)])}''', 'fast-responders'))
+            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(fr)])}
+            <p class="after">Their typical reply time. You're a priority.</p>''', 'fast-responders'))
 
     # Who reaches out
     if d.get('initiation_breakdown'):
@@ -296,9 +297,9 @@ def gen_html(d, contacts, path):
             tight = lambda r: r.replace('class="rows"', 'class="rows tight"', 1)
             body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>' if len(you_out) + len(they_in) <= 6 else ''
             if you_out:
-                body += '<p class="lead">You always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out]))
+                body += '<p class="lead">You usually text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out]))
             if they_in:
-                body += '<p class="lead gap">They always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in]))
+                body += '<p class="lead gap">They usually text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in]))
             slides.append(slide('cobalt', body, 'who-reaches-out'))
 
     # Heating up / ghosted
@@ -308,7 +309,8 @@ def gen_html(d, contacts, path):
         slides.append(slide('pink', f'''
             <div class="sticker" aria-hidden="true">🔥</div>
             <p class="lead">Heating up since June</p>
-            {rows([(n(h), f'+{b-a:,}', (b - a) / hmx) for h, a, b in ht])}''', 'heating-up'))
+            {rows([(n(h), f'+{b-a:,}', (b - a) / hmx) for h, a, b in ht])}
+            <p class="after">Extra messages since June, compared to before.</p>''', 'heating-up'))
     if d.get('ghosted'):
         gh = d['ghosted'][:5]
         gmx2 = max(b for _, b, _ in gh) or 1
@@ -316,7 +318,7 @@ def gen_html(d, contacts, path):
             <div class="sticker" aria-hidden="true">👻</div>
             <p class="lead">They went quiet after June</p>
             {rows([(n(h), f'{b:,} <i>to</i> {a:,}', b / gmx2) for h, b, a in gh])}
-            <p class="after">Messages before June, then after.</p>''', 'ghosted'))
+            <p class="after">Their messages to you, before June and after.</p>''', 'ghosted'))
 
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
@@ -338,12 +340,12 @@ def gen_html(d, contacts, path):
           <div class="body">
             <h2 class="ptitle"><span>Wrapped</span> <span>{year}</span></h2>
             {wave}
-            <div class="hero">{s[0]:,}<small>{plural(s[0], 'text')}</small></div>
+            <div class="hero">{s[0]:,}<small>{plural(s[0], 'message')}</small></div>
             <dl class="grid4">
               <div><dt>People</dt><dd>{s[3]:,}</dd></div>
               <div><dt>Words</dt><dd>{words:,}</dd></div>
-              <div><dt>I start</dt><dd>{d['starter_pct']}%</dd></div>
-              <div><dt>Reply</dt><dd>{mins(d['resp'])}</dd></div>
+              <div><dt>I text first</dt><dd>{d['starter_pct']}%</dd></div>
+              <div><dt>Typical reply</dt><dd>{mins(d['resp'])}</dd></div>
             </dl>
             {one}
             <p class="diag-sm">{esc(ptype.lower())}</p>

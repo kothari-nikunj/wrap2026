@@ -865,6 +865,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
 .bars button::after{content:"";position:absolute;inset:-10px 0}
 .bars button.done{opacity:.9}
+/* stories-style autoplay (site demo only, ?autoplay): the current bar fills, then the deck moves on */
+.auto .bars button.now{opacity:1;background:color-mix(in srgb,currentColor 25%,transparent);overflow:hidden}
+.auto .bars button.now::before{content:"";position:absolute;inset:0;border-radius:inherit;background:currentColor;opacity:.9;transform-origin:left;transform:scaleX(0);animation:fill var(--dwell,5s) linear forwards}
+.auto.held .bars button.now::before{animation-play-state:paused}
+@keyframes fill{to{transform:scaleX(1)}}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
@@ -963,13 +968,19 @@ const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = ma
 document.addEventListener('touchstart', () => {}, { passive: true });
 
 // fit text to the card width (numbers and the intro title)
+// measures a hidden copy of the parent, so siblings keep their styles and the real element's entrance animation never restarts
 function fit(el, max) {
-  const anim = el.style.animation, disp = el.style.display;
-  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content'; el.classList.add('fitting');
-  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
-  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = '';
+  const p = el.parentElement, i = [...p.children].indexOf(el), pc = p.cloneNode(true);
+  pc.classList.add('fitting'); pc.setAttribute('aria-hidden', 'true'); pc.removeAttribute('id');
+  pc.style.cssText += ';position:absolute;visibility:hidden;left:0;top:0;animation:none;width:' + p.clientWidth + 'px';
+  p.after(pc);
+  const c = pc.children[i];
+  c.style.cssText += ';animation:none;display:inline-block;width:max-content';
+  const base = parseFloat(getComputedStyle(c).fontSize), w = p.clientWidth * .97;
+  const ratio = w / c.getBoundingClientRect().width;
+  pc.remove();
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
-  el.style.animation = anim; el.style.display = disp; el.style.width = ''; el.classList.remove('fitting');
 }
 // long names shrink until every word fits and they take at most three lines; they never split mid-word
 function fitName(el) {
@@ -1026,10 +1037,12 @@ function countUp(el) {
   })(t0);
 }
 
+const auto = /[?&]autoplay/.test(location.search) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function go(i, quiet) {
   if (i < 0 || i >= slides.length || i === cur) return;
   slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
-  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', auto ? k < i : k <= i); b.classList.toggle('now', auto && k === i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  if (auto) bars.children[i].style.setProperty('--dwell', (/^(intro|summary)$/.test(slides[i].dataset.name) ? 6.5 : 4.5) + 's');
   cur = i;
   const s = slides[i];
   const theme = [...s.classList].find(c => c.startsWith('t-'));
@@ -1041,14 +1054,14 @@ function go(i, quiet) {
 }
 
 // tap left half of the card to go back, right half to go forward; swipe works too
-let sx = null, sy = null;
-deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+let sx = null, sy = null, st = 0;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); });
 deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
   if (e.target.closest('button, a')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
-  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && performance.now() - st < 500) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
 document.addEventListener('keydown', e => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
@@ -1137,7 +1150,7 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
     } catch (err) {
       if (err.name === 'AbortError') { label(ACT); busy(false); return; }
       // the share sheet needs a fresh tap after a slow render; keep the image for it
-      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Share now'); busy(false); return; }
+      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Tap to share'); busy(false); return; }
       download(blob, name); flash('Saved');
     }
     return;
@@ -1146,6 +1159,13 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
 }));
 
 if (location.search.includes('still')) document.body.classList.add('capturing');
+if (auto) {
+  document.body.classList.add('auto');
+  bars.addEventListener('animationend', e => { if (e.animationName === 'fill') go(cur + 1 < slides.length ? cur + 1 : 0, true); });
+  // press and hold pauses, like stories
+  deck.addEventListener('pointerdown', () => document.body.classList.add('held'));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => deck.addEventListener(t, () => document.body.classList.remove('held')));
+}
 const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
 go(start > 0 ? start : 0, true);
 })();
@@ -1241,7 +1261,7 @@ def generate_html(contacts_with_summaries, year, output_path):
           <div class="thread">
             <div class="bub r a1">I read your texts.</div>
             <div class="bub r a2">All of them.</div>
-            <div class="bub r a3">Here are the {count} people who made your year.</div>
+            <div class="bub r a3">{"Here's the one person" if count == 1 else f"Here are the {count} people"} who made your year.</div>
           </div>
           <p class="hint chrome a4">Tap to start</p>
         </div>''', 'intro'))
@@ -1252,7 +1272,7 @@ def generate_html(contacts_with_summaries, year, output_path):
     if themes and themes[-1] == 'cobalt':
         themes[-1] = 'night'
     for i, contact in enumerate(people):
-        summary = contact.get('summary') or 'No summary available.'
+        summary = contact.get('summary') or 'No story for this one. The numbers say enough.'
         slides.append(slide(themes[i], f'''
             <div class="who">{avatar(contact)}<div class="rank" aria-label="Number {i + 1}"><small>#</small>{i + 1}</div></div>
             <div class="hero name">{esc(contact['name'])}</div>
@@ -1278,7 +1298,7 @@ def generate_html(contacts_with_summaries, year, output_path):
           <div class="body">
             <h2 class="ptitle"><span>Wrapped</span> <span>{esc(year)}</span></h2>
             <div class="hero">{total:,}</div>
-            <p class="after">messages with the {count} people I talked to most.</p>
+            <p class="after">messages with the {"person" if count == 1 else f"{count} people"} I talked to most.</p>
             <ol class="rows tight">{top_rows}</ol>
             <button class="cta chrome" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
           </div>

@@ -647,7 +647,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
     elif ratio > 2: d['personality'] = ("THE YAPPER", "carries every conversation alone")
     elif d['starter_pct'] > 65: d['personality'] = ("CONVERSATION STARTER", "always making the first move")
     elif d['starter_pct'] < 35: d['personality'] = ("THE WAITER", "never texts first, ever")
-    else: d['personality'] = ("SUSPICIOUSLY NORMAL", "no notes. boring but stable.")
+    else: d['personality'] = ("SUSPICIOUSLY NORMAL", "no notes, boring but stable")
 
     # === CONTRIBUTION GRAPH DATA ===
     # Get daily message counts for the year
@@ -1022,6 +1022,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bars button{flex:1;height:3px;border:0;border-radius:3px;background:currentColor;opacity:.25;padding:0;position:relative}
 .bars button::after{content:"";position:absolute;inset:-10px 0}
 .bars button.done{opacity:.9}
+/* stories-style autoplay (site demo only, ?autoplay): the current bar fills, then the deck moves on */
+.auto .bars button.now{opacity:1;background:color-mix(in srgb,currentColor 25%,transparent);overflow:hidden}
+.auto .bars button.now::before{content:"";position:absolute;inset:0;border-radius:inherit;background:currentColor;opacity:.9;transform-origin:left;transform:scaleX(0);animation:fill var(--dwell,5s) linear forwards}
+.auto.held .bars button.now::before{animation-play-state:paused}
+@keyframes fill{to{transform:scaleX(1)}}
 .ctl{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;font-weight:500}
 .ctl .brand{font-family:var(--display);font-weight:800;font-stretch:120%;font-variation-settings:"wdth" 120;font-size:14px;opacity:.85}
 .pills{display:flex;gap:6px}
@@ -1120,13 +1125,19 @@ const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = ma
 document.addEventListener('touchstart', () => {}, { passive: true });
 
 // fit text to the card width (numbers and the intro title)
+// measures a hidden copy of the parent, so siblings keep their styles and the real element's entrance animation never restarts
 function fit(el, max) {
-  const anim = el.style.animation, disp = el.style.display;
-  el.style.animation = 'none'; el.style.fontSize = ''; el.style.display = 'inline-block'; el.style.width = 'max-content'; el.classList.add('fitting');
-  const base = parseFloat(getComputedStyle(el).fontSize), w = el.parentElement.clientWidth * .97;
-  const ratio = w / el.getBoundingClientRect().width;
+  el.style.fontSize = '';
+  const p = el.parentElement, i = [...p.children].indexOf(el), pc = p.cloneNode(true);
+  pc.classList.add('fitting'); pc.setAttribute('aria-hidden', 'true'); pc.removeAttribute('id');
+  pc.style.cssText += ';position:absolute;visibility:hidden;left:0;top:0;animation:none;width:' + p.clientWidth + 'px';
+  p.after(pc);
+  const c = pc.children[i];
+  c.style.cssText += ';animation:none;display:inline-block;width:max-content';
+  const base = parseFloat(getComputedStyle(c).fontSize), w = p.clientWidth * .97;
+  const ratio = w / c.getBoundingClientRect().width;
+  pc.remove();
   el.style.fontSize = (max ? Math.min(base * ratio, base * max) : Math.min(base, base * ratio)) + 'px';
-  el.style.animation = anim; el.style.display = disp; el.style.width = ''; el.classList.remove('fitting');
 }
 // long names shrink until every word fits and they take at most three lines; they never split mid-word
 function fitName(el) {
@@ -1183,10 +1194,12 @@ function countUp(el) {
   })(t0);
 }
 
+const auto = /[?&]autoplay/.test(location.search) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function go(i, quiet) {
   if (i < 0 || i >= slides.length || i === cur) return;
   slides.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
-  [...bars.children].forEach((b, k) => { b.classList.toggle('done', k <= i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  [...bars.children].forEach((b, k) => { b.classList.toggle('done', auto ? k < i : k <= i); b.classList.toggle('now', auto && k === i); b.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  if (auto) bars.children[i].style.setProperty('--dwell', (/^(intro|summary)$/.test(slides[i].dataset.name) ? 6.5 : 4.5) + 's');
   cur = i;
   const s = slides[i];
   const theme = [...s.classList].find(c => c.startsWith('t-'));
@@ -1198,14 +1211,14 @@ function go(i, quiet) {
 }
 
 // tap left half of the card to go back, right half to go forward; swipe works too
-let sx = null, sy = null;
-deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+let sx = null, sy = null, st = 0;
+deck.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); });
 deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
   if (e.target.closest('button, a')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
-  if (Math.abs(dx) < 8 && Math.abs(dy) < 8) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
+  if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && performance.now() - st < 500) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
 document.addEventListener('keydown', e => {
   if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
@@ -1294,7 +1307,7 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
     } catch (err) {
       if (err.name === 'AbortError') { label(ACT); busy(false); return; }
       // the share sheet needs a fresh tap after a slow render; keep the image for it
-      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Share now'); busy(false); return; }
+      if (err.name === 'NotAllowedError' && !held) { ready = { slide: s, blob }; label('Tap to share'); busy(false); return; }
       download(blob, name); flash('Saved');
     }
     return;
@@ -1303,6 +1316,13 @@ actBtns.forEach(btn => btn.addEventListener('click', async e => {
 }));
 
 if (location.search.includes('still')) document.body.classList.add('capturing');
+if (auto) {
+  document.body.classList.add('auto');
+  bars.addEventListener('animationend', e => { if (e.animationName === 'fill') go(cur + 1 < slides.length ? cur + 1 : 0, true); });
+  // press and hold pauses, like stories
+  deck.addEventListener('pointerdown', () => document.body.classList.add('held'));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => deck.addEventListener(t, () => document.body.classList.remove('held')));
+}
 const start = slides.findIndex(s => '#' + s.dataset.name === location.hash);
 go(start > 0 ? start : 0, true);
 })();
@@ -1398,7 +1418,7 @@ def gen_html(d, contacts, path):
         </div>''', 'intro'))
 
     # Total messages
-    per_day = f" That's about {msgs_per_day:,} a day, one bubble each." if msgs_per_day else ''
+    per_day = f" That's about {msgs_per_day:,} a day." if msgs_per_day else ''
     slides.append(slide('lilac', f'''
         <div class="pile" aria-hidden="true">{''.join('<i class="s"></i>' if (k * s[1]) % max(s[0],1) < s[1] else '<i></i>' for k in range(min(msgs_per_day, 240)))}</div>
         <p class="lead">This year you sent and received</p>
@@ -1456,7 +1476,7 @@ def gen_html(d, contacts, path):
             {avatar(top[0]["name"], 'xl')}
             <p class="lead">The person you texted most</p>
             <div class="hero name">{esc(top[0]["name"])}</div>
-            <p class="after">{num(top[0]["count"])} {plural(top[0]["count"], 'message')}. {round(top[0]["count"] / max(s[0], 1) * 100)}% of your whole year.</p>''', 'number-one'))
+            <p class="after">{num(top[0]["count"])} {plural(top[0]["count"], 'message')}. {(lambda p: f'{p}%' if p else 'Less than 1%')(round(top[0]["count"] / max(s[0], 1) * 100))} of all your messages.</p>''', 'number-one'))
         mx = top[0]['count'] or 1
         slides.append(slide('lilac', f'''
             <div class="stack" aria-hidden="true">{''.join(avatar(c["name"]) for c in top[:5])}</div>
@@ -1479,7 +1499,7 @@ def gen_html(d, contacts, path):
         gmx = lb[0]['msg_count'] if lb else 1
         slides.append(slide('cobalt', f'''
             <div class="stack groups" aria-hidden="true">{''.join(avatar(gname(gc)) for gc in lb[:5])}</div>
-            <p class="lead">You were in {num(gs['count'])} {plural(gs['count'], 'group chat')} and wrote {yours}% of what they said. You're {role}.</p>
+            <p class="lead">You were in {num(gs['count'])} {plural(gs['count'], 'group chat')} and sent {yours}% of the messages. You're {role}.</p>
             {rows([(gname(gc), f'{gc["msg_count"]:,}', gc["msg_count"] / gmx) for gc in lb]) if lb else ''}
             {more_btn(len(lb))}''', 'groups'))
 
@@ -1596,7 +1616,8 @@ def gen_html(d, contacts, path):
         slides.append(slide('lilac', f'''
             {stack([get_name(h, contacts) for h, _, _ in fr])}
             <p class="lead">These people drop everything for you</p>
-            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(fr)])}''', 'fast-responders'))
+            {rows([(n(h), mins(t), 1 - i / 6) for i, (h, t, _) in enumerate(fr)])}
+            <p class="after">Their typical reply time. You're a priority.</p>''', 'fast-responders'))
 
     # Who reaches out
     if d.get('initiation_breakdown'):
@@ -1608,9 +1629,9 @@ def gen_html(d, contacts, path):
             tight = lambda r: r.replace('class="rows"', 'class="rows tight"', 1)
             body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>' if len(you_out) + len(they_in) <= 6 else ''
             if you_out:
-                body += '<p class="lead">You always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out]))
+                body += '<p class="lead">You usually text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in you_out]))
             if they_in:
-                body += '<p class="lead gap">They always text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in]))
+                body += '<p class="lead gap">They usually text first</p>' + tight(rows([(n(h), f'{int(v/tc*100)}%', v / tc) for h, v, tc in they_in]))
             slides.append(slide('cobalt', body, 'who-reaches-out'))
 
     # Heating up / ghosted
@@ -1620,7 +1641,8 @@ def gen_html(d, contacts, path):
         slides.append(slide('pink', f'''
             <div class="sticker" aria-hidden="true">🔥</div>
             <p class="lead">Heating up since June</p>
-            {rows([(n(h), f'+{b-a:,}', (b - a) / hmx) for h, a, b in ht])}''', 'heating-up'))
+            {rows([(n(h), f'+{b-a:,}', (b - a) / hmx) for h, a, b in ht])}
+            <p class="after">Extra messages since June, compared to before.</p>''', 'heating-up'))
     if d.get('ghosted'):
         gh = d['ghosted'][:5]
         gmx2 = max(b for _, b, _ in gh) or 1
@@ -1628,7 +1650,7 @@ def gen_html(d, contacts, path):
             <div class="sticker" aria-hidden="true">👻</div>
             <p class="lead">They went quiet after June</p>
             {rows([(n(h), f'{b:,} <i>to</i> {a:,}', b / gmx2) for h, b, a in gh])}
-            <p class="after">Messages before June, then after.</p>''', 'ghosted'))
+            <p class="after">Their messages to you, before June and after.</p>''', 'ghosted'))
 
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
@@ -1650,12 +1672,12 @@ def gen_html(d, contacts, path):
           <div class="body">
             <h2 class="ptitle"><span>Wrapped</span> <span>{year}</span></h2>
             {wave}
-            <div class="hero">{s[0]:,}<small>{plural(s[0], 'text')}</small></div>
+            <div class="hero">{s[0]:,}<small>{plural(s[0], 'message')}</small></div>
             <dl class="grid4">
               <div><dt>People</dt><dd>{s[3]:,}</dd></div>
               <div><dt>Words</dt><dd>{words:,}</dd></div>
-              <div><dt>I start</dt><dd>{d['starter_pct']}%</dd></div>
-              <div><dt>Reply</dt><dd>{mins(d['resp'])}</dd></div>
+              <div><dt>I text first</dt><dd>{d['starter_pct']}%</dd></div>
+              <div><dt>Typical reply</dt><dd>{mins(d['resp'])}</dd></div>
             </dl>
             {one}
             <p class="diag-sm">{esc(ptype.lower())}</p>

@@ -47,3 +47,5 @@
 - people: a horizontal swipe that starts on the scrollable `.story` becomes a scroll (pointercancel), so it does not change slides. This existed before this pass.
 - Landing: main action is "Copy prompt" (Claude + Codex icons, simple-icons 15.0.0 paths inlined); prompt text lives in hidden <p> elements, Terminal command is a <details> fallback. Phones/tablets ((hover:none) and (pointer:coarse)) get "runs on a Mac" + send-link instead. Slides strip moved directly under the hero.
 - Agent prompt tells the agent not to open messages or the wrap; script stdout is counts only, so nothing personal reaches the model.
+- Headless Chrome clamps --window-size width to 500px, so it can't emulate a 360px phone. Card text scales with --cw (font-size cw/22), so dev/shots.sh sheets already show 360px proportions.
+- Parallel dev/shots.sh runs share Chrome's default profile and silently drop sheets. Run them one at a time.
