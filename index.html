@@ -96,7 +96,9 @@ p,dd{text-wrap:pretty}
 .trust{font-size:15px;color:var(--ink-2);margin-top:18px}
 .trust a{color:var(--ink);font-weight:600;text-underline-offset:.2em;margin-left:.3em;white-space:nowrap}
 .on-phone{display:none}
-.on-phone .lede{margin:0 0 4px}
+.on-phone .lede{margin:0 0 18px}
+.on-phone .trust{margin-top:10px}
+.textlink{font:inherit;color:var(--ink-2);font-weight:500;background:none;border:0;padding:6px 0;text-decoration:underline;text-underline-offset:.2em;cursor:pointer}
 .cmd{background:var(--ink);color:var(--paper);border-radius:18px;padding:18px 18px 18px 22px;display:flex;align-items:center;gap:14px;max-width:560px}
 .cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;min-width:0;overflow-wrap:anywhere}
 .cmd code .p{color:var(--pink);user-select:none}
@@ -104,7 +106,7 @@ p,dd{text-wrap:pretty}
 .copy.done{background:var(--pink)}
 .hint{font-size:15px;color:var(--ink-2);margin-top:14px;max-width:52ch}
 .hint a{font-weight:600;color:var(--ink)}
-.send-mac{margin-top:14px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
+.send-mac{display:inline-block;text-decoration:none;margin-top:4px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
 
 /* live demo */
 .demo{justify-self:end;width:min(100%,380px);animation:rise .7s var(--ease-out) both .2s}
@@ -253,9 +255,10 @@ footer .links{display:flex;gap:22px}
         <p class="trust">100% local. Nothing leaves your Mac. <a href="#privacy">How it works</a></p>
       </div>
       <div class="on-phone">
-        <p class="lede">Wrapped runs on a Mac, where your messages are. Send yourself the link and open it there.</p>
+        <p class="lede">It runs on your Mac. Text yourself the link and open it there.</p>
+        <a class="send-mac" href="sms:?&amp;body=Make%20my%20Wrapped%202026%20on%20my%20Mac%3A%20https%3A%2F%2Fwrap2026.com">Text it to myself</a>
+        <p class="trust"><button class="textlink" id="send-mac">Or share it another way</button></p>
         <p class="trust">100% local. Nothing leaves your Mac. <a href="#privacy">How it works</a></p>
-        <button class="send-mac" id="send-mac">Send this link to my Mac</button>
       </div>
     </div>
   </div>
@@ -444,7 +447,7 @@ document.getElementById('copy-src').addEventListener('click',async e=>{
 // send to Mac (phones)
 const sm=document.getElementById('send-mac');
 sm.addEventListener('click',async()=>{
-  if(navigator.share){try{await navigator.share({title:'Wrapped 2026',text:'Run this on my Mac',url:'https://wrap2026.com'})}catch(_){}}
+  if(navigator.share){try{await navigator.share({title:'Wrapped 2026',text:'Make my Wrapped 2026 on my Mac',url:'https://wrap2026.com'})}catch(_){}}
   else{flash(sm,(await copyText('https://wrap2026.com'))?'Link copied':'wrap2026.com')}
 });
 
