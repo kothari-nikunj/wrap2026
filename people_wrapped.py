@@ -893,6 +893,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cta:not(:disabled):active{transform:scale(.96)}
 .cta:focus-visible{outline-color:var(--fg)}
 .cta svg{width:1.1em;height:1.1em}
+/* poster color picker: never in the exported image (.chrome) */
+.swatches{display:flex;justify-content:center;gap:.7em;margin-top:1em}
+.swatches button{width:1.6em;height:1.6em;border-radius:50%;border:0;padding:0;background:var(--sw);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--fg) 35%,transparent);position:relative;transition:transform .16s var(--ease)}
+.swatches button::after{content:"";position:absolute;inset:-.7em}
+.swatches button[aria-pressed=true]{box-shadow:0 0 0 2px var(--fg),inset 0 0 0 1.5px color-mix(in srgb,var(--fg) 35%,transparent)}
+.swatches button:active{transform:scale(.9)}
+.on .swatches{animation:rise .5s var(--ease) backwards;animation-delay:.58s}
 
 /* chrome: progress + controls, sized to the card */
 .top{position:fixed;left:50%;transform:translateX(-50%);width:var(--cw);top:calc((100dvh - var(--ch)) / 2);padding:calc(var(--cw)*.035) calc(var(--cw)*.07) 0;z-index:10;color:var(--chrome,#fff);transition:color .3s ease}
@@ -998,8 +1005,30 @@ const bars = document.getElementById('bars');
 const top = document.getElementById('top');
 const dark = new Set(['t-cobalt','t-ink','t-night','t-stage','t-poster-a','t-poster-b']);
 // poster palette: a cobalt (default), b ink, c lilac, d pink; ?poster=c previews another
-const POSTER = (location.search.match(/[?&]poster=([a-d])\b/) || [, 'a'])[1];
-slides.forEach(s => { if (s.dataset.name === 'summary') s.classList.add('t-poster-' + POSTER); });
+let saved = null; try { saved = localStorage.getItem('wrap-poster'); } catch (_) {}
+const POSTER = (location.search.match(/[?&]poster=([a-d])\b/) || [, /^[a-d]$/.test(saved || '') ? saved : 'a'])[1];
+const posterSlide = slides.find(s => s.dataset.name === 'summary');
+const POSTERS = [['a', 'Cobalt', '#2F4BFF'], ['b', 'Night', '#241038'], ['c', 'Lilac', '#EEE8FF'], ['d', 'Pink', '#FF5FA2']];
+function setPoster(p) {
+  if (!posterSlide) return;
+  POSTERS.forEach(([k]) => posterSlide.classList.toggle('t-poster-' + k, k === p));
+  posterSlide.querySelectorAll('.swatches button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === p));
+  if (slides[cur] === posterSlide) {
+    top.style.setProperty('--chrome', dark.has('t-poster-' + p) ? '#fff' : '#241038');
+    if (phone.matches) themeMeta.content = getComputedStyle(posterSlide).getPropertyValue('--bg').trim();
+  }
+}
+if (posterSlide) {
+  posterSlide.classList.add('t-poster-' + POSTER);
+  const cta = posterSlide.querySelector('.cta');
+  if (cta) {
+    const sw = document.createElement('div');
+    sw.className = 'swatches chrome'; sw.setAttribute('role', 'group'); sw.setAttribute('aria-label', 'Poster color');
+    sw.innerHTML = POSTERS.map(([k, name, c]) => `<button type="button" data-p="${k}" aria-label="${name}" aria-pressed="${k === POSTER}" style="--sw:${c}"></button>`).join('');
+    sw.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); setPoster(b.dataset.p); buzz(); try { localStorage.setItem('wrap-poster', b.dataset.p); } catch (_) {} });
+    cta.before(sw);
+  }
+}
 const themeOf = s => [...s.classList].filter(c => c.startsWith('t-'));
 let cur = -1;
 const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = matchMedia('(max-width:540px)');

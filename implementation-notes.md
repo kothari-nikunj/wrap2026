@@ -68,3 +68,4 @@
 - `margin-bottom:auto` on a top visual no longer does anything (the flex spacers take the free space first). Add new top visuals to the `.body>:is(...)` list.
 - A flex child with only percentage-height children (the spark) collapses to 0 when the body overflows; `.body>.spark` is `flex-shrink:0`, only the poster wave may shrink.
 - CDP: navigating to the same file with a new #hash fires no load event; go via about:blank.
+- Poster color: default cobalt (a); the summary slide shows 4 color dots (.swatches.chrome, injected by JS above the Share CTA). Choice persists in localStorage ('wrap-poster'); ?poster= overrides; export uses the current palette and drops the dots.
