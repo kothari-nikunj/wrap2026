@@ -49,3 +49,22 @@
 - Agent prompt tells the agent not to open messages or the wrap; script stdout is counts only, so nothing personal reaches the model.
 - Headless Chrome clamps --window-size width to 500px, so it can't emulate a 360px phone. Card text scales with --cw (font-size cw/22), so dev/shots.sh sheets already show 360px proportions.
 - Parallel dev/shots.sh runs share Chrome's default profile and silently drop sheets. Run them one at a time.
+
+## Owner fixes pass (2026-11-05): expanded lists, vertical rhythm, who-reaches-out, poster, graph scrub
+### Changes
+- Layout rule (template_shell `.body`): content is centered between the chrome and the footer by two flex spacers (`.body::before/::after{flex:1 1 0}`); they shrink to 0, so tall content starts under the chrome instead of riding up over it. Top visuals keep a fixed 1.1em gap to the text (one selector list in `.body>:is(...)`). Body padding-bottom 1em + footer padding = about 2em minimum gap above the footer. Intro and poster opt out of the spacers.
+- Expanded lists (`.rows.all`): compact rows, stack/spark/bubbles/sticker hidden, body scrolls inside the card only as a last resort.
+- iMessage busiest-day shows top 3 (was 5) with "Show all N"; the toggle label is generic now ("Show top N").
+- Who reaches out: `MIN_CONVOS = 10` conversations, and rows whose display name is a raw phone number are dropped (imessage, whatsapp, combined). A side with fewer than 2 rows is dropped; no rows at all = no slide (existing behaviour).
+- Poster: kicker title, waveform, total, small app split (`.pmeta`), personality as the one loud accent (fitName), #1, three stats (`.stats3`). Palettes `t-poster-a..d` on the summary slide; default is the `POSTER` constant in template_shell JS; `?poster=c` previews.
+- Day graphs (`.spark[data-c]`, data-y + data-c counts + data-u unit): hover/drag shows "Mon D · N messages"; at rest the busiest-day label shows the peak, the poster label is hidden. Deck pointerup ignores events on the graph.
+### Deviations
+- SQL already required 5+ conversations, so the owner's 100% unknown numbers were not 1–2-conversation contacts. They were most likely automated/business senders. A threshold alone would not remove them, so unsaved numbers are also filtered (conservative: these lists are about people you know).
+- Poster graph label is hidden at rest (shown only while hovering/scrubbing), unlike busiest-day. A permanent pill on the poster added noise to the calm layout.
+- Calls poster gained the daily waveform (it had none) so all posters share one layout. Calls stats: People, Talk time, Missed (Answered dropped).
+- Combined platform waffle cells flattened (aspect 1.45 -> 1.7) so the slide fits a 9:16 card with the new footer gap.
+- Palette A keeps the pink peak bar on cobalt (1.65:1 non-text contrast, unchanged from before); the peak is also the tallest bar.
+### Gotchas
+- `margin-bottom:auto` on a top visual no longer does anything (the flex spacers take the free space first). Add new top visuals to the `.body>:is(...)` list.
+- A flex child with only percentage-height children (the spark) collapses to 0 when the body overflows; `.body>.spark` is `flex-shrink:0`, only the poster wave may shrink.
+- CDP: navigating to the same file with a new #hash fires no load event; go via about:blank.

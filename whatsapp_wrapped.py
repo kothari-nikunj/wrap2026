@@ -626,7 +626,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .slide.past{transform:translateX(-5%) scale(.97)}
 .slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .3s var(--ease),transform .35s var(--ease),visibility 0s}
 .card{position:relative;width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .075);background:var(--bg);color:var(--fg);font-size:calc(var(--cw) / 22);padding:5.2em 1.6em 1.3em;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
-.body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.2em;min-height:0}
+.body{flex:1;display:flex;flex-direction:column;gap:.2em;min-height:0;padding-bottom:1em}
+/* vertical rhythm: one rule for every slide. The content block (top visual + text) is centered between the
+   chrome and the footer. The spacers shrink to 0 when content is tall, so it never rides up under the chrome. */
+.body::before,.body::after{content:"";flex:1 1 0}
+.body:has(>.intro)::before,.body:has(>.intro)::after{content:none}
+.body>:is(.pile,.redact,.chain,.spark,.sticker,.stack,.av.xl,.thread,.clock,.wave,.share,.tiles,.ringing,.waffle,.pies,.notes,.cal,.cols,.lag,.who){margin-bottom:1.1em}
+.body>.spark{padding-bottom:0;flex-shrink:0}
+.body:has(>.rows)>.spark{height:5em}
 .mark{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-stretch:115%;font-variation-settings:"wdth" 115;font-size:.62em;opacity:.85;padding-top:1.6em;letter-spacing:.01em}
 
 /* type */
@@ -661,6 +668,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row:last-child{border-bottom-color:transparent}
 .row.extra{display:none}
 .rows.all .row.extra{display:grid}
+/* expanded to 10: compact rows, decoration steps aside, and the body scrolls inside the card as a last resort */
+.rows.all{gap:0;margin-top:.6em}
+.rows.all .row{padding:.34em 0;font-size:.85em}
+.rows.all .row:first-child{padding:.45em 0;font-size:1em}
+.body:has(.rows.all)>:is(.stack,.spark,.thread,.sticker,.pile,.av.xl){display:none}
+.body:has(.rows.all){overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -.3em;padding-left:.3em;padding-right:.3em}
+.body:has(.rows.all)::-webkit-scrollbar{display:none}
 .rows.tight{margin-top:.5em;gap:.1em}
 .rows.tight .row{padding:.4em 0}
 .rows.tight .row:first-child{font-size:1em}
@@ -706,6 +720,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .spark{display:flex;align-items:flex-end;gap:0;height:9em;margin-bottom:auto;padding-bottom:1.4em}
 .spark i{flex:1;height:var(--h);background:var(--ink);opacity:.28;border-radius:1px 1px 0 0}
 .spark i.pk{opacity:1;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
+/* day graph: hover or drag reads a day; the label sits above the bars */
+.spark[data-c]{position:relative;touch-action:none;cursor:crosshair;margin-top:2.2em}
+.spark .sl{position:absolute;left:0;top:-.5em;translate:0 -100%;padding:.3em .7em;border-radius:999px;background:var(--fg);color:var(--bg);font-size:.72em;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none;transition:opacity .15s var(--ease)}
+.spark i.cur{opacity:1}
 
 /* sticker */
 .sticker.big{font-size:6em}
@@ -773,7 +791,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* summary */
 .t-stage .tilt{perspective:1200px}
-.summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%)}
+.summary{transform-style:preserve-3d;transition:transform .5s var(--ease);background:var(--pbg)}
+/* poster palettes: t-poster-a (cobalt, default) to d; JS picks POSTER (or ?poster=b) */
+.t-stage,.t-poster-a{--pbg:linear-gradient(160deg,#4A62FF 0%,var(--cobalt) 45%,#2236D9 100%);--acc:#FFC2DC;--bar:var(--white);--bo:.4;--pk:var(--pink);--cbg:var(--white);--cfg:var(--cobalt)}
+.t-poster-b{--bg:var(--ink);--fg:var(--lilac);--soft:rgba(238,232,255,.1);--tint:var(--pink);--pbg:linear-gradient(160deg,var(--ink) 0%,var(--night) 100%);--acc:var(--pink);--bar:var(--lilac);--bo:.35;--pk:var(--pink);--cbg:var(--pink);--cfg:var(--ink)}
+.t-poster-c{--bg:var(--lilac);--fg:var(--ink);--soft:rgba(36,16,56,.08);--tint:var(--cobalt);--pbg:var(--lilac);--acc:var(--cobalt);--bar:var(--ink);--bo:.25;--pk:var(--cobalt);--cbg:var(--cobalt);--cfg:var(--white)}
+.t-poster-d{--bg:var(--pink);--fg:var(--ink);--soft:rgba(36,16,56,.1);--tint:var(--white);--pbg:var(--pink);--acc:var(--ink);--bar:var(--ink);--bo:.25;--pk:var(--ink);--cbg:var(--ink);--cfg:var(--pink)}
 .summary .sheen{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.28),transparent 45%);mix-blend-mode:soft-light;z-index:2}
 .summary .hero{font-size:4.2em}
 .grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9em 1em;margin-top:1.3em;padding-top:1.1em;border-top:1.5px solid var(--soft)}
@@ -782,23 +805,35 @@ button{font:inherit;color:inherit;cursor:pointer}
 .diag-sm{font-family:var(--display);font-weight:900;font-stretch:55%;font-variation-settings:"wdth" 55;font-size:2.4em;line-height:.9;margin-top:.7em;color:#FFC2DC}
 .top3{font-size:.85em;opacity:.85;margin-top:.5em}
 /* summary poster: the slide people post */
-.ptitle{font-family:var(--display);font-weight:800;line-height:.9;letter-spacing:-.03em;white-space:nowrap;margin-bottom:auto;font-size:2.4em}
+.ptitle{font-family:var(--display);font-weight:800;line-height:.9;letter-spacing:-.03em;white-space:nowrap;font-size:2.4em}
 .ptitle span:first-child{font-stretch:58%;font-variation-settings:"wdth" 58}
 .ptitle span:last-child{font-weight:900;font-stretch:150%;font-variation-settings:"wdth" 150;margin-left:.12em}
+/* poster layout: title, graph and total on top; personality, #1 and three stats at the bottom */
+.poster .body::before,.poster .body::after{content:none}
+.poster .body{padding-bottom:1em}
 .poster .hero small{opacity:.85}
-.wave{height:5.5em;padding:0}
-.wave i{background:var(--white);opacity:.4}
-.wave i.pk{background:var(--pink);opacity:1;box-shadow:none}
-.one{display:flex;align-items:center;gap:.7em;margin-top:1.2em}
-.one .av{width:2.9em;height:2.9em;flex:none;box-shadow:none}
-.one b{display:block;font-family:var(--display);font-weight:800;font-stretch:75%;font-variation-settings:"wdth" 75;font-size:1.7em;line-height:1;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pwave{height:5em;padding:0;margin:1.6em 0 .5em}
+.poster .pwave{flex-shrink:1;min-height:2.6em;margin-top:1.2em}
+.pwave i{background:var(--bar);opacity:var(--bo)}
+.pwave i.pk{background:var(--pk);opacity:1;box-shadow:none}
+.pwave .sl{opacity:0}.pwave.hot .sl{opacity:1}
+.pmeta{font-size:.78em;font-weight:500;opacity:.85;margin-top:.15em}
+.poster .ptitle{font-size:1.9em;margin-bottom:auto}
+/* white at .85 on the light end of the cobalt gradient is 3.8:1; full white is 4.7:1 */
+.t-poster-a .poster :is(.pmeta,.one span,.stats3 dt,.hero small){opacity:1}
+.poster .diag-sm{margin-top:auto;padding-top:.15em;font-size:3.3em;line-height:.88;letter-spacing:-.01em;color:var(--acc);text-wrap:balance}
+.one{display:flex;align-items:center;gap:.6em;margin-top:.9em}
+.one .av{--ab:var(--fg);--af:var(--bg);width:2.3em;height:2.3em;font-size:.9em;flex:none;box-shadow:none}
+.one b{display:block;font-family:var(--display);font-weight:800;font-stretch:75%;font-variation-settings:"wdth" 75;font-size:1.3em;line-height:1.05;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .one div{min-width:0}
-.one span{font-size:.8em;opacity:.85}
-.poster .diag-sm{margin-top:.6em}
+.one span{font-size:.72em;opacity:.85}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.1em}
+.stats3 dt{font-size:.68em;opacity:.85}
+.stats3 dd{font-family:var(--display);font-weight:800;font-stretch:110%;font-variation-settings:"wdth" 110;font-size:1.15em;font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
 .poster .mark{opacity:1;gap:1em}
-.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.9em 1em;background:var(--white);color:var(--cobalt);font-weight:600;font-size:.95em;transition:transform .15s var(--ease)}
+.cta{display:flex;justify-content:center;align-items:center;gap:.5em;margin-top:1.2em;border:0;border-radius:999px;padding:.85em 1em;background:var(--cbg,var(--white));color:var(--cfg,var(--cobalt));font-weight:600;font-size:.9em;transition:transform .15s var(--ease)}
 .cta:not(:disabled):active{transform:scale(.96)}
-.cta:focus-visible{outline-color:var(--white)}
+.cta:focus-visible{outline-color:var(--fg)}
 .cta svg{width:1.1em;height:1.1em}
 
 /* chrome: progress + controls, sized to the card */
@@ -849,7 +884,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .on .vs div>*{animation:fade .3s var(--ease) both;animation-delay:.5s}
 .on .ptitle span:first-child{animation:rise .8s var(--ease) both}
 .on .ptitle span:last-child{animation:stretch 1.4s var(--ease) both}
-.on .one{animation:rise .5s var(--ease) both;animation-delay:.4s}
+.on .one,.on .stats3,.on .pmeta{animation:rise .5s var(--ease) both;animation-delay:.4s}
 .on .cta{animation:rise .5s var(--ease) backwards;animation-delay:.5s}
 @keyframes sticker{from{opacity:0;transform:rotate(-40deg) scale(.4)}to{opacity:1;transform:rotate(-8deg)}}
 @keyframes hand{from{transform:rotate(180deg)}}
@@ -903,7 +938,11 @@ const deck = document.getElementById('deck');
 const slides = [...deck.querySelectorAll('.slide')];
 const bars = document.getElementById('bars');
 const top = document.getElementById('top');
-const dark = new Set(['t-cobalt','t-ink','t-night','t-stage']);
+const dark = new Set(['t-cobalt','t-ink','t-night','t-stage','t-poster-a','t-poster-b']);
+// poster palette: a cobalt (default), b ink, c lilac, d pink; ?poster=c previews another
+const POSTER = (location.search.match(/[?&]poster=([a-d])\b/) || [, 'a'])[1];
+slides.forEach(s => { if (s.dataset.name === 'summary') s.classList.add('t-poster-' + POSTER); });
+const themeOf = s => [...s.classList].filter(c => c.startsWith('t-'));
 let cur = -1;
 const themeMeta = document.querySelector('meta[name="theme-color"]'), phone = matchMedia('(max-width:540px)');
 // iOS Safari only applies :active (press feedback) on touch when a touchstart listener exists
@@ -935,9 +974,9 @@ function fitName(el) {
 function fitAll() {
   document.querySelectorAll('.stretch span').forEach(e => fit(e, 3));
   document.querySelectorAll('.hero.fit').forEach(e => fit(e));
-  document.querySelectorAll('.ptitle').forEach(e => fit(e, 3));
-  document.querySelectorAll('.split b, .grid4 dd').forEach(e => fit(e));
-  document.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
+  document.querySelectorAll('.ptitle:not(.poster .ptitle)').forEach(e => fit(e, 3));
+  document.querySelectorAll('.split b, .grid4 dd, .stats3 dd').forEach(e => fit(e));
+  document.querySelectorAll('.hero.name, .hero.diag, .poster .diag-sm').forEach(fitName);
 }
 document.querySelectorAll('.hero').forEach(h => { if (!h.classList.contains('name') && !h.classList.contains('diag')) h.classList.add('fit'); });
 document.querySelectorAll('.redact, .chain, .spark').forEach(p => [...p.children].forEach((c, k) => c.style.setProperty('--k', k)));
@@ -987,7 +1026,7 @@ function go(i, quiet) {
   if (auto) bars.children[i].style.setProperty('--dwell', (/^(intro|summary)$/.test(slides[i].dataset.name) ? 6.5 : 4.5) + 's');
   cur = i;
   const s = slides[i];
-  const theme = [...s.classList].find(c => c.startsWith('t-'));
+  const theme = themeOf(s).pop();
   top.style.setProperty('--chrome', dark.has(theme) ? '#fff' : '#241038');
   if (phone.matches) themeMeta.content = getComputedStyle(s).getPropertyValue('--bg').trim();
   s.querySelectorAll('.count').forEach(countUp);
@@ -1002,6 +1041,7 @@ deck.addEventListener('pointerup', e => {
   if (sx === null) return;
   const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
   if (e.target.closest('button, a')) return;
+  if (e.target.closest('.spark[data-c]')) return;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { go(cur + (dx < 0 ? 1 : -1)); return; }
   if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && performance.now() - st < 500) { const r = slides[cur].querySelector('.card').getBoundingClientRect(); go(e.clientX < r.left + r.width / 2 ? cur - 1 : cur + 1); }
 });
@@ -1017,8 +1057,7 @@ document.querySelectorAll('[data-more]').forEach(b => b.addEventListener('click'
   e.stopPropagation();
   const list = b.closest('.body').querySelector('.rows');
   const all = list.classList.toggle('all');
-  b.textContent = all ? 'Show top 5' : b.textContent.replace('Show top 5', '');
-  if (!all) b.textContent = 'Show all ' + list.children.length;
+  b.textContent = all ? 'Show top ' + list.querySelectorAll('.row:not(.extra)').length : 'Show all ' + list.children.length;
   buzz();
 }));
 
@@ -1027,6 +1066,36 @@ const tip = document.getElementById('tip');
 document.querySelectorAll('.dots i[data-tip]').forEach(d => {
   d.addEventListener('pointerenter', e => { if (e.pointerType !== 'mouse') return; const r = d.getBoundingClientRect(); tip.textContent = d.dataset.tip; tip.style.left = (r.left + r.width / 2) + 'px'; tip.style.top = r.top + 'px'; tip.style.opacity = 1; });
   d.addEventListener('pointerleave', () => tip.style.opacity = 0);
+});
+
+// day graphs: hover (mouse) or drag (finger) reads one day; at rest the label shows the peak.
+// The deck ignores pointerup on a graph, so a scrub never changes slide.
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function dayAt(sp, k, hot) {
+  const c = sp._c || (sp._c = sp.dataset.c.split(',').map(Number)), bars = sp.querySelectorAll('i');
+  const pk = [...bars].findIndex(b => b.classList.contains('pk'));
+  if (k == null) k = pk < 0 ? c.indexOf(Math.max(...c)) : pk;
+  let sl = sp.querySelector('.sl');
+  if (!sl) { sl = document.createElement('b'); sl.className = 'sl'; sp.appendChild(sl); }
+  const d = new Date(+sp.dataset.y, 0, 1 + k), u = sp.dataset.u || 'message';
+  sl.textContent = `${MON[d.getMonth()]} ${d.getDate()} · ${c[k].toLocaleString('en-US')} ${c[k] === 1 ? u : u + 's'}`;
+  sp.querySelectorAll('i.cur').forEach(b => b.classList.remove('cur'));
+  if (hot) bars[k].classList.add('cur');
+  sp.classList.toggle('hot', !!hot);
+  const w = sl.offsetWidth, x = bars[k].offsetLeft + bars[k].offsetWidth / 2;
+  sl.style.transform = `translateX(${Math.max(0, Math.min(sp.clientWidth - w, x - w / 2))}px)`;
+}
+document.querySelectorAll('.spark[data-c]').forEach(sp => {
+  const n = sp.querySelectorAll('i').length;
+  const at = e => { const r = sp.getBoundingClientRect(); return Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n))); };
+  const rest = () => dayAt(sp);
+  sp.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') sp.setPointerCapture(e.pointerId); dayAt(sp, at(e), true); });
+  sp.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || sp.hasPointerCapture(e.pointerId)) dayAt(sp, at(e), true); });
+  sp.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') rest(); });
+  sp.addEventListener('pointercancel', rest);
+  sp.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') rest(); });
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(rest);
+  addEventListener('resize', rest);
 });
 
 // summary card tilts toward the pointer
@@ -1057,7 +1126,7 @@ function flash(t, ms) { label(t); clearTimeout(resetT); resetT = setTimeout(() =
 async function render(s) {
   // capture a clone at a fixed 360x640 so every device gets exactly 1080x1920, final frame, no chrome
   const box = document.createElement('section');
-  box.className = [...s.classList].find(c => c.startsWith('t-')) + ' capturing';
+  box.className = themeOf(s).join(' ') + ' capturing';
   box.setAttribute('aria-hidden', 'true');
   box.style.cssText = 'position:fixed;left:-10000px;top:0;--cw:360px;--ch:640px';
   const card = s.querySelector('.card').cloneNode(true);
@@ -1065,9 +1134,10 @@ async function render(s) {
   card.querySelectorAll('.chrome').forEach(n => n.remove());
   box.appendChild(card); document.body.appendChild(box);
   card.querySelectorAll('.count').forEach(c => c.textContent = (c.dataset.fmt === 'dec' ? (+c.dataset.to).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : (+c.dataset.to).toLocaleString('en-US')) + (c.dataset.suffix || ''));
-  card.querySelectorAll('.hero.fit, .split b, .grid4 dd').forEach(e => fit(e));
-  card.querySelectorAll('.hero.name, .hero.diag').forEach(fitName);
-  card.querySelectorAll('.ptitle, .stretch span').forEach(e => fit(e, 3));
+  card.querySelectorAll('.hero.fit, .split b, .grid4 dd, .stats3 dd').forEach(e => fit(e));
+  card.querySelectorAll('.spark[data-c]').forEach(sp => dayAt(sp));
+  card.querySelectorAll('.hero.name, .hero.diag, .diag-sm').forEach(fitName);
+  card.querySelectorAll('.ptitle:not(.poster .ptitle), .stretch span').forEach(e => fit(e, 3));
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
@@ -1152,6 +1222,7 @@ def gen_html(d, contacts, path):
         shown = f"{v:,}" if fmt == 'int' else f"{v:,.1f}"
         return f'<span class="count" data-to="{v}" data-fmt="{fmt}" data-suffix="{esc(suffix)}">{shown}{esc(suffix)}</span>'
 
+    MIN_CONVOS = 10
     def plural(v, one, many=None):
         return one if v == 1 else (many or one + 's')
     def mins(m):
@@ -1355,7 +1426,7 @@ def gen_html(d, contacts, path):
             last = now.date() if year == now.year else ddate(year, 12, 31)
             days = [ddate(year, 1, 1) + timedelta(days=k) for k in range((last - ddate(year, 1, 1)).days + 1)]
             bars = ''.join(f'<i class="{"pk" if x.isoformat() == d["busiest_day"][0] else ""}" style="--h:{max(2, dc.get(x.isoformat(), 0) / peak * 100):.1f}%"></i>' for x in days)
-            spark = f'<div class="spark" aria-hidden="true">{bars}</div>'
+            spark = f'<div class="spark" aria-hidden="true" data-y="{year}" data-c="{",".join(str(dc.get(x.isoformat(), 0)) for x in days)}">{bars}</div>'
         slides.append(slide('pink', f'''
             {spark}
             <p class="lead">Your most unhinged day</p>
@@ -1400,8 +1471,11 @@ def gen_html(d, contacts, path):
     if d.get('initiation_breakdown'):
         ib = d['initiation_breakdown']
         pct_desc = lambda xs: sorted(xs, key=lambda x: x[1] / x[2], reverse=True)
-        you_out = pct_desc([(h, y, tc) for h, y, t, tc in ib if tc > 0 and y / tc > 0.7][:5])
-        they_in = pct_desc([(h, t, tc) for h, y, t, tc in ib if tc > 0 and t / tc > 0.7][:5])
+        # 10+ conversations so a percentage means something; unsaved numbers are mostly automated senders
+        ok = [(h, y, t, tc) for h, y, t, tc in ib if tc >= MIN_CONVOS and not re.fullmatch(r'[+\d\s().-]+', get_name(h, contacts))]
+        you_out = pct_desc([(h, y, tc) for h, y, t, tc in ok if y / tc > 0.7][:5])
+        they_in = pct_desc([(h, t, tc) for h, y, t, tc in ok if t / tc > 0.7][:5])
+        you_out, they_in = (you_out if len(you_out) > 1 else []), (they_in if len(they_in) > 1 else [])
         if you_out or they_in:
             tight = lambda r: r.replace('class="rows"', 'class="rows tight"', 1)
             body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>' if len(you_out) + len(they_in) <= 6 else ''
@@ -1439,8 +1513,8 @@ def gen_html(d, contacts, path):
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
-    wave = spark.replace('class="spark"', 'class="spark wave"', 1) if d['busiest_day'] else ''
-    one = f'<div class="one">{avatar(get_name(top[0][0], contacts))}<div><b>{n(top[0][0])}</b><span>My #1, {top[0][1]:,} {plural(top[0][1], 'message')}</span></div></div>' if top else ''
+    wave = spark.replace('class="spark"', 'class="spark pwave"', 1) if d['busiest_day'] else ''
+    one = f'<div class="one">{avatar(get_name(top[0][0], contacts))}<div><b>{n(top[0][0])}</b><span>My #1, {top[0][1]:,} {plural(top[0][1], "message")}</span></div></div>' if top else ''
     slides.append(f'''
     <section class="slide t-stage" data-name="summary">
       <div class="tilt">
@@ -1450,14 +1524,13 @@ def gen_html(d, contacts, path):
             <h2 class="ptitle"><span>Wrapped</span> <span>{year}</span></h2>
             {wave}
             <div class="hero">{s[0]:,}<small>{plural(s[0], 'message')}</small></div>
-            <dl class="grid4">
+            <p class="diag-sm">{esc(ptype.lower())}</p>
+            {one}
+            <dl class="stats3">
               <div><dt>People</dt><dd>{s[3]:,}</dd></div>
-              <div><dt>Words</dt><dd>{words:,}</dd></div>
               <div><dt>I text first</dt><dd>{d['starter_pct']}%</dd></div>
               <div><dt>Typical reply</dt><dd>{mins(d['resp'])}</dd></div>
             </dl>
-            {one}
-            <p class="diag-sm">{esc(ptype.lower())}</p>
             <button class="cta chrome" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
           </div>
           <footer class="mark"><span>wrap2026.com</span><span>WhatsApp · {year}</span></footer>

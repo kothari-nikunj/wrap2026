@@ -32,6 +32,7 @@ def gen_html(d, contacts, path):
         shown = f"{v:,}" if fmt == 'int' else f"{v:,.1f}"
         return f'<span class="count" data-to="{v}" data-fmt="{fmt}" data-suffix="{esc(suffix)}">{shown}{esc(suffix)}</span>'
 
+    MIN_CONVOS = 10
     def plural(v, one, many=None):
         return one if v == 1 else (many or one + 's')
     def mins(m):
@@ -65,8 +66,8 @@ def gen_html(d, contacts, path):
     def stack(names):
         return '<div class="stack" aria-hidden="true">' + ''.join(avatar(x) for x in names[:5]) + '</div>'
 
-    def more_btn(count):
-        return f'<button class="more chrome" data-more>Show all {count}</button>' if count > 5 else ''
+    def more_btn(count, shown=5):
+        return f'<button class="more chrome" data-more>Show all {count}</button>' if count > shown else ''
 
     def slide(theme, body, name):
         return f'<section class="slide t-{theme}" data-name="{name}"><div class="card"><div class="body">{body}</div><footer class="mark"><span>wrap2026.com</span><span>iMessage · {year}</span></footer></div></section>'
@@ -244,14 +245,14 @@ def gen_html(d, contacts, path):
             last = now.date() if year == now.year else ddate(year, 12, 31)
             days = [ddate(year, 1, 1) + timedelta(days=k) for k in range((last - ddate(year, 1, 1)).days + 1)]
             bars = ''.join(f'<i class="{"pk" if x.isoformat() == d["busiest_day"][0] else ""}" style="--h:{max(2, dc.get(x.isoformat(), 0) / peak * 100):.1f}%"></i>' for x in days)
-            spark = f'<div class="spark" aria-hidden="true">{bars}</div>'
+            spark = f'<div class="spark" aria-hidden="true" data-y="{year}" data-c="{",".join(str(dc.get(x.isoformat(), 0)) for x in days)}">{bars}</div>'
         slides.append(slide('pink', f'''
             {spark}
             <p class="lead">Your most unhinged day</p>
             <div class="hero">{busiest_str}</div>
             <p class="after">{num(busiest_count)} {plural(busiest_count, 'message')}{busiest_vs}. What happened?</p>
-            {rows([(n(h), f'{c:,}', c / bmx) for h, c in busiest_top[:10]]) if busiest_top else ''}
-            {more_btn(len(busiest_top[:10]))}''', 'busiest-day'))
+            {rows([(n(h), f'{c:,}', c / bmx) for h, c in busiest_top[:10]], 3) if busiest_top else ''}
+            {more_btn(len(busiest_top[:10]), 3)}''', 'busiest-day'))
 
     # Biggest fan / down bad
     if d['fan']:
@@ -291,8 +292,11 @@ def gen_html(d, contacts, path):
     if d.get('initiation_breakdown'):
         ib = d['initiation_breakdown']
         pct_desc = lambda xs: sorted(xs, key=lambda x: x[1] / x[2], reverse=True)
-        you_out = pct_desc([(h, y, tc) for h, y, t, tc in ib if tc > 0 and y / tc > 0.7][:5])
-        they_in = pct_desc([(h, t, tc) for h, y, t, tc in ib if tc > 0 and t / tc > 0.7][:5])
+        # 10+ conversations so a percentage means something; unsaved numbers are mostly automated senders
+        ok = [(h, y, t, tc) for h, y, t, tc in ib if tc >= MIN_CONVOS and not re.fullmatch(r'[+\d\s().-]+', get_name(h, contacts))]
+        you_out = pct_desc([(h, y, tc) for h, y, t, tc in ok if y / tc > 0.7][:5])
+        they_in = pct_desc([(h, t, tc) for h, y, t, tc in ok if t / tc > 0.7][:5])
+        you_out, they_in = (you_out if len(you_out) > 1 else []), (they_in if len(they_in) > 1 else [])
         if you_out or they_in:
             tight = lambda r: r.replace('class="rows"', 'class="rows tight"', 1)
             body = '<div class="thread big"><div class="bub s">hey</div><div class="bub s">you there?</div><div class="bub s">hello??</div></div>' if len(you_out) + len(they_in) <= 6 else ''
@@ -330,8 +334,8 @@ def gen_html(d, contacts, path):
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
-    wave = spark.replace('class="spark"', 'class="spark wave"', 1) if d['busiest_day'] else ''
-    one = f'<div class="one">{avatar(top[0]["name"])}<div><b>{esc(top[0]["name"])}</b><span>My #1, {top[0]["count"]:,} {plural(top[0]["count"], 'message')}</span></div></div>' if top else ''
+    wave = spark.replace('class="spark"', 'class="spark pwave"', 1) if d['busiest_day'] else ''
+    one = f'<div class="one">{avatar(top[0]["name"])}<div><b>{esc(top[0]["name"])}</b><span>My #1, {top[0]["count"]:,} {plural(top[0]["count"], "message")}</span></div></div>' if top else ''
     slides.append(f'''
     <section class="slide t-stage" data-name="summary">
       <div class="tilt">
@@ -341,14 +345,13 @@ def gen_html(d, contacts, path):
             <h2 class="ptitle"><span>Wrapped</span> <span>{year}</span></h2>
             {wave}
             <div class="hero">{s[0]:,}<small>{plural(s[0], 'message')}</small></div>
-            <dl class="grid4">
+            <p class="diag-sm">{esc(ptype.lower())}</p>
+            {one}
+            <dl class="stats3">
               <div><dt>People</dt><dd>{s[3]:,}</dd></div>
-              <div><dt>Words</dt><dd>{words:,}</dd></div>
               <div><dt>I text first</dt><dd>{d['starter_pct']}%</dd></div>
               <div><dt>Typical reply</dt><dd>{mins(d['resp'])}</dd></div>
             </dl>
-            {one}
-            <p class="diag-sm">{esc(ptype.lower())}</p>
             <button class="cta chrome" data-act><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lbl">Save image</span></button>
           </div>
           <footer class="mark"><span>wrap2026.com</span><span>iMessage · {year}</span></footer>
