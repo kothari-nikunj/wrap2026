@@ -4,7 +4,7 @@
 
 ## How to run it
 
-- Easiest: paste this into Claude Code or Codex on a Mac: "Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself."
+- Easiest: paste this into Claude Code or Codex on a Mac: "Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and review it before running anything. Tell me in a few short bullets what it reads, what it writes, whether it sends anything over the network, and anything that looks risky. It should only read my iMessage and WhatsApp data on this Mac. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself."
 - Or in Terminal: `curl -sO https://wrap2026.com/combined_wrapped.py && python3 combined_wrapped.py`
 - Needs macOS, Python 3 (built in), and Full Disk Access for the app that runs it. Does not run on iPhone, Android or Windows.
 - If there is little 2026 data yet, it falls back to 2025. `--use-2025` forces 2025.
@@ -20,7 +20,7 @@
 ## Privacy
 
 - Reads timestamps, participants and counts. Word and emoji totals are counted inside SQLite; message text is never read out, stored or shown (except people_wrapped.py).
-- Output is one local HTML file. The page loads two Google Fonts and an image-saving library; no analytics.
+- Output is one local HTML file. Opening it loads two Google Fonts; tapping Share loads an image-saving library pinned with an integrity hash. No analytics.
 
 ## Links
 

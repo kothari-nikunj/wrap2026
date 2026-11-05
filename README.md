@@ -9,7 +9,7 @@ Spotify Wrapped for your texts. See who you text most, how fast you reply, who t
 Paste this into Claude Code or Codex on your Mac:
 
 ```
-Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
+Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and review it before running anything. Tell me in a few short bullets what it reads, what it writes, whether it sends anything over the network, and anything that looks risky. It should only read my iMessage and WhatsApp data on this Mac. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
 ```
 
 Or run it yourself. First turn on Full Disk Access for your terminal app (System Settings > Privacy & Security > Full Disk Access), then:
@@ -37,7 +37,8 @@ Needs macOS and the `python3` it ships with (3.9 or newer). No packages to insta
 - The scripts read the message and call databases already on your Mac, write one HTML file, and open it. They make no network calls.
 - They read who, when and how many. Word and emoji totals are counted inside SQLite; message text is never printed, saved or sent.
 - Progress lines show counts only, so an agent running the script never sees names or messages.
-- The wrap page loads two Google Fonts and an image-saving library (for Share). No analytics.
+- Opening the wrap loads two Google Fonts, nothing else. Tapping Share loads an image-saving library, pinned to one exact version with an integrity hash. No analytics.
+- The wrap file has your contacts' names. Share slides, not the file. You can turn Full Disk Access off again when you're done.
 - The exception: `people_wrapped.py` reads message text so Claude Code can write about it, in your own Claude Code session.
 
 ## People Wrapped
@@ -49,7 +50,7 @@ claude --dangerously-skip-permissions
 ```
 
 ```
-Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py and read it first. Then run python3 people_wrapped.py and follow the steps it prints. If it can't get access, tell me how to turn on Full Disk Access for this app.
+Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py and review it before running anything. Tell me in a few short bullets what it reads, what it writes, whether it sends anything over the network, and anything that looks risky. If it checks out, run python3 people_wrapped.py and follow the steps it prints. If it can't get access, tell me how to turn on Full Disk Access for this app.
 ```
 
 It takes about 10 minutes and opens `people_wrapped_2026.html`.

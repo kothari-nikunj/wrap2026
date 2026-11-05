@@ -587,7 +587,6 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js" integrity="sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y" crossorigin="anonymous"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1166,6 +1165,18 @@ async function render(s) {
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
+// The image library is fetched only when you tap Share, never when the wrap opens.
+// integrity pins the exact reviewed file: the browser refuses any other copy.
+let shotLib = null;
+function loadShot() {
+  if (window.modernScreenshot) return Promise.resolve();
+  return shotLib || (shotLib = new Promise((ok, fail) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
+    sc.onload = ok;
+    sc.onerror = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    document.head.appendChild(sc);
+  }));
+}
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1173,11 +1184,11 @@ function download(blob, name) {
 actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
   const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
-  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
   const held = ready && ready.slide === s ? ready.blob : null; ready = null;
   let blob = held;
   if (!blob) {
     label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { await loadShot(); } catch (_) { flash('Offline. Take a screenshot', 2400); return; }
     try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
   }
   if (canShare) {
@@ -1617,7 +1628,7 @@ def main():
     spinner.stop(f"Saved to {output_file}")
 
     subprocess.run(['open', output_file])
-    print("\n  Done! Click through your wrapped.\n")
+    print("\n  Done! Click through your wrapped.\n  It has your contacts' names: share slides, not the file.\n")
 
 if __name__ == '__main__':
     main()
