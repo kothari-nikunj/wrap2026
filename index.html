@@ -3,21 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wrapped 2026 · Your year in texts and calls</title>
-<meta name="description" content="Your 2026 in messages and calls. See who you text most, how fast you reply, who texts first, and your texting personality. iMessage, WhatsApp and Phone. Runs on your Mac in about 30 seconds. Nothing leaves your computer.">
+<title>iMessage and WhatsApp Wrapped 2026 · Your year in texts</title>
+<meta name="description" content="Spotify Wrapped for your texts. See who you text most, how fast you reply, who texts first, and your texting personality, from iMessage and WhatsApp on your Mac. Free, open source, and nothing leaves your computer.">
 <link rel="canonical" href="https://wrap2026.com">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://wrap2026.com">
-<meta property="og:title" content="Wrapped 2026 · Your year in texts and calls">
+<meta property="og:title" content="Wrapped 2026 · Your year in texts">
 <meta property="og:description" content="Who you text most, how fast you reply, and your texting personality. Runs on your Mac. Nothing leaves your computer.">
 <meta property="og:image" content="https://wrap2026.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:video" content="https://wrap2026.com/og.mp4">
+<meta property="og:video:secure_url" content="https://wrap2026.com/og.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="720">
+<meta property="og:video:height" content="1280">
+<meta property="og:image:alt" content="Wrapped 2026: your year in texts, from iMessage and WhatsApp">
+<meta property="og:site_name" content="wrap2026">
+<meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Wrapped 2026 · Your year in texts">
+<meta name="twitter:description" content="Who you text most, how fast you reply, and your texting personality. Runs on your Mac. Nothing leaves your computer.">
 <meta name="twitter:image" content="https://wrap2026.com/og.png">
+<meta name="twitter:image:alt" content="Wrapped 2026: your year in texts, from iMessage and WhatsApp">
 <meta name="twitter:creator" content="@nikunj">
 <meta name="theme-color" content="#EEE8FF">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='10' width='56' height='40' rx='20' fill='%232F4BFF'/><path d='M14 44 L8 58 L26 48Z' fill='%232F4BFF'/></svg>">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="LLM summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -36,12 +49,19 @@
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --gutter:clamp(16px,4vw,56px);
   --max:1240px;
+  --ease-out:cubic-bezier(.23,1,.32,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,a,summary{touch-action:manipulation}
+button,summary{user-select:none;-webkit-user-select:none}
 body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--sent);outline-offset:3px;border-radius:6px}
+.install :focus-visible{outline-color:var(--paper)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+h2{text-wrap:balance}
+p,dd{text-wrap:pretty}
 .wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
 
 /* top bar */
@@ -49,34 +69,51 @@ a{color:inherit}
 .mark{font-family:var(--display);font-weight:800;font-stretch:120%;font-size:20px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:10px}
 .mark svg{width:26px;height:26px}
 .bar nav{display:flex;gap:28px;font-size:15px;font-weight:500}
-.bar nav a{text-decoration:none;color:var(--ink-2)}
-.bar nav a:hover{color:var(--ink)}
+.bar nav a{text-decoration:none;color:var(--ink-2);padding:10px 0;margin:-10px 0}
 
 /* hero */
-.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,5vw,80px);padding:clamp(28px,6vw,72px) 0 clamp(56px,8vw,120px);align-items:start}
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);grid-template-areas:'intro demo' 'get demo';grid-template-rows:auto 1fr;column-gap:clamp(32px,5vw,80px);padding:clamp(8px,2.5vw,32px) 0 clamp(24px,4vw,56px);align-items:start}
+.intro{grid-area:intro}.demo{grid-area:demo}.get{grid-area:get}
 .hero h1{font-family:var(--display);line-height:.82;letter-spacing:-.035em}
 .hero h1 .w{display:block;white-space:nowrap;font-weight:800;font-stretch:62%;font-size:clamp(56px,8.6vw,124px)}
-.hero h1 .y{display:block;font-weight:900;font-stretch:150%;font-size:clamp(64px,11.4vw,168px);color:var(--sent);margin-left:-.04em;animation:stretch 1.6s cubic-bezier(.2,.8,.2,1) both .1s}
+.hero h1 .y{display:block;font-weight:900;font-stretch:150%;font-size:clamp(64px,11.4vw,168px);color:var(--sent);margin-left:-.04em;animation:stretch 1.3s var(--ease-out) both .1s}
 @keyframes stretch{from{font-stretch:50%;opacity:0}25%{opacity:1}to{font-stretch:150%}}
 .lede{font-size:clamp(19px,1.7vw,22px);line-height:1.45;max-width:30ch;margin:28px 0 32px;color:var(--ink)}
+.act{display:flex;align-items:center;gap:16px;margin-top:16px;max-width:560px}
+.act .hint{margin-top:0}
+.copy.primary{font-size:17px;background:var(--ink);color:var(--paper);padding:15px 24px 15px 16px}
+.logos{display:inline-flex;align-items:center;margin-right:10px;vertical-align:-5px}
+.logos svg{width:26px;height:26px;padding:4px;border-radius:50%;background:var(--white);box-shadow:0 0 0 2px var(--ink)}
+.logos svg+svg{margin-left:-6px;color:var(--ink)}
+.copy:not(.primary) .logos svg{width:22px;height:22px;padding:3px}
+.copy .lbl{display:inline-block;min-width:6.2em;text-align:left}
+.copy.primary.done{background:var(--pink);color:var(--ink)}
+.alt{margin-top:22px;max-width:560px}
+.alt summary{cursor:pointer;font-size:15px;font-weight:600;color:var(--ink-2);text-decoration:underline;text-underline-offset:.25em;width:fit-content;padding:6px 0}
+.alt summary::-webkit-details-marker{display:none}.alt summary{list-style:none}
+.alt[open]>:not(summary){animation:fade .2s var(--ease-out)}
+.alt .cmd{margin-top:10px}
+.on-phone{display:none}
+.on-phone .lede{margin:0 0 4px}
 .cmd{background:var(--ink);color:var(--paper);border-radius:18px;padding:18px 18px 18px 22px;display:flex;align-items:center;gap:14px;max-width:560px}
-.cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-.cmd code::-webkit-scrollbar{display:none}
+.cmd code{font-family:var(--mono);font-size:14px;line-height:1.5;flex:1;min-width:0;overflow-wrap:anywhere}
 .cmd code .p{color:var(--pink);user-select:none}
 .copy{font:600 14px var(--body);background:var(--paper);color:var(--ink);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;flex-shrink:0;min-width:74px}
-.copy:hover{background:var(--white)}
 .copy.done{background:var(--pink)}
 .hint{font-size:15px;color:var(--ink-2);margin-top:14px;max-width:52ch}
 .hint a{font-weight:600;color:var(--ink)}
-.send-mac{display:none;margin-top:14px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
+.send-mac{margin-top:14px;font:600 16px var(--body);background:var(--sent);color:var(--white);border:0;border-radius:999px;padding:14px 22px;cursor:pointer}
 
 /* live demo */
-.demo{justify-self:end;width:min(100%,380px)}
+.demo{justify-self:end;width:min(100%,380px);animation:rise .7s var(--ease-out) both .2s}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+@keyframes fade{from{opacity:0}}
 .demo iframe{display:block;width:100%;aspect-ratio:9/16;border:0;border-radius:34px;background:var(--sent);box-shadow:0 40px 80px -40px rgba(36,16,56,.6),0 0 0 1px rgba(36,16,56,.06)}
 .demo figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;text-align:center}
 
 /* sections */
 section{padding:clamp(64px,9vw,128px) 0}
+.inside{padding-top:clamp(16px,3vw,40px)}
 h2{font-family:var(--display);font-weight:800;font-stretch:72%;font-size:clamp(44px,6.4vw,88px);line-height:.9;letter-spacing:-.03em;max-width:14ch}
 .sub{font-size:19px;max-width:46ch;margin-top:18px;color:var(--ink-2)}
 
@@ -85,25 +122,29 @@ h2{font-family:var(--display);font-weight:800;font-stretch:72%;font-size:clamp(4
 .install .sub{color:#B9ADD6}
 .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:44px 0 0}
 .tab{font:600 16px var(--body);color:var(--paper);background:transparent;border:1.5px solid #4A3A68;border-radius:999px;padding:11px 20px;cursor:pointer}
-.tab:hover{border-color:var(--paper)}
 .tab[aria-selected=true]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
 .panel{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(28px,5vw,72px);margin-top:44px}
 .panel[hidden]{display:none}
+.panel:not([hidden]){animation:fade .2s var(--ease-out)}
 .panel .what{font-size:clamp(22px,2.2vw,28px);line-height:1.3;font-weight:500;max-width:24ch}
 .panel .what small{display:block;font-size:16px;font-weight:400;color:#B9ADD6;margin-top:16px;line-height:1.5;max-width:40ch}
 .steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:26px}
 .steps li{counter-increment:s;display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 16px}
 .steps li::before{content:counter(s);font-family:var(--display);font-weight:800;font-stretch:120%;font-size:18px;width:36px;height:36px;border-radius:50%;background:#3A2A58;color:var(--paper);display:grid;place-items:center;grid-row:span 2}
-.steps h3{font-size:18px;font-weight:600;line-height:36px}
+.steps h3{font-size:18px;font-weight:600;line-height:1.3;padding-top:7px}
 .steps p{color:#B9ADD6;font-size:16px}
 .steps li>*{grid-column:2}
 .steps .cmd{background:#130A22;margin-top:10px;max-width:none}
+.steps h3+[hidden]+.copy{margin-top:12px;justify-self:start}
+.install .alt{margin:30px 0 0 60px;max-width:none}
+.install .alt summary{color:#B9ADD6}
+.install .alt p{color:#B9ADD6;font-size:16px;margin-top:6px}
+.install .alt .cmd{background:#130A22}
 kbd{font-family:var(--body);font-weight:600;color:var(--paper)}
 
 /* slides strip */
 .strip{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:48px var(--gutter) 24px;margin-top:8px;scrollbar-width:thin;scrollbar-color:var(--ink-2) transparent}
-.slide{flex:0 0 auto;width:min(280px,72vw);height:auto;aspect-ratio:9/16;border-radius:26px;scroll-snap-align:start;box-shadow:0 24px 48px -28px rgba(36,16,56,.55);transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
-.slide:hover{transform:translateY(-6px) rotate(-1deg)}
+.slide{flex:0 0 auto;width:min(280px,72vw);height:auto;aspect-ratio:9/16;border-radius:26px;scroll-snap-align:start;box-shadow:0 24px 48px -28px rgba(36,16,56,.55);outline:1px solid rgba(0,0,0,.1);outline-offset:-1px}
 .strip-note{font-size:14px;color:var(--ink-2);padding:0 var(--gutter)}
 
 /* privacy */
@@ -113,17 +154,27 @@ kbd{font-family:var(--body);font-weight:600;color:var(--paper)}
 .facts dt{font-weight:600;padding-right:28px;white-space:nowrap}
 .facts dd{color:var(--ink-2)}
 .ghost{margin-top:28px;font:600 16px var(--body);background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:13px 22px;cursor:pointer}
-.ghost:hover{background:var(--ink);color:var(--paper)}
 .ghost.done{background:var(--ink);color:var(--paper)}
+
+/* faq */
+.qs{border-top:1.5px solid var(--ink);margin-top:40px;max-width:780px}
+.qs details{border-bottom:1px solid rgba(36,16,56,.18)}
+.qs summary{list-style:none;cursor:pointer;font-weight:600;font-size:18px;padding:18px 40px 18px 0;position:relative}
+.qs summary::-webkit-details-marker{display:none}
+.qs summary::after{content:"";position:absolute;right:6px;top:50%;width:10px;height:10px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateY(-70%) rotate(45deg);transition:transform .2s var(--ease-out)}
+.qs details[open] summary::after{transform:translateY(-30%) rotate(225deg)}
+.qs details p{color:var(--ink-2);padding:0 40px 20px 0;max-width:62ch}
+.qs details[open] p{animation:fade .2s var(--ease-out)}
+.faq{padding-top:0}
 
 footer{padding:40px 0 56px}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font-size:15px;color:var(--ink-2)}
 footer a{text-decoration:none;font-weight:500;color:var(--ink)}
-footer a:hover{text-decoration:underline}
 footer .links{display:flex;gap:22px}
 
 @media (max-width:900px){
-  .hero{grid-template-columns:minmax(0,1fr)}
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-areas:'intro' 'demo' 'get';grid-template-rows:auto;row-gap:28px}
+  .lede{margin-bottom:0}
   .demo{justify-self:center}
   .panel{grid-template-columns:minmax(0,1fr)}
   .privacy .wrap{grid-template-columns:minmax(0,1fr)}
@@ -135,46 +186,105 @@ footer .links{display:flex;gap:22px}
   .facts dt{border-bottom:0;padding-bottom:2px}
   .facts dd{padding-top:0}
   .steps li{grid-template-columns:36px minmax(0,1fr);gap:0 12px}
+  .cmd{flex-wrap:wrap}
+  .cmd code{flex-basis:100%}
+  .cmd .copy{margin-left:auto}
+  .act{flex-direction:column;align-items:flex-start;gap:10px}
+  .install .alt{margin-left:48px}
 }
-@media (hover:none) and (max-width:900px){ .send-mac{display:inline-block} }
+/* phones and tablets can't run it: offer to send the link to a Mac instead */
+@media (hover:none) and (pointer:coarse){ .on-mac{display:none} .on-phone{display:block} }
 @media (prefers-reduced-motion:reduce){
   .hero h1 .y{animation:none}
+  .demo{animation-name:fade}
+}
+@media (hover:hover) and (pointer:fine){
+  .bar nav a:hover{color:var(--ink)}
+  .copy:not(.done):hover{background:var(--white)}
+  .tab:hover{border-color:var(--paper)}
+  .ghost:hover{background:var(--ink);color:var(--paper)}
+  footer a:hover{text-decoration:underline}
+  .alt summary:hover{color:var(--ink)}
+  .install .alt summary:hover{color:var(--paper)}
+  .copy.primary:not(.done):hover{background:var(--sent);color:var(--white)}
+}
+.copy,.tab,.ghost,.send-mac{transition:scale .16s var(--ease-out),background-color .15s ease,color .15s ease}
+.copy:active,.tab:active,.ghost:active,.send-mac:active{scale:.97}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .slide{transition:transform .25s ease}
+  .slide:hover{transform:translateY(-6px) rotate(-1deg)}
 }
 </style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Wrapped 2026","alternateName":["iMessage Wrapped 2026","WhatsApp Wrapped 2026","wrap2026"],"url":"https://wrap2026.com","description":"A free, open-source Spotify Wrapped for your texts. It reads iMessage and WhatsApp history on your Mac and shows who you text most, how fast you reply, who texts first, and your texting personality. Nothing leaves your computer.","applicationCategory":"LifestyleApplication","operatingSystem":"macOS","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://wrap2026.com/og.png","screenshot":["https://wrap2026.com/img/slide-total.webp","https://wrap2026.com/img/slide-number-one.webp","https://wrap2026.com/img/slide-summary.webp"],"author":{"@type":"Person","name":"Nikunj Kothari","url":"https://x.com/nikunj"},"sameAs":["https://github.com/kothari-nikunj/wrap2026"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is it free?","acceptedAnswer":{"@type":"Answer","text":"Yes. It's free and open source under the MIT license. The code is on GitHub."}},{"@type":"Question","name":"Does it work on iPhone, Android or Windows?","acceptedAnswer":{"@type":"Answer","text":"No. It runs on a Mac, because that's where Messages and WhatsApp keep a copy of your history. On your phone, send yourself the link and open it on your Mac."}},{"@type":"Question","name":"Does it upload my messages?","acceptedAnswer":{"@type":"Answer","text":"No. The script runs on your Mac and makes no network calls. It makes one web page and opens it in your browser. Nothing is sent anywhere unless you share a slide."}},{"@type":"Question","name":"Why does it need Full Disk Access?","acceptedAnswer":{"@type":"Answer","text":"macOS locks the Messages and WhatsApp history so apps can't read it without your permission. Full Disk Access is that permission. You can turn it off again when you're done."}},{"@type":"Question","name":"Do I need Claude Code or Codex?","acceptedAnswer":{"@type":"Answer","text":"No. They make it easier, because they check the script before running it. You can also paste one Terminal command yourself."}},{"@type":"Question","name":"My numbers look low. Why?","acceptedAnswer":{"@type":"Answer","text":"Your Mac only has what it has synced. For iMessage, turn on Messages in iCloud. For WhatsApp, open the desktop app and let it catch up. Then run it again."}},{"@type":"Question","name":"It's early in the year. Will it still work?","acceptedAnswer":{"@type":"Answer","text":"Yes. If you don't have many 2026 messages yet, it uses 2025 instead."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to make your iMessage and WhatsApp Wrapped 2026","totalTime":"PT2M","tool":[{"@type":"HowToTool","name":"A Mac"},{"@type":"HowToTool","name":"Claude Code or Codex (optional)"}],"step":[{"@type":"HowToStep","name":"Copy the prompt","text":"On wrap2026.com, click Copy prompt."},{"@type":"HowToStep","name":"Paste it into Claude Code or Codex","text":"It downloads combined_wrapped.py, checks it, and runs it with python3."},{"@type":"HowToStep","name":"Allow Full Disk Access if asked","text":"System Settings, Privacy & Security, Full Disk Access: turn on the app you are using, then reopen it."},{"@type":"HowToStep","name":"Open your wrap","text":"Your wrap opens in the browser. Tap Share on any slide."}]}</script>
 </head>
 <body>
 
 <div class="wrap">
   <header class="bar">
     <a class="mark" href="/" aria-label="wrap2026 home"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="10" width="56" height="40" rx="20" fill="#2F4BFF"/><path d="M14 44 L8 58 L26 48Z" fill="#2F4BFF"/></svg>wrap2026</a>
-    <nav><a href="#inside">What you get</a><a href="#privacy">Privacy</a><a class="go" href="#install">Get it</a></nav>
+    <nav><a href="#inside">What you get</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a><a class="go" href="#install">Get it</a></nav>
   </header>
+</div>
 
-  <main>
+<main>
+<div class="wrap">
   <div class="hero">
-    <div>
+    <div class="intro">
       <h1><span class="w">Wrapped</span><span class="y">2026</span></h1>
-      <p class="lede">Your year in texts and calls. Who you talk to most, how fast you reply, and what that says about you.</p>
-      <div class="cmd">
-        <code id="hero-cmd"><span class="p">$ </span>curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code>
-        <button class="copy" data-copy="hero-cmd">Copy</button>
-      </div>
-      <p class="hint">Paste in Terminal on your Mac. Covers iMessage and WhatsApp. First time? <a href="#install">See the two-minute setup</a>.</p>
-      <button class="send-mac" id="send-mac">Send this link to my Mac</button>
+      <p class="lede">Your year in texts, across iMessage and WhatsApp. Who you talk to most, how fast you reply, and what that says about you.</p>
     </div>
 
     <figure class="demo">
-      <iframe src="demo.html" title="A sample wrap with made-up data. Tap or use arrow keys to go through it." loading="eager"></iframe>
-      <figcaption>A live sample with made-up people. Tap through it.</figcaption>
+      <iframe src="demo.html?autoplay" title="A sample wrap with made-up data. It plays like a story. Tap or use arrow keys to skip." loading="eager"></iframe>
+      <figcaption>A live sample with made-up people. Tap to skip, hold to pause.</figcaption>
     </figure>
+
+    <div class="get">
+      <div class="on-mac">
+        <p hidden id="hero-prompt">Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can’t get access, tell me how to turn on Full Disk Access for this app. Don’t open my messages or the wrap file yourself.</p>
+        <div class="act">
+          <button class="copy primary" data-copy="hero-prompt"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button>
+          <p class="hint">Paste it into Claude Code or Codex on your Mac. Your wrap opens in about a minute.</p>
+        </div>
+        <details class="alt">
+          <summary>Prefer Terminal? Run it yourself</summary>
+          <div class="cmd"><code id="hero-cmd"><span class="p">$ </span>curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code><button class="copy" data-copy="hero-cmd">Copy</button></div>
+          <p class="hint">First time? <a href="#install">See the two-minute setup</a>.</p>
+        </details>
+      </div>
+      <div class="on-phone">
+        <p class="lede">Wrapped runs on a Mac, where your messages are. Send yourself the link and open it there.</p>
+        <button class="send-mac" id="send-mac">Send this link to my Mac</button>
+      </div>
+    </div>
   </div>
-  </main>
 </div>
+
+<section class="inside" id="inside">
+  <div class="wrap">
+    <h2>Twenty slides about you.</h2>
+    <p class="sub">Tap through it like a story. Share the best ones to the group chat and regret it.</p>
+  </div>
+  <div class="strip" role="region" tabindex="0" aria-label="Example slides">
+    <img class="slide" src="img/slide-intro.webp" width="600" height="1067" alt="The intro slide: Wrapped 2026" loading="lazy">
+    <img class="slide" src="img/slide-total.webp" width="600" height="1067" alt="47,832 messages this year, shown as a pile of message bubbles" loading="lazy">
+    <img class="slide" src="img/slide-number-one.webp" width="600" height="1067" alt="The person you texted most: Mom" loading="lazy">
+    <img class="slide" src="img/slide-year.webp" width="600" height="1067" alt="Your year as a grid of dots, one per day" loading="lazy">
+    <img class="slide" src="img/slide-personality.webp" width="600" height="1067" alt="Diagnosis: nocturnal menace" loading="lazy">
+    <img class="slide" src="img/slide-peak.webp" width="600" height="1067" alt="You text most at 11PM, with a clock" loading="lazy">
+    <img class="slide" src="img/slide-busiest-day.webp" width="600" height="1067" alt="Your busiest day, Mar 14, with a sparkline of the year" loading="lazy">
+    <img class="slide" src="img/slide-emoji.webp" width="600" height="1067" alt="Your most-used emoji" loading="lazy">
+    <img class="slide" src="img/slide-summary.webp" width="600" height="1067" alt="The summary card" loading="lazy">
+  </div>
+  <p class="strip-note">Real slides, made-up people. Every slide shares as a 1080×1920 image for your story.</p>
+</section>
 
 <section class="install" id="install">
   <div class="wrap">
-    <h2>Two minutes, one Terminal window.</h2>
-    <p class="sub">Pick what you want wrapped. Each one is a single Python file. Your Mac already has Python.</p>
+    <h2>Two minutes, one prompt.</h2>
+    <p class="sub">Pick what you want wrapped. Claude Code or Codex reads the script, checks it, and runs it on your Mac. Nothing to install.</p>
 
     <div class="tabs" role="tablist" aria-label="Choose a wrap">
       <button class="tab" role="tab" aria-selected="true" aria-controls="p-combined" id="t-combined">iMessage + WhatsApp</button>
@@ -186,98 +296,113 @@ footer .links{display:flex;gap:22px}
 
     <div class="panel" role="tabpanel" id="p-combined" aria-labelledby="t-combined">
       <p class="what">Both apps in one wrap. Contacts are matched across them, so Mom is one person, not two.<small>Works with only one app installed too. This is the one most people should run.</small></p>
-      <ol class="steps">
-        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal (or iTerm, Warp, Ghostty).</p></li>
-        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-combined">curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code><button class="copy" data-copy="c-combined">Copy</button></div></li>
-        <li><h3>Watch it open</h3><p>About 30 seconds later your wrap opens in the browser. Each slide has a save button for sharing.</p></li>
-      </ol>
+      <div>
+        <ol class="steps">
+          <li><h3>Copy the prompt</h3><p hidden id="c-combined">Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py and read it first: it should only read my iMessage and WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can’t get access, tell me how to turn on Full Disk Access for this app. Don’t open my messages or the wrap file yourself.</p><button class="copy" data-copy="c-combined"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button></li>
+          <li><h3>Paste it into Claude Code or Codex on your Mac</h3><p>It downloads the script, reads it to check it’s safe, then runs it. Say yes when it asks to.</p></li>
+          <li><h3>Turn on Full Disk Access if asked</h3><p>Your Mac keeps messages locked by default. In System Settings, Privacy &amp; Security, Full Disk Access, turn on the app you’re using: Terminal, iTerm, Ghostty or Codex. Reopen it and paste the prompt again.</p></li>
+          <li><h3>Watch it open</h3><p>When it’s done, your wrap opens in your browser. Tap Share on any slide to post it.</p></li>
+        </ol>
+        <details class="alt"><summary>Prefer Terminal? Run it yourself</summary><p>Turn on Full Disk Access for Terminal first, then paste this.</p><div class="cmd"><code id="t-cmd-combined">curl -sO https://wrap2026.com/combined_wrapped.py &amp;&amp; python3 combined_wrapped.py</code><button class="copy" data-copy="t-cmd-combined">Copy</button></div></details>
+      </div>
     </div>
-
     <div class="panel" role="tabpanel" id="p-imessage" aria-labelledby="t-imessage" hidden>
       <p class="what">Just iMessage and SMS, from the Messages app on your Mac.<small>Needs Messages in iCloud turned on so your Mac has your full history.</small></p>
-      <ol class="steps">
-        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
-        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-imessage">curl -sO https://wrap2026.com/imessage_wrapped.py &amp;&amp; python3 imessage_wrapped.py</code><button class="copy" data-copy="c-imessage">Copy</button></div></li>
-        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
-      </ol>
+      <div>
+        <ol class="steps">
+          <li><h3>Copy the prompt</h3><p hidden id="c-imessage">Make my Wrapped 2026. Download https://wrap2026.com/imessage_wrapped.py and read it first: it should only read my Messages data on this Mac and send nothing anywhere. Then run it with python3. If it can’t get access, tell me how to turn on Full Disk Access for this app. Don’t open my messages or the wrap file yourself.</p><button class="copy" data-copy="c-imessage"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button></li>
+          <li><h3>Paste it into Claude Code or Codex on your Mac</h3><p>It downloads the script, reads it to check it’s safe, then runs it. Say yes when it asks to.</p></li>
+          <li><h3>Turn on Full Disk Access if asked</h3><p>Your Mac keeps messages locked by default. In System Settings, Privacy &amp; Security, Full Disk Access, turn on the app you’re using: Terminal, iTerm, Ghostty or Codex. Reopen it and paste the prompt again.</p></li>
+          <li><h3>Watch it open</h3><p>When it’s done, your wrap opens in your browser. Tap Share on any slide to post it.</p></li>
+        </ol>
+        <details class="alt"><summary>Prefer Terminal? Run it yourself</summary><p>Turn on Full Disk Access for Terminal first, then paste this.</p><div class="cmd"><code id="t-cmd-imessage">curl -sO https://wrap2026.com/imessage_wrapped.py &amp;&amp; python3 imessage_wrapped.py</code><button class="copy" data-copy="t-cmd-imessage">Copy</button></div></details>
+      </div>
     </div>
-
     <div class="panel" role="tabpanel" id="p-whatsapp" aria-labelledby="t-whatsapp" hidden>
       <p class="what">Just WhatsApp, from the WhatsApp desktop app.<small>The desktop app only has what it has synced. Open it and let it catch up first.</small></p>
-      <ol class="steps">
-        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
-        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-whatsapp">curl -sO https://wrap2026.com/whatsapp_wrapped.py &amp;&amp; python3 whatsapp_wrapped.py</code><button class="copy" data-copy="c-whatsapp">Copy</button></div></li>
-        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
-      </ol>
+      <div>
+        <ol class="steps">
+          <li><h3>Copy the prompt</h3><p hidden id="c-whatsapp">Make my Wrapped 2026. Download https://wrap2026.com/whatsapp_wrapped.py and read it first: it should only read my WhatsApp data on this Mac and send nothing anywhere. Then run it with python3. If it can’t get access, tell me how to turn on Full Disk Access for this app. Don’t open my messages or the wrap file yourself.</p><button class="copy" data-copy="c-whatsapp"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button></li>
+          <li><h3>Paste it into Claude Code or Codex on your Mac</h3><p>It downloads the script, reads it to check it’s safe, then runs it. Say yes when it asks to.</p></li>
+          <li><h3>Turn on Full Disk Access if asked</h3><p>Your Mac keeps messages locked by default. In System Settings, Privacy &amp; Security, Full Disk Access, turn on the app you’re using: Terminal, iTerm, Ghostty or Codex. Reopen it and paste the prompt again.</p></li>
+          <li><h3>Watch it open</h3><p>When it’s done, your wrap opens in your browser. Tap Share on any slide to post it.</p></li>
+        </ol>
+        <details class="alt"><summary>Prefer Terminal? Run it yourself</summary><p>Turn on Full Disk Access for Terminal first, then paste this.</p><div class="cmd"><code id="t-cmd-whatsapp">curl -sO https://wrap2026.com/whatsapp_wrapped.py &amp;&amp; python3 whatsapp_wrapped.py</code><button class="copy" data-copy="t-cmd-whatsapp">Copy</button></div></details>
+      </div>
     </div>
-
     <div class="panel" role="tabpanel" id="p-calls" aria-labelledby="t-calls" hidden>
-      <p class="what">Phone, FaceTime and WhatsApp calls. Minutes on the phone, who you call most, and who never calls back.<small>Phone calls show up when your iPhone shares call history with your Mac.</small></p>
-      <ol class="steps">
-        <li><h3>Give Terminal access to your call history</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
-        <li><h3>Download and run</h3><p>Paste this in Terminal and press Return.</p><div class="cmd"><code id="c-calls">curl -sO https://wrap2026.com/call_wrapped.py &amp;&amp; python3 call_wrapped.py</code><button class="copy" data-copy="c-calls">Copy</button></div></li>
-        <li><h3>Watch it open</h3><p>Your wrap opens in the browser when it's done.</p></li>
-      </ol>
+      <p class="what">Phone, FaceTime and WhatsApp calls. Minutes on the phone, who you call most, and who never calls back.<small>Your Mac only has the calls your iPhone shared with it, so this wrap can miss part of the year.</small></p>
+      <div>
+        <ol class="steps">
+          <li><h3>Copy the prompt</h3><p hidden id="c-calls">Make my Wrapped 2026. Download https://wrap2026.com/call_wrapped.py and read it first: it should only read my call history on this Mac and send nothing anywhere. Then run it with python3. If it can’t get access, tell me how to turn on Full Disk Access for this app. Don’t open my messages or the wrap file yourself.</p><button class="copy" data-copy="c-calls"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button></li>
+          <li><h3>Paste it into Claude Code or Codex on your Mac</h3><p>It downloads the script, reads it to check it’s safe, then runs it. Say yes when it asks to.</p></li>
+          <li><h3>Turn on Full Disk Access if asked</h3><p>Your Mac keeps messages locked by default. In System Settings, Privacy &amp; Security, Full Disk Access, turn on the app you’re using: Terminal, iTerm, Ghostty or Codex. Reopen it and paste the prompt again.</p></li>
+          <li><h3>Watch it open</h3><p>When it’s done, your wrap opens in your browser. Tap Share on any slide to post it.</p></li>
+        </ol>
+        <details class="alt"><summary>Prefer Terminal? Run it yourself</summary><p>Turn on Full Disk Access for Terminal first, then paste this.</p><div class="cmd"><code id="t-cmd-calls">curl -sO https://wrap2026.com/call_wrapped.py &amp;&amp; python3 call_wrapped.py</code><button class="copy" data-copy="t-cmd-calls">Copy</button></div></details>
+      </div>
     </div>
-
     <div class="panel" role="tabpanel" id="p-people" aria-labelledby="t-people" hidden>
       <p class="what">A written portrait of each of your top 25 people: inside jokes, how things changed, the quotes that sum it up.<small>Claude Code reads the conversations on your Mac and writes the summaries. Takes about 10 minutes. This is the only wrap that reads message text.</small></p>
       <ol class="steps">
-        <li><h3>Install Claude Code</h3><p>Get it at <a href="https://claude.com/claude-code">claude.com/claude-code</a> if you don't have it.</p></li>
-        <li><h3>Give Terminal access to your messages</h3><p>System Settings, Privacy &amp; Security, Full Disk Access. Turn on Terminal.</p></li>
-        <li><h3>Download the script</h3><div class="cmd"><code id="c-people-dl">curl -sO https://wrap2026.com/people_wrapped.py</code><button class="copy" data-copy="c-people-dl">Copy</button></div></li>
-        <li><h3>Start Claude Code</h3><p>It writes 25 files, so start it without permission prompts.</p><div class="cmd"><code id="c-people-cc">claude --dangerously-skip-permissions</code><button class="copy" data-copy="c-people-cc">Copy</button></div></li>
-        <li><h3>Ask it to run</h3><div class="cmd"><code id="c-people-run">Run python3 people_wrapped.py</code><button class="copy" data-copy="c-people-run">Copy</button></div></li>
+        <li><h3>Install Claude Code</h3><p>Get it at <a href="https://claude.com/claude-code">claude.com/claude-code</a> if you don’t have it.</p></li>
+        <li><h3>Start it without permission prompts</h3><p>It writes 25 files, so it would ask 25 times otherwise.</p><div class="cmd"><code id="c-people-cc">claude --dangerously-skip-permissions</code><button class="copy" data-copy="c-people-cc">Copy</button></div></li>
+        <li><h3>Paste this prompt</h3><p hidden id="c-people">Make my People Wrapped 2026. Download https://wrap2026.com/people_wrapped.py and read it first. Then run python3 people_wrapped.py and follow the steps it prints. If it can’t get access, tell me how to turn on Full Disk Access for this app.</p><button class="copy" data-copy="c-people"><span class="logos" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg><svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span><span class="lbl">Copy prompt</span></button></li>
+        <li><h3>Turn on Full Disk Access if asked</h3><p>Your Mac keeps messages locked by default. In System Settings, Privacy &amp; Security, Full Disk Access, turn on the app you’re using: Terminal, iTerm or Ghostty. Reopen it and paste the prompt again.</p></li>
       </ol>
     </div>
   </div>
 </section>
 
-<section class="inside" id="inside">
-  <div class="wrap">
-    <h2>Twenty slides about you.</h2>
-    <p class="sub">Tap through it like a story. Turn the sound on and each slide plays a note. Send the best ones to the group chat and regret it.</p>
-  </div>
-  <div class="strip" tabindex="0" aria-label="Example slides">
-    <img class="slide" src="img/slide-intro.webp" width="600" height="1067" alt="The intro slide: Wrapped 2026" loading="lazy">
-    <img class="slide" src="img/slide-total.webp" width="600" height="1067" alt="47,832 messages this year, shown as a pile of message bubbles" loading="lazy">
-    <img class="slide" src="img/slide-number-one.webp" width="600" height="1067" alt="The person you texted most: Mom" loading="lazy">
-    <img class="slide" src="img/slide-year.webp" width="600" height="1067" alt="Your year as a grid of dots, one per day" loading="lazy">
-    <img class="slide" src="img/slide-personality.webp" width="600" height="1067" alt="Diagnosis: nocturnal menace" loading="lazy">
-    <img class="slide" src="img/slide-peak.webp" width="600" height="1067" alt="You text most at 11PM, with a clock" loading="lazy">
-    <img class="slide" src="img/slide-busiest-day.webp" width="600" height="1067" alt="Your busiest day, Mar 14, with a sparkline of the year" loading="lazy">
-    <img class="slide" src="img/slide-emoji.webp" width="600" height="1067" alt="Your most-used emoji" loading="lazy">
-    <img class="slide" src="img/slide-summary.webp" width="600" height="1067" alt="The summary card" loading="lazy">
-  </div>
-  <p class="strip-note">Real slides, made-up people. Every slide saves as a 1080×1920 image for your story.</p>
-</section>
 
 <section class="privacy" id="privacy">
   <div class="wrap">
     <div>
       <h2>Nothing leaves your Mac.</h2>
-      <p class="sub">The script reads the message database already on your computer, writes one HTML file, and opens it. That's all it does.</p>
+      <p class="sub">The script reads the message history already on your Mac, makes one web page, and opens it. That’s all it does.</p>
       <button class="ghost" id="copy-src">Copy the script to check it yourself</button>
-      <p class="hint">Paste it into Claude or ChatGPT and ask if it's safe.</p>
+      <p class="hint" id="src-hint">Paste it into Claude or ChatGPT and ask if it’s safe.</p>
     </div>
     <dl class="facts">
-      <dt>What it reads</dt><dd>Timestamps, who sent what to whom, counts, and emoji. Not the words in your messages.</dd>
+      <dt>What it reads</dt><dd>When you texted, who with, and how much. Word and emoji totals are counted inside the database. Your messages are never read out, kept or shown.</dd>
       <dt>Network</dt><dd>The script makes no network calls. Your wrap page loads two fonts and a small image-saving library. No servers, no uploads, no analytics.</dd>
-      <dt>Dependencies</dt><dd>Python's standard library. Nothing to install.</dd>
-      <dt>Output</dt><dd>One HTML file, saved next to the script.</dd>
+      <dt>Dependencies</dt><dd>Python’s standard library. Nothing to install.</dd>
+      <dt>With an agent</dt><dd>Claude Code or Codex sees the script and its progress lines. Those are counts, never names or messages. The prompt tells it not to open your messages or your wrap.</dd>
+      <dt>Output</dt><dd>One web page (an HTML file), saved next to the script. Only you can see it until you share a slide.</dd>
       <dt>The exception</dt><dd>People, with Claude reads message text so Claude Code can write about it. It runs in your own Claude Code session.</dd>
     </dl>
   </div>
 </section>
 
+<section class="faq" id="faq">
+  <div class="wrap">
+    <h2>Questions.</h2>
+    <div class="qs">
+      <details><summary>Is it free?</summary><p>Yes. It’s free and open source under the MIT license. The code is on GitHub.</p></details>
+      <details><summary>Does it work on iPhone, Android or Windows?</summary><p>No. It runs on a Mac, because that’s where Messages and WhatsApp keep a copy of your history. On your phone, send yourself the link and open it on your Mac.</p></details>
+      <details><summary>Does it upload my messages?</summary><p>No. The script runs on your Mac and makes no network calls. It makes one web page and opens it in your browser. Nothing is sent anywhere unless you share a slide.</p></details>
+      <details><summary>Why does it need Full Disk Access?</summary><p>macOS locks the Messages and WhatsApp history so apps can’t read it without your permission. Full Disk Access is that permission. You can turn it off again when you’re done.</p></details>
+      <details><summary>Do I need Claude Code or Codex?</summary><p>No. They make it easier, because they check the script before running it. You can also paste one Terminal command yourself.</p></details>
+      <details><summary>My numbers look low. Why?</summary><p>Your Mac only has what it has synced. For iMessage, turn on Messages in iCloud. For WhatsApp, open the desktop app and let it catch up. Then run it again.</p></details>
+      <details><summary>It’s early in the year. Will it still work?</summary><p>Yes. If you don’t have many 2026 messages yet, it uses 2025 instead.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
 <footer>
   <div class="wrap">
-    <span>Made by <a href="https://x.com/nikunj">@nikunj</a>. Not affiliated with Apple, Meta or Spotify.</span>
-    <span class="links"><a href="https://wrap2025.com">Last year's wrap</a><a href="/combined_wrapped.py">Source</a></span>
+    <span>Made by <a href="https://x.com/nikunj">@nikunj</a>. Not affiliated with Apple, Meta, Spotify, Anthropic or OpenAI.</span>
+    <span class="links"><a href="https://wrap2025.com">Last year’s wrap</a><a href="https://github.com/kothari-nikunj/wrap2026">Source</a></span>
   </div>
 </footer>
 
+<p class="sr" role="status" id="status"></p>
+
 <script>
+// iOS Safari only applies :active when a touch listener exists
+document.addEventListener('touchstart',()=>{},{passive:true});
+
 // copy buttons
 async function copyText(t){
   try{await navigator.clipboard.writeText(t);return true}catch(e){
@@ -286,7 +411,7 @@ async function copyText(t){
 }
 const hap=document.createElement('label');hap.innerHTML='<input type="checkbox" switch tabindex="-1">';hap.style.cssText='position:fixed;left:-99px;opacity:0';hap.setAttribute('aria-hidden','true');document.body.appendChild(hap);
 function buzz(){if(navigator.vibrate)navigator.vibrate(8);else if(matchMedia('(pointer:coarse)').matches)hap.click()}
-function flash(btn,label){buzz();const o=btn.textContent;btn.textContent=label;btn.classList.add('done');setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800)}
+function flash(btn,label){buzz();document.getElementById('status').textContent=label;const t=btn.querySelector('.lbl')||btn,o=t.textContent;t.textContent=label;btn.classList.add('done');setTimeout(()=>{t.textContent=o;btn.classList.remove('done')},1800)}
 document.querySelectorAll('[data-copy]').forEach(btn=>{
   btn.addEventListener('click',async()=>{
     const el=document.getElementById(btn.dataset.copy);
@@ -311,8 +436,10 @@ tabs.forEach((t,i)=>{
 // copy full source
 document.getElementById('copy-src').addEventListener('click',async e=>{
   const btn=e.currentTarget;
-  try{const r=await fetch('/combined_wrapped.py');if(!r.ok)throw 0;flash(btn,(await copyText(await r.text()))?'Copied the full script':'Copy failed')}
-  catch(_){flash(btn,'Could not load the script')}
+  let ok=false;
+  try{const r=await fetch('/combined_wrapped.py');if(r.ok)ok=await copyText(await r.text())}catch(_){}
+  flash(btn,ok?'Copied the full script':'Could not copy it');
+  if(!ok)document.getElementById('src-hint').innerHTML='Could not copy it here. <a href="/combined_wrapped.py">Open the script</a> and copy it from there.';
 });
 
 // send to Mac (phones)
