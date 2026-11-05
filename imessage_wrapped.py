@@ -1758,10 +1758,12 @@ def gen_html(d, contacts, path):
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
         em = [e for e in d['emoji'] if e[1] > 0]
+        spans = ''.join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))
+        emoji_row = f'<div class="emoji">{spans}</div>' if spans else ''
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            {emoji_row}
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
