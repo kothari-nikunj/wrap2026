@@ -1,5 +1,7 @@
 """Render a wrap from made-up data: python3 dev/fixture.py imessage out.html"""
-import sys, random, importlib.util
+import importlib.util, os, random, sys
+sys.path.insert(0, os.path.dirname(__file__))
+import frozen_clock  # noqa: E402,F401  (before any datetime import)
 from datetime import date, timedelta
 from pathlib import Path
 

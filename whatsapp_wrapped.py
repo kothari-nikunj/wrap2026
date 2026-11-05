@@ -4,8 +4,7 @@ WhatsApp Wrapped 2026 - Your texting habits, exposed.
 Usage: python3 whatsapp_wrapped.py
 """
 
-import re, os, plistlib
-import sqlite3, os, sys, re, subprocess, argparse, glob, threading, time
+import argparse, os, plistlib, re, sqlite3, subprocess, sys, threading, time
 from datetime import datetime
 
 # WhatsApp database locations (try in order)
@@ -35,7 +34,7 @@ class Spinner:
         if message:
             self.message = message
         self.spinning = True
-        self.thread = threading.Thread(target=self.spin)
+        self.thread = threading.Thread(target=self.spin, daemon=True)
         self.thread.start()
 
     def stop(self, final_message=None):
@@ -51,15 +50,12 @@ class Spinner:
 # Add 978307200 to convert to Unix timestamp
 COCOA_OFFSET = 978307200
 
-# 2026: Jan 1, 2026 = 788918400 (Cocoa time)
-# 2025: Jan 1, 2025 = 757382400 (Cocoa time)
-TS_2026 = 788918400  # Cocoa time for Jan 1, 2026
-TS_JUN_2026 = 801964800  # Cocoa time for Jun 1, 2026
-TS_2025 = 757382400  # Cocoa time for Jan 1, 2025
-TS_JUN_2025 = 770428800  # Cocoa time for Jun 1, 2025
-# End of year timestamps (Dec 31 23:59:59)
-TS_2026_END = 820454399  # Cocoa time for Dec 31, 2026 23:59:59
-TS_2025_END = 788918399  # Cocoa time for Dec 31, 2025 23:59:59
+def _local_ts(y, m=1, d=1):
+    """Cocoa time of local midnight. The stats bucket days and hours in local time, so the year must too."""
+    return int(datetime(y, m, d).timestamp()) - COCOA_OFFSET
+
+TS_2026, TS_JUN_2026, TS_2026_END = _local_ts(2026), _local_ts(2026, 6), _local_ts(2027) - 1
+TS_2025, TS_JUN_2025, TS_2025_END = _local_ts(2025), _local_ts(2025, 6), _local_ts(2026) - 1
 
 WHATSAPP_DB = None
 
@@ -80,7 +76,7 @@ def extract_contacts():
             if jid and name:
                 contacts[jid] = name
         conn.close()
-    except Exception as e:
+    except Exception:
         pass
     return contacts
 
@@ -118,7 +114,7 @@ def check_access():
         conn = sqlite3.connect(WHATSAPP_DB)
         conn.execute("SELECT 1 FROM ZWAMESSAGE LIMIT 1")
         conn.close()
-    except Exception as e:
+    except Exception:
         print("\n[!] ACCESS DENIED")
         print("   System Settings -> Privacy & Security -> Full Disk Access -> turn on the app running this (Terminal, iTerm, Ghostty, Codex), then reopen it")
         subprocess.run(['open', 'x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles'])
@@ -399,7 +395,7 @@ def analyze(ts_start, ts_end, ts_jun):
     emojis = ['😂','❤️','😭','🔥','💀','✨','🙏','👀','💯','😈']
     emoji_cases = ', '.join([f"SUM(CASE WHEN ZTEXT LIKE '%{e}%' THEN 1 ELSE 0 END)" for e in emojis])
     r = q(f"SELECT {emoji_cases} FROM ZWAMESSAGE WHERE ZMESSAGEDATE>{ts_start} AND ZMESSAGEDATE<{ts_end} AND ZISFROMME=1")
-    counts = dict(zip(emojis, r[0])) if r else {e: 0 for e in emojis}
+    counts = {e: c or 0 for e, c in zip(emojis, r[0])} if r else {e: 0 for e in emojis}
     d['emoji'] = sorted(counts.items(), key=lambda x:-x[1])[:5]
 
     # Total words sent
@@ -478,7 +474,7 @@ def analyze(ts_start, ts_end, ts_jun):
     d['daily_counts'] = {row[0]: row[1] for row in daily_counts}
 
     # Calculate streaks and stats
-    from datetime import datetime as dt, timedelta
+    from datetime import datetime as dt
     if d['daily_counts']:
         all_counts = list(d['daily_counts'].values())
         d['max_daily'] = max(all_counts) if all_counts else 0
@@ -591,7 +587,6 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1170,6 +1165,20 @@ async function render(s) {
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
+// The image library is fetched only when you tap Share, never when the wrap opens.
+// integrity pins the exact reviewed file: the browser refuses any other copy.
+let shotLib = null;
+function loadShot() {
+  if (window.modernScreenshot) return Promise.resolve();
+  return shotLib || (shotLib = new Promise((ok, fail) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
+    document.head.appendChild(sc);
+  }));
+}
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1177,11 +1186,11 @@ function download(blob, name) {
 actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
   const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
-  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
   const held = ready && ready.slide === s ? ready.blob : null; ready = null;
   let blob = held;
   if (!blob) {
     label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { await loadShot(); } catch (_) { flash('Offline. Take a screenshot', 2400); return; }
     try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
   }
   if (canShare) {
@@ -1243,7 +1252,7 @@ def gen_html(d, contacts, path):
         bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
         busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-        busiest_mult = busiest_count / max(s[0] / days_elapsed, 1e-9)
+        busiest_mult = busiest_count / max(sum(d['daily_counts'].values()) / days_elapsed, 1e-9)
         busiest_vs = f", {busiest_mult:,.1f}".rstrip('0').rstrip('.') + '× a normal day' if busiest_mult >= 1.5 else ''
 
     def num(v, fmt='int', suffix=''):
@@ -1339,7 +1348,7 @@ def gen_html(d, contacts, path):
         <div class="redact" aria-hidden="true">{''.join(f'<i style="--w:{w}%"></i>' for w in (92, 64, 81, 100, 47, 88, 73, 95, 58, 84, 69))}</div>
         <p class="lead">You typed</p>
         <div class="hero">{num(words)}</div>
-        <p class="after">{plural(words, 'word')}. That's about {pages:,} {plural(pages, 'page')} of a novel nobody asked for.</p>''', 'words'))
+        <p class="after">{plural(words, 'word')}. About {pages:,} {plural(pages, 'page')}, or {novels:,} {plural(novels, 'novel')} nobody asked for.</p>''', 'words'))
 
     # Year in dots: 12 rows (months) x 31 columns (days)
     if d['daily_counts']:
@@ -1535,10 +1544,12 @@ def gen_html(d, contacts, path):
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
         em = [e for e in d['emoji'] if e[1] > 0]
+        spans = ''.join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))
+        emoji_row = f'<div class="emoji">{spans}</div>' if spans else ''
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            {emoji_row}
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
@@ -1570,7 +1581,7 @@ def gen_html(d, contacts, path):
     html_out = TEMPLATE.replace('</style>', EXTRA_CSS + '\n</style>', 1).replace('__TITLE__', f'WhatsApp Wrapped {year}') \
                        .replace('__FILE__', f'whatsapp_wrapped_{year}') \
                        .replace('__SLIDES__', ''.join(slides))
-    with open(path, 'w') as fh:
+    with open(path, 'w', encoding='utf-8') as fh:
         fh.write(html_out)
     return path
 
@@ -1587,7 +1598,7 @@ def main():
 
     print("[*] Checking access...")
     check_access()
-    print(f"    ✓ Found database: {WHATSAPP_DB}")
+    print(f"    ✓ Found database: {WHATSAPP_DB.replace(os.path.expanduser('~'), '~')}")
 
     print("[*] Loading contacts...")
     contacts = extract_contacts()
@@ -1613,13 +1624,13 @@ def main():
     data['year'] = int(year)  # Pass the year to gen_html
     spinner.stop(f"{data['stats'][0]:,} messages analyzed")
 
-    print(f"[*] Generating report...")
+    print("[*] Generating report...")
     spinner.start("Building your wrapped...")
     gen_html(data, contacts, output_file)
     spinner.stop(f"Saved to {output_file}")
 
     subprocess.run(['open', output_file])
-    print("\n  Done! Click through your wrapped.\n")
+    print("\n  Done! Click through your wrapped.\n  It has your contacts' names: share slides, not the file.\n")
 
 if __name__ == '__main__':
     main()

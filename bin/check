@@ -1,0 +1,49 @@
+#!/bin/bash
+# Repo gate. Run before every PR: bin/check
+# Users run the scripts with the python3 macOS ships (3.9 today), so every
+# script is compiled and every fixture rendered with that interpreter.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+PY=/usr/bin/python3
+out=$(mktemp -d)
+trap 'rm -rf "$out"' EXIT
+
+step() { printf '\n== %s\n' "$1"; }
+
+step "interpreter"
+"$PY" -c 'import sys; v = sys.version_info; print(sys.version.split()[0]); assert v >= (3, 9), "need 3.9+"'
+
+step "shared sources are synced (dev/sync_template.py)"
+python3 dev/sync_template.py --check
+
+step "compile on $PY"
+for f in ./*_wrapped.py template_*.py dev/*.py; do "$PY" -m py_compile "$f"; done
+echo "ok"
+
+step "lint (ruff: pyflakes + bugbear, py39 target)"
+command -v uvx >/dev/null || { echo "uvx not found: install uv (https://docs.astral.sh/uv/)"; exit 1; }
+uvx ruff@0.8.6 check --quiet --target-version py39 --select F,E9,B,PLE \
+  --extend-exclude template_imessage.py ./*_wrapped.py dev/*.py
+
+step "fixtures render on $PY"
+"$PY" dev/fixture.py imessage "$out/imessage.html" >/dev/null
+"$PY" dev/fixture_whatsapp.py "$out/whatsapp.html" >/dev/null
+"$PY" dev/fixture_combined.py "$out/combined.html" >/dev/null
+"$PY" dev/fixture_call.py "$out/call.html" >/dev/null
+"$PY" dev/fixture_people.py "$out/people.html" >/dev/null
+for f in "$out"/*.html; do
+  n=$(grep -c 'class="slide' "$f" || true)
+  [ "$n" -ge 10 ] || { echo "$(basename "$f"): only $n slides"; exit 1; }
+  echo "$(basename "$f"): $n slides"
+done
+
+step "tests on $PY (made-up databases)"
+"$PY" dev/test_merge.py
+"$PY" dev/test_bugs.py
+
+step "demo.html is current"
+cmp -s "$out/imessage.html" demo.html || { echo "demo.html is stale: python3 dev/fixture.py imessage demo.html"; exit 1; }
+echo "ok"
+
+printf '\nall checks passed\n'

@@ -4,3 +4,5 @@ implementation-notes.md
 README.md
 .gitignore
 LICENSE
+bin/
+docs/

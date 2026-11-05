@@ -69,3 +69,15 @@
 - A flex child with only percentage-height children (the spark) collapses to 0 when the body overflows; `.body>.spark` is `flex-shrink:0`, only the poster wave may shrink.
 - CDP: navigating to the same file with a new #hash fires no load event; go via about:blank.
 - Poster color: default cobalt (a); the summary slide shows 4 color dots (.swatches.chrome, injected by JS above the Share CTA). Choice persists in localStorage ('wrap-poster'); ?poster= overrides; export uses the current palette and drops the dots.
+
+## Final pass (2026-11-05)
+### Changes
+- Python 3.9: a backslash inside an f-string expression (emoji slide) was a SyntaxError on macOS's stock python3; imessage/whatsapp/combined never started. See docs/solutions/python39-compat.md. `bin/check` is the repo gate.
+- dev/sync_template.py also splices template_imessage.py (gen_html) into imessage_wrapped.py; `--check` fails on drift.
+- dev/test_bugs.py: regression tests on made-up chat.db/AddressBook (dev/synth.py), run in US Pacific time.
+- Fixed: year window was UTC while stats use local dates (now `_local_ts`); non-daemon spinner hung the process after any crash; SUM NULL on zero sent messages crashed; busiest-day multiplier divided all messages by 1:1-only messages; last-7-digit name fallback matched other countries' numbers (now only for 7-digit handles); calls dropped FaceTime-by-email and international numbers (toll-free filter now NANP-only); HTML written in the locale encoding (now utf-8); call check_access probed a different WhatsApp table than the analysis reads.
+- Wrap page: modern-screenshot pinned with SRI (sha384). DB paths print with ~ instead of the home dir.
+- Removed localbrief.py (unrelated private-dashboard script that was committed and served publicly).
+### Deviations
+- Not fixed (owner call or larger change): people_wrapped tells users to run `claude --dangerously-skip-permissions` over raw message text (prompt-injection risk); WhatsApp names use push names only (no ZPARTNERNAME fallback); iMessage word/emoji counts skip attributedBody-only rows; people lacks is_person/is_own filters; WhatsApp group calls add full duration per participant.
+- iMessage real-data run on 3.9 not repeated: this session lost Full Disk Access to Messages/Contacts. WhatsApp, combined (WhatsApp half) and calls ran on real data under 3.9.

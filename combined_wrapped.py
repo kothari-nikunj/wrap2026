@@ -4,8 +4,7 @@ Combined Wrapped 2026 - Your texting habits across iMessage AND WhatsApp, expose
 Usage: python3 combined_wrapped.py
 """
 
-import re, os, plistlib
-import sqlite3, os, sys, re, subprocess, argparse, glob, threading, time
+import argparse, glob, os, plistlib, re, sqlite3, subprocess, sys, threading, time
 from datetime import datetime, timedelta
 
 # Database paths
@@ -39,7 +38,7 @@ class Spinner:
         if message:
             self.message = message
         self.spinning = True
-        self.thread = threading.Thread(target=self.spin)
+        self.thread = threading.Thread(target=self.spin, daemon=True)
         self.thread.start()
 
     def stop(self, final_message=None):
@@ -51,25 +50,19 @@ class Spinner:
         else:
             print()
 
-# Timestamps
-# iMessage: Unix timestamp in nanoseconds since 2001
-TS_2026_IMESSAGE = 1767225600
-TS_JUN_2026_IMESSAGE = 1780272000
-TS_2025_IMESSAGE = 1735689600
-TS_JUN_2025_IMESSAGE = 1748736000
-# End of year timestamps (Dec 31 23:59:59)
-TS_2026_END_IMESSAGE = 1798761599  # Dec 31, 2026 23:59:59 UTC
-TS_2025_END_IMESSAGE = 1767225599  # Dec 31, 2025 23:59:59 UTC
-
-# WhatsApp: Cocoa Core Data Time (seconds since Jan 1, 2001)
+# Year windows start at local midnight: the stats bucket days and hours in local time.
+# iMessage compares Unix seconds; WhatsApp stores Cocoa seconds (since Jan 1, 2001).
 COCOA_OFFSET = 978307200
-TS_2026_WHATSAPP = 788918400
-TS_JUN_2026_WHATSAPP = 801964800
-TS_2025_WHATSAPP = 757382400
-TS_JUN_2025_WHATSAPP = 770428800
-# End of year timestamps (Dec 31 23:59:59)
-TS_2026_END_WHATSAPP = 820454399  # Dec 31, 2026 23:59:59
-TS_2025_END_WHATSAPP = 788918399  # Dec 31, 2025 23:59:59
+
+
+def _local_ts(y, m=1, d=1):
+    return int(datetime(y, m, d).timestamp())
+
+
+TS_2026_IMESSAGE, TS_JUN_2026_IMESSAGE, TS_2026_END_IMESSAGE = _local_ts(2026), _local_ts(2026, 6), _local_ts(2027) - 1
+TS_2025_IMESSAGE, TS_JUN_2025_IMESSAGE, TS_2025_END_IMESSAGE = _local_ts(2025), _local_ts(2025, 6), _local_ts(2026) - 1
+TS_2026_WHATSAPP, TS_JUN_2026_WHATSAPP, TS_2026_END_WHATSAPP = (t - COCOA_OFFSET for t in (TS_2026_IMESSAGE, TS_JUN_2026_IMESSAGE, TS_2026_END_IMESSAGE))
+TS_2025_WHATSAPP, TS_JUN_2025_WHATSAPP, TS_2025_END_WHATSAPP = (t - COCOA_OFFSET for t in (TS_2025_IMESSAGE, TS_JUN_2025_IMESSAGE, TS_2025_END_IMESSAGE))
 
 def normalize_phone(phone):
     if not phone: return None
@@ -138,8 +131,8 @@ def get_name_imessage(handle, contacts):
         if digits[1:] in contacts: return contacts[digits[1:]]
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
-    if len(digits) >= 7 and digits[-7:] in contacts:
-        return contacts[digits[-7:]]
+    if len(digits) == 7 and digits in contacts:
+        return contacts[digits]
     return handle
 
 def get_name_whatsapp(jid, contacts):
@@ -504,7 +497,7 @@ def analyze_imessage(ts_start, ts_end, ts_jun):
     emojis = ['😂','❤️','😭','🔥','💀','✨','🙏','👀','💯','😈']
     emoji_cases = ', '.join([f"SUM(CASE WHEN text LIKE '%{e}%' THEN 1 ELSE 0 END)" for e in emojis])
     r = q_imessage(f"SELECT {emoji_cases} FROM message WHERE (date/1000000000+978307200)>{ts_start} AND (date/1000000000+978307200)<{ts_end} AND is_from_me=1")
-    d['emoji'] = dict(zip(emojis, r[0])) if r else {e: 0 for e in emojis}
+    d['emoji'] = {e: c or 0 for e, c in zip(emojis, r[0])} if r else {e: 0 for e in emojis}
 
     # Words
     r = q_imessage(f"""
@@ -795,7 +788,7 @@ def analyze_whatsapp(ts_start, ts_end, ts_jun):
     emojis = ['😂','❤️','😭','🔥','💀','✨','🙏','👀','💯','😈']
     emoji_cases = ', '.join([f"SUM(CASE WHEN ZTEXT LIKE '%{e}%' THEN 1 ELSE 0 END)" for e in emojis])
     r = q_whatsapp(f"SELECT {emoji_cases} FROM ZWAMESSAGE WHERE ZMESSAGEDATE>{ts_start} AND ZMESSAGEDATE<{ts_end} AND ZISFROMME=1")
-    d['emoji'] = dict(zip(emojis, r[0])) if r else {e: 0 for e in emojis}
+    d['emoji'] = {e: c or 0 for e, c in zip(emojis, r[0])} if r else {e: 0 for e in emojis}
 
     # Words
     r = q_whatsapp(f"""
@@ -1031,14 +1024,6 @@ def merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contact
     wa_words = whatsapp_data.get('words', 0) if has_whatsapp else 0
     d['words'] = im_words + wa_words
 
-    # Busiest day (pick the one with more messages)
-    im_busiest = imessage_data.get('busiest_day') if has_imessage else None
-    wa_busiest = whatsapp_data.get('busiest_day') if has_whatsapp else None
-    if im_busiest and wa_busiest:
-        d['busiest_day'] = im_busiest if im_busiest[1] >= wa_busiest[1] else wa_busiest
-    else:
-        d['busiest_day'] = im_busiest or wa_busiest
-
     # Weighted starter %
     im_weight = im_stats[0]
     wa_weight = wa_stats[0]
@@ -1059,6 +1044,9 @@ def merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contact
         for date, count in whatsapp_data.get('daily_counts', {}).items():
             daily_counts[date] = daily_counts.get(date, 0) + count
     d['daily_counts'] = daily_counts
+    # Busiest day across both apps together
+    peak = max(daily_counts.items(), key=lambda x: x[1], default=None)
+    d['busiest_day'] = peak if peak and peak[1] > 0 else None
 
     # Calculate merged daily stats
     if daily_counts:
@@ -1139,7 +1127,6 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1718,6 +1705,20 @@ async function render(s) {
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
+// The image library is fetched only when you tap Share, never when the wrap opens.
+// integrity pins the exact reviewed file: the browser refuses any other copy.
+let shotLib = null;
+function loadShot() {
+  if (window.modernScreenshot) return Promise.resolve();
+  return shotLib || (shotLib = new Promise((ok, fail) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
+    document.head.appendChild(sc);
+  }));
+}
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1725,11 +1726,11 @@ function download(blob, name) {
 actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
   const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
-  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
   const held = ready && ready.slide === s ? ready.blob : null; ready = null;
   let blob = held;
   if (!blob) {
     label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { await loadShot(); } catch (_) { flash('Offline. Take a screenshot', 2400); return; }
     try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
   }
   if (canShare) {
@@ -1809,7 +1810,7 @@ def gen_html(d, path, year, has_imessage, has_whatsapp):
         bd = datetime.strptime(d['busiest_day'][0], '%Y-%m-%d')
         busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-        busiest_mult = busiest_count / max(s[0] / days_elapsed, 1e-9)
+        busiest_mult = busiest_count / max(sum(d['daily_counts'].values()) / days_elapsed, 1e-9)
         busiest_vs = f", {busiest_mult:,.1f}".rstrip('0').rstrip('.') + '× a normal day' if busiest_mult >= 1.5 else ''
 
     def num(v, fmt='int', suffix=''):
@@ -2119,10 +2120,12 @@ def gen_html(d, path, year, has_imessage, has_whatsapp):
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
         em = [e for e in d['emoji'] if e[1] > 0]
+        spans = ''.join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))
+        emoji_row = f'<div class="emoji">{spans}</div>' if spans else ''
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            {emoji_row}
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
@@ -2156,7 +2159,7 @@ def gen_html(d, path, year, has_imessage, has_whatsapp):
     html_out = TEMPLATE.replace('</style>', COMBINED_CSS + '</style>', 1).replace('__TITLE__', f'Texts Wrapped {year}') \
                        .replace('__FILE__', f'combined_wrapped_{year}') \
                        .replace('__SLIDES__', ''.join(slides))
-    with open(path, 'w') as fh:
+    with open(path, 'w', encoding='utf-8') as fh:
         fh.write(html_out)
     return path
 
@@ -2176,10 +2179,10 @@ def main():
     platforms = []
     if has_imessage:
         platforms.append("iMessage")
-        print(f"    ✓ iMessage: {IMESSAGE_DB}")
+        print(f"    ✓ iMessage: {IMESSAGE_DB.replace(os.path.expanduser('~'), '~')}")
     if has_whatsapp:
         platforms.append("WhatsApp")
-        print(f"    ✓ WhatsApp: {WHATSAPP_DB}")
+        print(f"    ✓ WhatsApp: {WHATSAPP_DB.replace(os.path.expanduser('~'), '~')}")
 
     print(f"\n[*] Platforms: {' + '.join(platforms)}")
 
@@ -2232,18 +2235,18 @@ def main():
         whatsapp_data = analyze_whatsapp(ts_start, ts_end, ts_jun)
         spinner.stop(f"{whatsapp_data['stats'][0]:,} WhatsApp messages analyzed")
 
-    print(f"[*] Merging data...")
+    print("[*] Merging data...")
     spinner.start("Combining platform stats...")
     merged_data = merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contacts, has_imessage, has_whatsapp)
     spinner.stop(f"{merged_data['stats'][0]:,} total messages combined")
 
-    print(f"[*] Generating report...")
+    print("[*] Generating report...")
     spinner.start("Building your wrapped...")
     gen_html(merged_data, output_file, year, has_imessage, has_whatsapp)
     spinner.stop(f"Saved to {output_file}")
 
     subprocess.run(['open', output_file])
-    print("\n  Done! Click through your wrapped.\n")
+    print("\n  Done! Click through your wrapped.\n  It has your contacts' names: share slides, not the file.\n")
 
 if __name__ == '__main__':
     main()

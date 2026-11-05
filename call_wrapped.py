@@ -47,7 +47,7 @@ class Spinner:
         if message:
             self.message = message
         self.spinning = True
-        self.thread = threading.Thread(target=self.spin)
+        self.thread = threading.Thread(target=self.spin, daemon=True)
         self.thread.start()
 
     def stop(self, final_message=None):
@@ -61,8 +61,8 @@ class Spinner:
 
 
 def normalize_phone(phone):
-    """Normalize phone number to last 10 digits."""
-    if not phone:
+    """Normalize phone number to last 10 digits. Emails (FaceTime) are not phone numbers."""
+    if not phone or '@' in str(phone):
         return None
     digits = re.sub(r'\D', '', str(phone))
     if len(digits) == 11 and digits.startswith('1'):
@@ -100,6 +100,9 @@ def extract_contacts():
                             contacts[digits[-7:]] = name
                         if len(digits) == 11 and digits.startswith('1'):
                             contacts[digits[1:]] = name
+            for owner, email in conn.execute("SELECT ZOWNER, ZADDRESS FROM ZABCDEMAILADDRESS WHERE ZADDRESS IS NOT NULL"):
+                if owner in people:
+                    contacts[email.lower().strip()] = people[owner]
             conn.close()
         except:
             pass
@@ -107,17 +110,20 @@ def extract_contacts():
 
 
 def get_name(phone, contacts):
-    """Resolve phone number to contact name."""
+    """Resolve a phone number or FaceTime email to a contact name."""
     if not phone:
         return None
+    if '@' in phone:
+        return contacts.get(phone.lower().strip())
     digits = re.sub(r'\D', '', str(phone))
 
     # Skip short codes
     if 5 <= len(digits) <= 6:
         return None
 
-    # Skip toll-free
-    if len(digits) >= 10 and digits[-10:-7] in ('800', '888', '877', '866', '855', '844', '833'):
+    # Skip US toll-free (10 digits, or 11 starting with 1)
+    nanp = digits[1:] if len(digits) == 11 and digits.startswith('1') else digits
+    if len(nanp) == 10 and nanp[:3] in ('800', '888', '877', '866', '855', '844', '833'):
         return None
 
     if digits in contacts:
@@ -127,8 +133,8 @@ def get_name(phone, contacts):
             return contacts[digits[1:]]
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
-    if len(digits) >= 7 and digits[-7:] in contacts:
-        return contacts[digits[-7:]]
+    if len(digits) == 7 and digits in contacts:
+        return contacts[digits]
     return None
 
 
@@ -151,7 +157,8 @@ def check_access():
     if os.path.exists(WHATSAPP_CALLS_DB):
         try:
             conn = sqlite3.connect(WHATSAPP_CALLS_DB)
-            conn.execute("SELECT 1 FROM ZWAAGGREGATECALLEVENT LIMIT 1")
+            for table in ('ZWAAGGREGATECALLEVENT', 'ZWACDCALLEVENT', 'ZWACDCALLEVENTPARTICIPANT'):
+                conn.execute(f"SELECT 1 FROM {table} LIMIT 1")
             conn.close()
             has_whatsapp = True
         except:
@@ -329,7 +336,7 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
                 phone_to_names[key].add(c['name'])
 
     name_normalize = {}
-    for key, names in phone_to_names.items():
+    for names in phone_to_names.values():
         best_name = max(names, key=len)
         for name in names:
             name_normalize[name] = best_name
@@ -442,7 +449,7 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
 
     # Convert to contact_stats with best display name, MERGING entries with same name
     contact_stats = {}
-    for key, stats in phone_stats.items():
+    for stats in phone_stats.values():
         # Pick the longest name as display name (e.g., "Shimolee Kothari" > "Shimolee")
         best_name = max(stats['names'], key=len)
         platforms = list(stats['platforms'])
@@ -818,7 +825,6 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1397,6 +1403,20 @@ async function render(s) {
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
+// The image library is fetched only when you tap Share, never when the wrap opens.
+// integrity pins the exact reviewed file: the browser refuses any other copy.
+let shotLib = null;
+function loadShot() {
+  if (window.modernScreenshot) return Promise.resolve();
+  return shotLib || (shotLib = new Promise((ok, fail) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
+    document.head.appendChild(sc);
+  }));
+}
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1404,11 +1424,11 @@ function download(blob, name) {
 actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
   const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
-  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
   const held = ready && ready.slide === s ? ready.blob : null; ready = null;
   let blob = held;
   if (!blob) {
     label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { await loadShot(); } catch (_) { flash('Offline. Take a screenshot', 2400); return; }
     try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
   }
   if (canShare) {
@@ -1967,7 +1987,7 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
                        .replace('__TITLE__', f'Calls Wrapped {esc(year)}') \
                        .replace('__FILE__', f'call_wrapped_{esc(year)}') \
                        .replace('__SLIDES__', ''.join(slides))
-    with open(path, 'w') as fh:
+    with open(path, 'w', encoding='utf-8') as fh:
         fh.write(html_out)
     return path
 
@@ -1988,10 +2008,10 @@ def main():
     platforms = []
     if has_phone:
         platforms.append("Phone/FaceTime")
-        print(f"    ✓ Phone/FaceTime: {CALL_HISTORY_DB}")
+        print(f"    ✓ Phone/FaceTime: {CALL_HISTORY_DB.replace(os.path.expanduser('~'), '~')}")
     if has_whatsapp:
         platforms.append("WhatsApp")
-        print(f"    ✓ WhatsApp: {WHATSAPP_CALLS_DB}")
+        print(f"    ✓ WhatsApp: {WHATSAPP_CALLS_DB.replace(os.path.expanduser('~'), '~')}")
 
     print(f"\n[*] Platforms: {' + '.join(platforms)}")
 
@@ -2060,7 +2080,7 @@ def main():
     spinner.stop(f"Saved to {output_file}")
 
     subprocess.run(['open', output_file])
-    print("\n  Done! Click through your call wrapped.\n")
+    print("\n  Done! Click through your call wrapped.\n  It has your contacts' names: share slides, not the file.\n")
 
 
 if __name__ == '__main__':

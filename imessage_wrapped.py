@@ -4,8 +4,7 @@ iMessage Wrapped 2026 - Your texting habits, exposed.
 Usage: python3 imessage_wrapped.py
 """
 
-import re, os, plistlib
-import sqlite3, os, sys, re, subprocess, argparse, glob, threading, time
+import argparse, glob, os, plistlib, re, sqlite3, subprocess, sys, threading, time
 from datetime import datetime
 
 IMESSAGE_DB = os.path.expanduser("~/Library/Messages/chat.db")
@@ -31,7 +30,7 @@ class Spinner:
         if message:
             self.message = message
         self.spinning = True
-        self.thread = threading.Thread(target=self.spin)
+        self.thread = threading.Thread(target=self.spin, daemon=True)
         self.thread.start()
 
     def stop(self, final_message=None):
@@ -43,13 +42,12 @@ class Spinner:
         else:
             print()
 
-TS_2026 = 1767225600
-TS_JUN_2026 = 1780272000
-TS_2025 = 1735689600
-TS_JUN_2025 = 1748736000
-# End of year timestamps (Dec 31 23:59:59)
-TS_2026_END = 1798761599  # Dec 31, 2026 23:59:59 UTC
-TS_2025_END = 1767225599  # Dec 31, 2025 23:59:59 UTC
+def _local_ts(y, m=1, d=1):
+    """Unix time of local midnight. The stats bucket days and hours in local time, so the year must too."""
+    return int(datetime(y, m, d).timestamp())
+
+TS_2026, TS_JUN_2026, TS_2026_END = _local_ts(2026), _local_ts(2026, 6), _local_ts(2027) - 1
+TS_2025, TS_JUN_2025, TS_2025_END = _local_ts(2025), _local_ts(2025, 6), _local_ts(2026) - 1
 
 def normalize_phone(phone):
     if not phone: return None
@@ -109,9 +107,9 @@ def get_name(handle, contacts):
     # Try last 10 digits
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
-    # Try last 7 digits (local)
-    if len(digits) >= 7 and digits[-7:] in contacts:
-        return contacts[digits[-7:]]
+    # A 7-digit local number (no area code)
+    if len(digits) == 7 and digits in contacts:
+        return contacts[digits]
     return handle
 
 def contact_key_and_label(handle, contacts):
@@ -494,7 +492,7 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
     emojis = ['😂','❤️','😭','🔥','💀','✨','🙏','👀','💯','😈']
     emoji_cases = ', '.join([f"SUM(CASE WHEN text LIKE '%{e}%' THEN 1 ELSE 0 END)" for e in emojis])
     r = q(f"SELECT {emoji_cases} FROM message WHERE (date/1000000000+978307200)>{ts_start} AND (date/1000000000+978307200)<{ts_end} AND is_from_me=1")
-    counts = dict(zip(emojis, r[0])) if r else {e: 0 for e in emojis}
+    counts = {e: c or 0 for e, c in zip(emojis, r[0])} if r else {e: 0 for e in emojis}
     d['emoji'] = sorted(counts.items(), key=lambda x:-x[1])[:5]
 
     # Total words sent (excluding reactions, empty messages, and attachments-only)
@@ -806,7 +804,6 @@ TEMPLATE = r'''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js"></script>
 <style>
 :root{
   --ink:#241038; --night:#160A26; --lilac:#EEE8FF; --lav:#DCD3F5;
@@ -1385,6 +1382,20 @@ async function render(s) {
   try { return await modernScreenshot.domToBlob(card, { scale: 3, width: 360, height: 640 }); }
   finally { box.remove(); }
 }
+// The image library is fetched only when you tap Share, never when the wrap opens.
+// integrity pins the exact reviewed file: the browser refuses any other copy.
+let shotLib = null;
+function loadShot() {
+  if (window.modernScreenshot) return Promise.resolve();
+  return shotLib || (shotLib = new Promise((ok, fail) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
+    document.head.appendChild(sc);
+  }));
+}
 function download(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1392,11 +1403,11 @@ function download(blob, name) {
 actBtns.forEach(btn => btn.addEventListener('click', async e => {
   e.stopPropagation();
   const s = slides[cur], name = `${FILE}_${s.dataset.name}.png`;
-  if (!window.modernScreenshot) { flash('Offline. Take a screenshot', 2400); return; }
   const held = ready && ready.slide === s ? ready.blob : null; ready = null;
   let blob = held;
   if (!blob) {
     label(canShare ? 'Preparing…' : 'Saving…'); busy(true);
+    try { await loadShot(); } catch (_) { flash('Offline. Take a screenshot', 2400); return; }
     try { blob = await render(s); } catch (err) { console.error(err); flash('Could not save. Take a screenshot', 2400); return; }
   }
   if (canShare) {
@@ -1431,7 +1442,6 @@ go(start > 0 ? start : 0, true);
 
 def gen_html(d, contacts, path):
     import html as _html
-    import json as _json
     from datetime import datetime as dt, date as ddate, timedelta
 
     esc = lambda v: _html.escape(str(v))
@@ -1455,7 +1465,7 @@ def gen_html(d, contacts, path):
         bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
         busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-        busiest_mult = busiest_count / max(s[0] / days_elapsed, 1e-9)
+        busiest_mult = busiest_count / max(sum(d['daily_counts'].values()) / days_elapsed, 1e-9)
         busiest_vs = f", {busiest_mult:,.1f}".rstrip('0').rstrip('.') + '× a normal day' if busiest_mult >= 1.5 else ''
 
     def num(v, fmt='int', suffix=''):
@@ -1758,10 +1768,12 @@ def gen_html(d, contacts, path):
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
         em = [e for e in d['emoji'] if e[1] > 0]
+        spans = ''.join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))
+        emoji_row = f'<div class="emoji">{spans}</div>' if spans else ''
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            {emoji_row}
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
@@ -1793,7 +1805,7 @@ def gen_html(d, contacts, path):
     html_out = TEMPLATE.replace('__TITLE__', f'iMessage Wrapped {year}') \
                        .replace('__FILE__', f'imessage_wrapped_{year}') \
                        .replace('__SLIDES__', ''.join(slides))
-    with open(path, 'w') as fh:
+    with open(path, 'w', encoding='utf-8') as fh:
         fh.write(html_out)
     return path
 
@@ -1835,13 +1847,13 @@ def main():
     data['year'] = int(year)  # Pass the year to gen_html
     spinner.stop(f"{data['stats'][0]:,} messages analyzed")
 
-    print(f"[*] Generating report...")
+    print("[*] Generating report...")
     spinner.start("Building your wrapped...")
     gen_html(data, contacts, output_file)
     spinner.stop(f"Saved to {output_file}")
     
     subprocess.run(['open', output_file])
-    print("\n  Done! Click through your wrapped.\n")
+    print("\n  Done! Click through your wrapped.\n  It has your contacts' names: share slides, not the file.\n")
 
 if __name__ == '__main__':
     main()

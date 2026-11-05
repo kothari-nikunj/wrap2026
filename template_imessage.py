@@ -1,6 +1,5 @@
 def gen_html(d, contacts, path):
     import html as _html
-    import json as _json
     from datetime import datetime as dt, date as ddate, timedelta
 
     esc = lambda v: _html.escape(str(v))
@@ -24,7 +23,7 @@ def gen_html(d, contacts, path):
         bd = dt.strptime(d['busiest_day'][0], '%Y-%m-%d')
         busiest_str = bd.strftime('%b %-d')
         busiest_count = d['busiest_day'][1]
-        busiest_mult = busiest_count / max(s[0] / days_elapsed, 1e-9)
+        busiest_mult = busiest_count / max(sum(d['daily_counts'].values()) / days_elapsed, 1e-9)
         busiest_vs = f", {busiest_mult:,.1f}".rstrip('0').rstrip('.') + '× a normal day' if busiest_mult >= 1.5 else ''
 
     def num(v, fmt='int', suffix=''):
@@ -327,10 +326,12 @@ def gen_html(d, contacts, path):
     # Emoji
     if d['emoji'] and any(e[1] > 0 for e in d['emoji']):
         em = [e for e in d['emoji'] if e[1] > 0]
+        spans = ''.join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:]))
+        emoji_row = f'<div class="emoji">{spans}</div>' if spans else ''
         slides.append(slide('white', f'''
             <div class="sticker big" aria-hidden="true">{esc(em[0][0])}</div>
             <p class="lead">Your emotional range</p>
-            {"<div class=\"emoji\">" + "".join(f'<span style="--d:{i}">{esc(e[0])}</span>' for i, e in enumerate(em[1:])) + "</div>" if len(em) > 1 else ""}
+            {emoji_row}
             <p class="after">{esc(em[0][0])} alone: {em[0][1]:,} {plural(em[0][1], 'time')}.</p>''', 'emoji'))
 
     # Summary: the poster people post
@@ -362,6 +363,6 @@ def gen_html(d, contacts, path):
     html_out = TEMPLATE.replace('__TITLE__', f'iMessage Wrapped {year}') \
                        .replace('__FILE__', f'imessage_wrapped_{year}') \
                        .replace('__SLIDES__', ''.join(slides))
-    with open(path, 'w') as fh:
+    with open(path, 'w', encoding='utf-8') as fh:
         fh.write(html_out)
     return path
