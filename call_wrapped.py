@@ -61,8 +61,8 @@ class Spinner:
 
 
 def normalize_phone(phone):
-    """Normalize phone number to last 10 digits."""
-    if not phone:
+    """Normalize phone number to last 10 digits. Emails (FaceTime) are not phone numbers."""
+    if not phone or '@' in str(phone):
         return None
     digits = re.sub(r'\D', '', str(phone))
     if len(digits) == 11 and digits.startswith('1'):
@@ -134,7 +134,7 @@ def get_name(phone, contacts):
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
     if len(digits) == 7 and digits in contacts:
-        return contacts[digits[-7:]]
+        return contacts[digits]
     return None
 
 
@@ -1410,8 +1410,10 @@ function loadShot() {
   if (window.modernScreenshot) return Promise.resolve();
   return shotLib || (shotLib = new Promise((ok, fail) => {
     const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
-    sc.onload = ok;
-    sc.onerror = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
     document.head.appendChild(sc);
   }));
 }

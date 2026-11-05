@@ -132,7 +132,7 @@ def get_name_imessage(handle, contacts):
     if len(digits) >= 10 and digits[-10:] in contacts:
         return contacts[digits[-10:]]
     if len(digits) == 7 and digits in contacts:
-        return contacts[digits[-7:]]
+        return contacts[digits]
     return handle
 
 def get_name_whatsapp(jid, contacts):
@@ -1024,14 +1024,6 @@ def merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contact
     wa_words = whatsapp_data.get('words', 0) if has_whatsapp else 0
     d['words'] = im_words + wa_words
 
-    # Busiest day (pick the one with more messages)
-    im_busiest = imessage_data.get('busiest_day') if has_imessage else None
-    wa_busiest = whatsapp_data.get('busiest_day') if has_whatsapp else None
-    if im_busiest and wa_busiest:
-        d['busiest_day'] = im_busiest if im_busiest[1] >= wa_busiest[1] else wa_busiest
-    else:
-        d['busiest_day'] = im_busiest or wa_busiest
-
     # Weighted starter %
     im_weight = im_stats[0]
     wa_weight = wa_stats[0]
@@ -1052,6 +1044,9 @@ def merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contact
         for date, count in whatsapp_data.get('daily_counts', {}).items():
             daily_counts[date] = daily_counts.get(date, 0) + count
     d['daily_counts'] = daily_counts
+    # Busiest day across both apps together
+    peak = max(daily_counts.items(), key=lambda x: x[1], default=None)
+    d['busiest_day'] = peak if peak and peak[1] > 0 else None
 
     # Calculate merged daily stats
     if daily_counts:
@@ -1717,8 +1712,10 @@ function loadShot() {
   if (window.modernScreenshot) return Promise.resolve();
   return shotLib || (shotLib = new Promise((ok, fail) => {
     const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/dist/index.js', integrity: 'sha384-NeS4652m0nhya1JOA13DmKmR24bnK/+kQGMmJ3Ws7qipMG64xmyweG66thRmpU+Y', crossOrigin: 'anonymous' });
-    sc.onload = ok;
-    sc.onerror = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const give = () => { shotLib = null; sc.remove(); fail(new Error('image library unavailable')); };
+    const t = setTimeout(give, 10000);
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); give(); };
     document.head.appendChild(sc);
   }));
 }

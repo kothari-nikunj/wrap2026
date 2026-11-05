@@ -16,9 +16,9 @@ gen_html = (root / 'template_imessage.py').read_text().strip()
 stale = []
 
 
-def sync(path, pattern, new, flags=re.S | re.M):
+def sync(path, pattern, new):
     s = path.read_text()
-    m = re.search(pattern, s, flags)
+    m = re.search(pattern, s, re.S | re.M)
     if not m:
         sys.exit(f'{path.name}: pattern not found: {pattern}')
     if m.group(0) == new:

@@ -154,6 +154,12 @@ def test_call_contacts_include_email_and_international():
     assert w.get_name('+18005551234', contacts) is None, 'US toll-free should still be skipped'
 
 
+def test_call_emails_are_not_phone_numbers():
+    w = load('call')
+    for email in ('alice1234567@example.com', 'bob1234567@example.com'):
+        assert w.normalize_phone(email) is None, f'{email} was turned into a phone number and could merge people'
+
+
 def test_output_is_utf8_under_any_locale():
     out = tmp / 'latin1.html'
     env = dict(os.environ, LC_ALL='en_US.ISO8859-1')

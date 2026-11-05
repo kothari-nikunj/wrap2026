@@ -2,7 +2,7 @@
 
 Spotify Wrapped for your texts. See who you text most, how fast you reply, who texts first, and your texting personality, from iMessage and WhatsApp on your Mac.
 
-**[wrap2026.com](https://wrap2026.com)** · Free · MIT · Nothing leaves your Mac
+**[wrap2026.com](https://wrap2026.com)** · Free · MIT · Runs on your Mac, sends nothing anywhere (People Wrapped is the exception, see below)
 
 ## Run it
 
