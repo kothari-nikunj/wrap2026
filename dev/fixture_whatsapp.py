@@ -41,6 +41,7 @@ data = {
   'heating': [(j(1005), 120, 1980), (j(1009), 200, 780), (j(1007), 90, 520)],
   'ghosted': [(j(1008), 640, 2), (j(1012), 300, 0), (j(1011), 210, 1)],
   'emoji': [('😂', 2811), ('😭', 1990), ('🙏', 1204), ('❤️', 990), ('🔥', 870)],
+  'newcomer': {'name': 'Bartholomew Featherstonehaugh', 'count': 12, 'new': 1, 'kept': 1},
   'daily_counts': daily, 'avg_daily': 126, 'busiest_month': 'Jun', 'quiet_days': 9,
 }
 w.gen_html(data, contacts, out)

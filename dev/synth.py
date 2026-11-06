@@ -72,3 +72,48 @@ def address_book(directory, people):
 
 def at(y, m, d, hh=12, mm=0):
     return datetime(y, m, d, hh, mm, tzinfo=UTC)
+
+
+WA_SCHEMA = """
+CREATE TABLE ZWACHATSESSION(Z_PK INTEGER PRIMARY KEY, ZCONTACTJID TEXT, ZSESSIONTYPE INT, ZPARTNERNAME TEXT);
+CREATE TABLE ZWAMESSAGE(Z_PK INTEGER PRIMARY KEY, ZTEXT TEXT, ZISFROMME INT, ZMESSAGEDATE REAL, ZCHATSESSION INT);
+CREATE TABLE ZWAPROFILEPUSHNAME(ZJID TEXT, ZPUSHNAME TEXT);
+"""
+
+
+class WhatsAppDB:
+    """WhatsApp ChatStorage.sqlite: sessions (0 = 1:1, 1 = group), messages, push names."""
+
+    def __init__(self, path):
+        self.conn = sqlite3.connect(path)
+        self.conn.executescript(WA_SCHEMA)
+
+    def session(self, pk, jid, name=None, group=False):
+        self.conn.execute('INSERT INTO ZWACHATSESSION VALUES(?,?,?,?)', (pk, jid, 1 if group else 0, name))
+        if name and not group:
+            self.conn.execute('INSERT INTO ZWAPROFILEPUSHNAME VALUES(?,?)', (jid, name))
+
+    def message(self, session, from_me, when, text='hi there'):
+        self.conn.execute('INSERT INTO ZWAMESSAGE(ZTEXT, ZISFROMME, ZMESSAGEDATE, ZCHATSESSION) VALUES(?,?,?,?)',
+                          (text, int(from_me), when.timestamp() - COCOA, session))
+
+    def close(self):
+        self.conn.commit()
+        self.conn.close()
+
+
+class CallDB:
+    """CallHistory.storedata ZCALLRECORD. call_type: 1 phone, 8 FaceTime audio, 16 FaceTime video."""
+
+    def __init__(self, path):
+        self.conn = sqlite3.connect(path)
+        self.conn.execute('CREATE TABLE ZCALLRECORD(Z_PK INTEGER PRIMARY KEY, ZADDRESS TEXT, ZDURATION REAL, ZDATE REAL,'
+                          ' ZORIGINATED INT, ZANSWERED INT, ZCALLTYPE INT)')
+
+    def call(self, address, when, duration=120, originated=1, answered=1, call_type=1):
+        self.conn.execute('INSERT INTO ZCALLRECORD(ZADDRESS, ZDURATION, ZDATE, ZORIGINATED, ZANSWERED, ZCALLTYPE)'
+                          ' VALUES(?,?,?,?,?,?)', (address, duration, when.timestamp() - COCOA, originated, answered, call_type))
+
+    def close(self):
+        self.conn.commit()
+        self.conn.close()

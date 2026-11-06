@@ -41,6 +41,7 @@ done
 step "tests on $PY (made-up databases)"
 "$PY" dev/test_merge.py
 "$PY" dev/test_bugs.py
+"$PY" dev/test_newcomer.py
 
 step "demo.html is current"
 cmp -s "$out/imessage.html" demo.html || { echo "demo.html is stale: python3 dev/fixture.py imessage demo.html"; exit 1; }

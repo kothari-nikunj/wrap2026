@@ -319,11 +319,8 @@ def analyze_whatsapp_calls(ts_start, ts_end, ts_jun, contacts):
     return calls
 
 
-def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
-    """Combine and analyze all calls."""
-    all_calls = phone_calls + whatsapp_calls
-    all_calls.sort(key=lambda x: x['timestamp'])
-
+def normalize_call_names(all_calls):
+    """Give one person one name across phone numbers and short/long name forms (in place)."""
     # === FIRST: Build name normalization map ===
     # Step 1: Phone-based matching (same phone = same person)
     phone_to_names = defaultdict(set)
@@ -386,43 +383,13 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
     for c in all_calls:
         c['name'] = name_normalize.get(c['name'].strip(), c['name'].strip())
 
-    d = {}
 
-    # Basic stats (note: WhatsApp direction unknown, so outgoing/incoming skewed)
-    total_calls = len(all_calls)
-    # Only count direction for Phone/FaceTime where we have accurate data
-    phone_ft_calls = [c for c in all_calls if c['platform'] != 'WhatsApp']
-    outgoing = sum(1 for c in phone_ft_calls if c['outgoing'])
-    incoming = sum(1 for c in phone_ft_calls if not c['outgoing'])
-    answered = sum(1 for c in all_calls if c['answered'])
-    missed = total_calls - answered
-    total_duration = sum(c['duration'] for c in all_calls)
-
-    d['stats'] = {
-        'total': total_calls,
-        'outgoing': outgoing,
-        'incoming': incoming,
-        'answered': answered,
-        'missed': missed,
-        'total_duration': total_duration,
-    }
-
-    # Platform breakdown
-    platform_stats = defaultdict(lambda: {'count': 0, 'duration': 0})
-    for c in all_calls:
-        platform_stats[c['platform']]['count'] += 1
-        platform_stats[c['platform']]['duration'] += c['duration']
-    d['platforms'] = dict(platform_stats)
-
-    # Video vs voice (only accurate for Phone/FaceTime)
-    video_calls = sum(1 for c in all_calls if c['is_video'])
-    voice_calls = total_calls - video_calls
-    d['video_voice'] = {'video': video_calls, 'voice': voice_calls}
-
+def group_call_contacts(all_calls):
+    """Per-person totals: keyed by phone number, then merged by name."""
     # Top contacts by call count - key by phone number to deduplicate
     phone_stats = defaultdict(lambda: {
         'count': 0, 'duration': 0, 'outgoing': 0, 'incoming': 0,
-        'answered': 0, 'missed': 0, 'platforms': set(), 'names': set()
+        'answered': 0, 'missed': 0, 'platforms': set(), 'names': set(), 'times': []
     })
     for c in all_calls:
         # Use last 10 digits of phone as key for consistent matching across platforms
@@ -446,6 +413,7 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
         cs['missed'] += 0 if c['answered'] else 1
         cs['platforms'].add(c['platform'])
         cs['names'].add(c['name'])
+        cs['times'].append(c['timestamp'])
 
     # Convert to contact_stats with best display name, MERGING entries with same name
     contact_stats = {}
@@ -483,6 +451,7 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
             existing['answered'] += stats['answered']
             existing['missed'] += stats['missed']
             existing['platforms'] = list(set(existing['platforms']) | set(platforms))
+            existing['times'] += stats['times']
 
             # If best_name is longer, rename the entry
             if len(best_name) > len(merge_target):
@@ -496,8 +465,53 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
                 'incoming': stats['incoming'],
                 'answered': stats['answered'],
                 'missed': stats['missed'],
-                'platforms': platforms
+                'platforms': platforms,
+                'times': stats['times'],
             }
+    return contact_stats
+
+
+def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
+    """Combine and analyze all calls."""
+    all_calls = phone_calls + whatsapp_calls
+    all_calls.sort(key=lambda x: x['timestamp'])
+
+    normalize_call_names(all_calls)
+
+    d = {}
+
+    # Basic stats (note: WhatsApp direction unknown, so outgoing/incoming skewed)
+    total_calls = len(all_calls)
+    # Only count direction for Phone/FaceTime where we have accurate data
+    phone_ft_calls = [c for c in all_calls if c['platform'] != 'WhatsApp']
+    outgoing = sum(1 for c in phone_ft_calls if c['outgoing'])
+    incoming = sum(1 for c in phone_ft_calls if not c['outgoing'])
+    answered = sum(1 for c in all_calls if c['answered'])
+    missed = total_calls - answered
+    total_duration = sum(c['duration'] for c in all_calls)
+
+    d['stats'] = {
+        'total': total_calls,
+        'outgoing': outgoing,
+        'incoming': incoming,
+        'answered': answered,
+        'missed': missed,
+        'total_duration': total_duration,
+    }
+
+    # Platform breakdown
+    platform_stats = defaultdict(lambda: {'count': 0, 'duration': 0})
+    for c in all_calls:
+        platform_stats[c['platform']]['count'] += 1
+        platform_stats[c['platform']]['duration'] += c['duration']
+    d['platforms'] = dict(platform_stats)
+
+    # Video vs voice (only accurate for Phone/FaceTime)
+    video_calls = sum(1 for c in all_calls if c['is_video'])
+    voice_calls = total_calls - video_calls
+    d['video_voice'] = {'video': video_calls, 'voice': voice_calls}
+
+    contact_stats = group_call_contacts(all_calls)
 
     # Top 10 by call count
     top_by_count = sorted(contact_stats.items(), key=lambda x: x[1]['count'], reverse=True)[:10]
@@ -785,6 +799,31 @@ def analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun):
     return d
 
 
+NEW_MIN_CALLS, HISTORY_MONTHS = 3, 6
+
+
+def call_newcomer(ts_start, ts_end, contacts, has_phone, has_whatsapp):
+    """The new person you called most: 3+ calls this year and none before it. None without last year's history."""
+    history = []
+    if has_phone:
+        history += analyze_phone_calls(0, ts_end, None, contacts)
+    if has_whatsapp:
+        history += analyze_whatsapp_calls(0, ts_end, None, contacts)
+    ts_prev = datetime(datetime.fromtimestamp(ts_start).year - 1, 1, 1).timestamp()
+    if len({datetime.fromtimestamp(c['timestamp']).month for c in history if ts_prev <= c['timestamp'] < ts_start}) < HISTORY_MONTHS:
+        return None
+    normalize_call_names(history)
+    regulars = []
+    for name, st in group_call_contacts(history).items():
+        this = sum(1 for t in st['times'] if t > ts_start)
+        if this >= NEW_MIN_CALLS:
+            regulars.append((name, this, any(ts_prev <= t < ts_start for t in st['times']), any(t < ts_start for t in st['times'])))
+    new = sorted((r for r in regulars if not r[3]), key=lambda r: (-r[1], r[0]))
+    if not new:
+        return None
+    return {'name': new[0][0], 'count': new[0][1], 'new': len(new), 'kept': sum(1 for r in regulars if r[2])}
+
+
 def get_data_coverage(ts_start, ts_end, has_phone, has_whatsapp):
     """Check how much of the year we have data for."""
     earliest = None
@@ -881,6 +920,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
 .after .count{font-weight:600;font-variant-numeric:tabular-nums}
+.after.rule{max-width:none;margin-top:1.2em;padding-top:.9em;border-top:1.5px solid var(--soft)}
 
 /* stat split */
 .split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
@@ -1732,6 +1772,19 @@ def gen_html(d, path, year, has_phone, has_whatsapp, earliest_date, latest_date)
             {rows([(esc(nm) + pf_icons(s2['platforms']), f"{s2['count']:,}", s2['count'] / mx) for nm, s2 in tc])}
             {more_btn(len(tc))}''', 'inner-circle')
 
+    # New phone, who dis? (new people this year vs. people from last year)
+    nc = d.get('newcomer')
+    if nc:
+        circle = f"{nc['new']:,} new {'person' if nc['new'] == 1 else 'people'} this year."
+        if nc['kept']:  # nobody from last year: say nothing rather than '0 ... still here'
+            circle += f" {nc['kept']:,} from last year {'is' if nc['kept'] == 1 else 'are'} still here."
+        slide('ink', f'''
+            {avatar(nc["name"], 'xl')}
+            <p class="lead">New phone, who dis?</p>
+            <div class="hero name">{esc(nc["name"])}</div>
+            <p class="after">{num(nc["count"])} {calls_word(nc["count"])}, and you'd never called before this year.</p>
+            <p class="after rule">{circle}</p>''', 'newcomer')
+
     # Talk time champions
     if d['top_duration']:
         td = d['top_duration'][:5]
@@ -2072,6 +2125,7 @@ def main():
     print("[*] Combining and analyzing...")
     spinner.start("Crunching numbers...")
     data = analyze_calls(phone_calls, whatsapp_calls, ts_start, ts_end, ts_jun)
+    data['newcomer'] = call_newcomer(ts_start, ts_end, contacts, has_phone, has_whatsapp)
     spinner.stop(f"{data['stats']['total']} total calls processed")
 
     print("[*] Generating report...")

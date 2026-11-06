@@ -81,3 +81,25 @@
 ### Deviations
 - Not fixed (owner call or larger change): people_wrapped tells users to run `claude --dangerously-skip-permissions` over raw message text (prompt-injection risk); WhatsApp names use push names only (no ZPARTNERNAME fallback); iMessage word/emoji counts skip attributedBody-only rows; people lacks is_person/is_own filters; WhatsApp group calls add full duration per participant.
 - iMessage real-data run on 3.9 not repeated: this session lost Full Disk Access to Messages/Contacts. WhatsApp, combined (WhatsApp half) and calls ran on real data under 3.9.
+
+## Newcomer slide (2026-11-06): "New phone, who dis?"
+### Changes
+- New slide `newcomer` right after `inner-circle` in imessage, whatsapp, combined and calls. Hero = new person with the most 1:1 messages (calls: calls) this year; line below: "N new people this year. M from last year are still here."
+- Person = existing filters (iMessage `is_person`; WhatsApp `NOT is_own` 1:1 sessions; calls = named contacts), grouped by contact. Bar: 10 messages (calls: 3) this year. New = no 1:1 before Jan 1 of the wrap year (local). Still here = qualifies and had 1+ in the previous calendar year.
+- Shown only when the source has 1:1 messages (calls: named calls) in 6+ distinct months of the previous year, and N > 0. Shared helpers `group_people` / `find_newcomer` copied into imessage/whatsapp/combined; calls has `call_newcomer`.
+- People count (total slide + poster): same grouping, no bar. iMessage was already right; combined (was COUNT DISTINCT handle_id + sum of both apps) and WhatsApp (was distinct JIDs) fixed.
+- calls: name normalization and per-contact grouping moved out of `analyze_calls` into `normalize_call_names` / `group_call_contacts` (code moved as-is, plus a `times` list per contact) so the newcomer uses the same grouping.
+- CSS: `.after.rule` (separator line, existing `--soft` token). Tests: dev/test_newcomer.py (in bin/check); synth.py gained `WhatsAppDB` and `CallDB`.
+### Deviations / judgment calls
+- WhatsApp people are grouped by display name (push name, else formatted number), as combined already does, so a phone JID and a @lid JID of one person count once. Risk: two different people with the same push name merge.
+- WhatsApp does not use `is_person`: it returns 0 for every `@lid` JID, so it would drop real people. WhatsApp keeps its existing `NOT is_own` filter.
+- Combined: each app adds to the newcomer slide only if that app passes its own 6-month check; if only WhatsApp passes, the slide uses WhatsApp alone. People count uses both apps regardless.
+- Calls history check counts months of named calls only (unnamed calls are dropped before analysis). Calls have no `plural()` helper; the slide uses inline conditionals.
+- Unsaved numbers that pass `is_person` with 10+ messages can be the hero (same as number-one). Not filtered, per spec.
+- Theme: white (calls: ink, since the next calls slide is white).
+### Gotchas
+- WhatsApp `analyze()` now takes `contacts` (names are needed for grouping).
+- dev/test_newcomer.py stubs `load_own_imessage` in whatsapp/combined: whatsapp's version opens the real ~/Library/Messages/chat.db by path.
+- Review (2026-11-06): WhatsApp keeps grouping people by display name. On the owner's DB, of 16 names on >1 1:1 chat, 1 was a phone+@lid pair and 15 phone+phone; LID.sqlite's ZWAPHONENUMBERLIDPAIR exists but is empty. Merging by name can only make "you'd never texted before" more cautious (shared name with an old contact => not new); splitting by JID can make it false. Cost: two new people with the same push name count as one.
+- Combined: an app that fails the 6-month history check still contributes its before-this-year counts, so older chats there rule people out as new (test in dev/test_merge.py).
+- Calls newcomer counts WhatsApp group-call participants like 1:1 calls (existing call-counting behaviour; left as is).

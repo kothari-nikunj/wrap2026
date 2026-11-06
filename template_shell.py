@@ -64,6 +64,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
 .after .count{font-weight:600;font-variant-numeric:tabular-nums}
+.after.rule{max-width:none;margin-top:1.2em;padding-top:.9em;border-top:1.5px solid var(--soft)}
 
 /* stat split */
 .split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}

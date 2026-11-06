@@ -38,6 +38,7 @@ data = {
   'heating': [('Priya Natarajan', 120, 1980), ('Theo', 200, 780), ('Maya', 90, 520)],
   'ghosted': [('Chris O.', 640, 12), ('Roommate Ben', 300, 0), ('Kelsey', 210, 4)],
   'emoji': [('😭', 2811), ('💀', 1990), ('🙏', 1204), ('😂', 990), ('❤️', 870), ('🥲', 400)],
+  'newcomer': {'name': 'Lena Okafor', 'count': 1204, 'new': 23, 'kept': 141},
   'daily_counts': daily, 'avg_daily': 156, 'busiest_month': 'Mar', 'quiet_days': 11,
 }
 w.gen_html(data, {}, out)

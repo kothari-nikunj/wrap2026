@@ -52,6 +52,7 @@ data = {
   'duration_buckets': {'quick': 612, 'normal': 801, 'marathon': 133},
   'ghosts': [('Unknown Caller', 14), ('Dentist Office', 9), ('Chris O.', 6), ('Kelsey', 3)],
   'avg_callback_time': 42,
+  'newcomer': {'name': 'Kelsey', 'count': 41, 'new': 9, 'kept': 62},
   'personality': ('THE CHATTY CATHY', "Once you're on the phone, you're ON the phone"),
 }
 w.gen_html(data, out, '2026', True, True, datetime(2026, 1, 1, 0, 3).timestamp(), datetime(2026, 11, 2).timestamp())
