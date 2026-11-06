@@ -165,6 +165,25 @@ def aggregate_contacts(rows, contacts):
 
     return sorted(aggregated.values(), key=lambda x: x['count'], reverse=True)
 
+NEW_MIN, HISTORY_MONTHS = 10, 6
+
+def group_people(rows, key_label):
+    """1:1 rows (handle, this year, last year, before this year) -> {contact key: [label, this, last, before]}"""
+    people = {}
+    for h, this, last, before in rows:
+        key, label = key_label(h)
+        p = people.setdefault(key, [label, 0, 0, 0])
+        p[1] += this or 0; p[2] += last or 0; p[3] += before or 0
+    return people
+
+def find_newcomer(people, history_ok, min_count=NEW_MIN):
+    """New = no 1:1 before this year. None when last year's history is too thin to tell, or nobody is new."""
+    if not history_ok: return None
+    regulars = [p for p in people.values() if p[1] >= min_count]
+    new = sorted((p for p in regulars if not p[3]), key=lambda p: (-p[1], p[0]))
+    if not new: return None
+    return {'name': new[0][0], 'count': new[0][1], 'new': len(new), 'kept': sum(1 for p in regulars if p[2])}
+
 def check_access():
     if not os.path.exists(IMESSAGE_DB):
         print("\n[FATAL] Not macOS.")
@@ -289,17 +308,27 @@ def analyze(ts_start, ts_end, ts_jun, contacts):
     """)
     d['top'] = aggregate_contacts(top_handles, contacts)
 
-    # Unique people count (merge phone/email for same contact)
-    all_handles = q(f"""{one_on_one_cte}
-        SELECT DISTINCT h.id
+    # People (merge phone/email for same contact) and newcomers: 1:1 counts this year, last year, and before this year
+    ts_prev = _local_ts(datetime.fromtimestamp(ts_start).year - 1)
+    people = group_people(q(f"""{one_on_one_cte}
+        SELECT h.id, SUM((m.date/1000000000+978307200)>{ts_start}),
+            SUM((m.date/1000000000+978307200)>={ts_prev} AND (m.date/1000000000+978307200)<{ts_start}),
+            SUM((m.date/1000000000+978307200)<{ts_start})
         FROM message m JOIN handle h ON m.handle_id=h.ROWID
-        WHERE (m.date/1000000000+978307200)>{ts_start} AND (m.date/1000000000+978307200)<{ts_end}
+        WHERE (m.date/1000000000+978307200)<{ts_end}
         AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
         AND is_person(h.id)
-    """)
-    unique_contact_keys = {contact_key_and_label(row[0], contacts)[0] for row in all_handles}
-    stats[3] = len(unique_contact_keys)
+        GROUP BY h.id
+    """), lambda h: contact_key_and_label(h, contacts))
+    stats[3] = sum(1 for p in people.values() if p[1])
     d['stats'] = tuple(stats)
+    months = q(f"""{one_on_one_cte}
+        SELECT COUNT(DISTINCT strftime('%m',datetime((m.date/1000000000+978307200),'unixepoch','localtime')))
+        FROM message m
+        WHERE (m.date/1000000000+978307200)>={ts_prev} AND (m.date/1000000000+978307200)<{ts_start}
+        AND m.ROWID IN (SELECT msg_id FROM one_on_one_messages)
+    """)[0][0]
+    d['newcomer'] = find_newcomer(people, months >= HISTORY_MONTHS)
 
     # Late night texters (1:1 only, excluding shortcodes)
     d['late'] = q(f"""{one_on_one_cte}
@@ -860,6 +889,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
 .after .count{font-weight:600;font-variant-numeric:tabular-nums}
+.after.rule{max-width:none;margin-top:1.2em;padding-top:.9em;border-top:1.5px solid var(--soft)}
 
 /* stat split */
 .split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
@@ -1593,6 +1623,19 @@ def gen_html(d, contacts, path):
             <p class="lead">Your inner circle</p>
             {rows([(esc(c["name"]), f'{c["count"]:,}', c["count"] / mx) for c in top[:10]])}
             {more_btn(len(top[:10]))}''', 'inner-circle'))
+
+    # New phone, who dis? (new people this year vs. people from last year)
+    nc = d.get('newcomer')
+    if nc:
+        circle = f"{nc['new']:,} new {plural(nc['new'], 'person', 'people')} this year."
+        if nc['kept']:  # nobody from last year: say nothing rather than '0 ... still here'
+            circle += f" {nc['kept']:,} from last year {plural(nc['kept'], 'is', 'are')} still here."
+        slides.append(slide('white', f'''
+            {avatar(nc["name"], 'xl')}
+            <p class="lead">New phone, who dis?</p>
+            <div class="hero name">{esc(nc["name"])}</div>
+            <p class="after">{num(nc["count"])} {plural(nc["count"], 'message')}, and you'd never texted before this year.</p>
+            <p class="after rule">{circle}</p>''', 'newcomer'))
 
     # Groups
     gs = d['group_stats']

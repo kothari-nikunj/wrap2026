@@ -152,6 +152,19 @@ def gen_html(d, contacts, path):
             {rows([(esc(c["name"]), f'{c["count"]:,}', c["count"] / mx) for c in top[:10]])}
             {more_btn(len(top[:10]))}''', 'inner-circle'))
 
+    # New phone, who dis? (new people this year vs. people from last year)
+    nc = d.get('newcomer')
+    if nc:
+        circle = f"{nc['new']:,} new {plural(nc['new'], 'person', 'people')} this year."
+        if nc['kept']:  # nobody from last year: say nothing rather than '0 ... still here'
+            circle += f" {nc['kept']:,} from last year {plural(nc['kept'], 'is', 'are')} still here."
+        slides.append(slide('white', f'''
+            {avatar(nc["name"], 'xl')}
+            <p class="lead">New phone, who dis?</p>
+            <div class="hero name">{esc(nc["name"])}</div>
+            <p class="after">{num(nc["count"])} {plural(nc["count"], 'message')}, and you'd never texted before this year.</p>
+            <p class="after rule">{circle}</p>''', 'newcomer'))
+
     # Groups
     gs = d['group_stats']
     if gs['count'] > 0 and gs['total'] > 0 and d['group_leaderboard']:

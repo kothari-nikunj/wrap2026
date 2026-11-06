@@ -98,6 +98,25 @@ def get_name(jid, contacts):
         return f"+{phone}"
     return jid
 
+NEW_MIN, HISTORY_MONTHS = 10, 6
+
+def group_people(rows, key_label):
+    """1:1 rows (handle, this year, last year, before this year) -> {contact key: [label, this, last, before]}"""
+    people = {}
+    for h, this, last, before in rows:
+        key, label = key_label(h)
+        p = people.setdefault(key, [label, 0, 0, 0])
+        p[1] += this or 0; p[2] += last or 0; p[3] += before or 0
+    return people
+
+def find_newcomer(people, history_ok, min_count=NEW_MIN):
+    """New = no 1:1 before this year. None when last year's history is too thin to tell, or nobody is new."""
+    if not history_ok: return None
+    regulars = [p for p in people.values() if p[1] >= min_count]
+    new = sorted((p for p in regulars if not p[3]), key=lambda p: (-p[1], p[0]))
+    if not new: return None
+    return {'name': new[0][0], 'count': new[0][1], 'new': len(new), 'kept': sum(1 for p in regulars if p[2])}
+
 def check_access():
     global WHATSAPP_DB
     WHATSAPP_DB = find_database()
@@ -185,7 +204,7 @@ def q(sql):
     conn.close()
     return r
 
-def analyze(ts_start, ts_end, ts_jun):
+def analyze(ts_start, ts_end, ts_jun, contacts):
     d = {}
     load_own_imessage(); load_own_whatsapp()
 
@@ -213,7 +232,23 @@ def analyze(ts_start, ts_end, ts_jun):
         JOIN dm_messages dm ON m.Z_PK = dm.msg_id
         WHERE m.ZMESSAGEDATE>{ts_start} AND m.ZMESSAGEDATE<{ts_end}
     """)[0]
-    d['stats'] = (raw_stats[0] or 0, raw_stats[1] or 0, raw_stats[2] or 0, raw_stats[3] or 0)
+    # People (grouped by name, so a number and a @lid id of one person count once) and newcomers
+    ts_prev = _local_ts(datetime.fromtimestamp(ts_start + COCOA_OFFSET).year - 1)
+    people = group_people(q(f"""{one_on_one_cte}
+        SELECT dm.ZCONTACTJID, SUM(m.ZMESSAGEDATE>{ts_start}), SUM(m.ZMESSAGEDATE>={ts_prev} AND m.ZMESSAGEDATE<{ts_start}), SUM(m.ZMESSAGEDATE<{ts_start})
+        FROM ZWAMESSAGE m
+        JOIN dm_messages dm ON m.Z_PK = dm.msg_id
+        WHERE m.ZMESSAGEDATE<{ts_end}
+        GROUP BY dm.ZCONTACTJID
+    """), lambda j: (get_name(j, contacts),) * 2)
+    d['stats'] = (raw_stats[0] or 0, raw_stats[1] or 0, raw_stats[2] or 0, sum(1 for p in people.values() if p[1]))
+    months = q(f"""{one_on_one_cte}
+        SELECT COUNT(DISTINCT strftime('%m',datetime(m.ZMESSAGEDATE+{COCOA_OFFSET},'unixepoch','localtime')))
+        FROM ZWAMESSAGE m
+        JOIN dm_messages dm ON m.Z_PK = dm.msg_id
+        WHERE m.ZMESSAGEDATE>={ts_prev} AND m.ZMESSAGEDATE<{ts_start}
+    """)[0][0]
+    d['newcomer'] = find_newcomer(people, months >= HISTORY_MONTHS)
 
     # Top contacts (1:1 only)
     d['top'] = q(f"""{one_on_one_cte}
@@ -643,6 +678,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .after{font-size:1em;line-height:1.4;opacity:.85;max-width:26ch;text-wrap:pretty;overflow-wrap:break-word}
 .after b{font-weight:600;opacity:1}
 .after .count{font-weight:600;font-variant-numeric:tabular-nums}
+.after.rule{max-width:none;margin-top:1.2em;padding-top:.9em;border-top:1.5px solid var(--soft)}
 
 /* stat split */
 .split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin-top:1.4em;padding-top:1em;border-top:1.5px solid var(--soft)}
@@ -1394,6 +1430,19 @@ def gen_html(d, contacts, path):
             <p class="lead">Your inner circle</p>
             {rows([(n(h), f'{t:,}', t / mx) for h, t, *_ in top5])}''', 'inner-circle'))
 
+    # New phone, who dis? (new people this year vs. people from last year)
+    nc = d.get('newcomer')
+    if nc:
+        circle = f"{nc['new']:,} new {plural(nc['new'], 'person', 'people')} this year."
+        if nc['kept']:  # nobody from last year: say nothing rather than '0 ... still here'
+            circle += f" {nc['kept']:,} from last year {plural(nc['kept'], 'is', 'are')} still here."
+        slides.append(slide('white', f'''
+            {avatar(nc["name"], 'xl')}
+            <p class="lead">New phone, who dis?</p>
+            {hero('name', nc["name"])}{esc(nc["name"])}</div>
+            <p class="after">{num(nc["count"])} {plural(nc["count"], 'message')}, and you'd never texted before this year.</p>
+            <p class="after rule">{circle}</p>''', 'newcomer'))
+
     # Groups
     gs = d['group_stats']
     if gs['count'] > 0 and gs['total'] > 0 and d['group_leaderboard']:
@@ -1620,7 +1669,7 @@ def main():
 
     print(f"[*] Analyzing {year}...")
     spinner.start("Reading message database...")
-    data = analyze(ts_start, ts_end, ts_jun)
+    data = analyze(ts_start, ts_end, ts_jun, contacts)
     data['year'] = int(year)  # Pass the year to gen_html
     spinner.stop(f"{data['stats'][0]:,} messages analyzed")
 

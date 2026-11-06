@@ -38,6 +38,7 @@ data = {
   'heating': [('Priya Natarajan', 120, 1980), ('Theo', 200, 780), ('Maya', 90, 520)],
   'ghosted': [('Chris O.', 640, 12), ('Roommate Ben', 300, 0), ('Kelsey', 210, 4)],
   'emoji': [('😭', 2811), ('💀', 1990), ('🙏', 1204), ('😂', 990), ('❤️', 870)],
+  'newcomer': {'name': 'Lena Okafor', 'count': 1688, 'new': 31, 'kept': 187},
   'daily_counts': daily, 'avg_daily': 226, 'busiest_month': 'Mar', 'quiet_days': 11,
 }
 w.gen_html(data, out, '2026', mode != 'whatsapp-only', mode != 'imessage-only')
