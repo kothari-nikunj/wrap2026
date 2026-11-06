@@ -26,4 +26,10 @@ wa['daily_counts'] = {'2026-03-14': 200, '2026-04-01': 0}
 im['busiest_day'], wa['busiest_day'] = ('2026-04-01', 260), ('2026-03-14', 200)
 d = w.merge_data(im, wa, {}, {}, True, True)
 assert d['busiest_day'] == ('2026-03-14', 400), d['busiest_day']
+# an app that fails the 6-month check still rules people out as new (its older history counts)
+im, wa = side(300, [1], 50), side(100, [1], 50)
+im['person_rows'], im['history_months'] = [('+14155550109', 50, 0, 0)], 12
+wa['person_rows'], wa['history_months'] = [('14155550109@s.whatsapp.net', 0, 2, 2000)], 2
+d = w.merge_data(im, wa, {'4155550109': 'Dad'}, {'14155550109@s.whatsapp.net': 'Dad'}, True, True)
+assert not d['newcomer'], f"Dad was called new despite years of WhatsApp history: {d['newcomer']}"
 print('ok')

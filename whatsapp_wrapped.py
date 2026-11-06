@@ -109,10 +109,10 @@ def group_people(rows, key_label):
         p[1] += this or 0; p[2] += last or 0; p[3] += before or 0
     return people
 
-def find_newcomer(people, history_ok, min_count=NEW_MIN):
+def find_newcomer(people, history_ok):
     """New = no 1:1 before this year. None when last year's history is too thin to tell, or nobody is new."""
     if not history_ok: return None
-    regulars = [p for p in people.values() if p[1] >= min_count]
+    regulars = [p for p in people.values() if p[1] >= NEW_MIN]
     new = sorted((p for p in regulars if not p[3]), key=lambda p: (-p[1], p[0]))
     if not new: return None
     return {'name': new[0][0], 'count': new[0][1], 'new': len(new), 'kept': sum(1 for p in regulars if p[2])}

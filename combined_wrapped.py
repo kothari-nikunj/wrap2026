@@ -160,10 +160,10 @@ def group_people(rows, key_label):
         p[1] += this or 0; p[2] += last or 0; p[3] += before or 0
     return people
 
-def find_newcomer(people, history_ok, min_count=NEW_MIN):
+def find_newcomer(people, history_ok):
     """New = no 1:1 before this year. None when last year's history is too thin to tell, or nobody is new."""
     if not history_ok: return None
-    regulars = [p for p in people.values() if p[1] >= min_count]
+    regulars = [p for p in people.values() if p[1] >= NEW_MIN]
     new = sorted((p for p in regulars if not p[3]), key=lambda p: (-p[1], p[0]))
     if not new: return None
     return {'name': new[0][0], 'count': new[0][1], 'new': len(new), 'kept': sum(1 for p in regulars if p[2])}
@@ -947,7 +947,10 @@ def merge_data(imessage_data, whatsapp_data, imessage_contacts, whatsapp_contact
     d['stats'] = d['stats'][:3] + (sum(1 for p in people.values() if p[1]),)
     im_ok = imessage_data.get('history_months', 0) >= HISTORY_MONTHS
     wa_ok = whatsapp_data.get('history_months', 0) >= HISTORY_MONTHS
-    d['newcomer'] = find_newcomer(group_people((im_rows if im_ok else []) + (wa_rows if wa_ok else []), by_name), im_ok or wa_ok)
+    # An app with thin history can't name newcomers, but its older chats still rule people out
+    older_only = lambda rows: [(h, 0, 0, before) for h, _, _, before in rows]
+    d['newcomer'] = find_newcomer(group_people((im_rows if im_ok else older_only(im_rows)) +
+                                               (wa_rows if wa_ok else older_only(wa_rows)), by_name), im_ok or wa_ok)
 
     # Merge top contacts (with source tracking)
     top_combined = []

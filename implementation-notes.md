@@ -100,3 +100,6 @@
 ### Gotchas
 - WhatsApp `analyze()` now takes `contacts` (names are needed for grouping).
 - dev/test_newcomer.py stubs `load_own_imessage` in whatsapp/combined: whatsapp's version opens the real ~/Library/Messages/chat.db by path.
+- Review (2026-11-06): WhatsApp keeps grouping people by display name. On the owner's DB, of 16 names on >1 1:1 chat, 1 was a phone+@lid pair and 15 phone+phone; LID.sqlite's ZWAPHONENUMBERLIDPAIR exists but is empty. Merging by name can only make "you'd never texted before" more cautious (shared name with an old contact => not new); splitting by JID can make it false. Cost: two new people with the same push name count as one.
+- Combined: an app that fails the 6-month history check still contributes its before-this-year counts, so older chats there rule people out as new (test in dev/test_merge.py).
+- Calls newcomer counts WhatsApp group-call participants like 1:1 calls (existing call-counting behaviour; left as is).
