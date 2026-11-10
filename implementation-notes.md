@@ -103,3 +103,19 @@
 - Review (2026-11-06): WhatsApp keeps grouping people by display name. On the owner's DB, of 16 names on >1 1:1 chat, 1 was a phone+@lid pair and 15 phone+phone; LID.sqlite's ZWAPHONENUMBERLIDPAIR exists but is empty. Merging by name can only make "you'd never texted before" more cautious (shared name with an old contact => not new); splitting by JID can make it false. Cost: two new people with the same push name count as one.
 - Combined: an app that fails the 6-month history check still contributes its before-this-year counts, so older chats there rule people out as new (test in dev/test_merge.py).
 - Calls newcomer counts WhatsApp group-call participants like 1:1 calls (existing call-counting behaviour; left as is).
+
+## Self-contained wrap (2026-11-10): agents refused to run the script
+### Why
+- Codex ran the prompt's safety check and stopped: the prompt said "only read my iMessage and WhatsApp data", but the script also reads Contacts, and the page it writes loaded Google Fonts and (on Share) modern-screenshot from jsDelivr.
+### Changes
+- The wrap page makes no network requests. Fonts (Anybody, Onest: latin + latin-ext, the files Google Fonts serves) are base64 `@font-face` rules; modern-screenshot 4.4.39 is inlined. Sources in `dev/vendor/`, written into `template_shell.py` by `dev/embed_assets.py` between `fonts:begin/end` and `shot:begin/end` markers.
+- The page has a CSP meta tag (`default-src 'none'`, inline style/script, `data:`/`blob:` only), so the browser blocks any request. `bin/check` fails if a rendered fixture has an external URL or no CSP.
+- One prompt sentence for all four scripts: reads Messages, WhatsApp, call history and Contacts (a superset: imessage also reads the WhatsApp plist for your own number, whatsapp reads chat.db for the same reason), no network requests in the script or the page.
+- Supersedes the earlier notes about "wrap page loads fonts + image-save library" and the SRI pin.
+### Deviations
+- The library is the readable `dist/index.mjs` with its `export {}` block replaced by `window.modernScreenshot = { domToBlob }`, not the minified file the SRI hash pinned. An agent that searches the script gets short lines, not one 27 KB line.
+- Each script grew by about 250 KB. Vietnamese (both fonts) and Cyrillic (Onest) subsets are not embedded; those characters use the system font.
+### Gotchas
+- Base64 lines are 100 characters, joined with a CSS backslash line continuation inside the quoted `url("...")`. Do not reformat them.
+- New page features must work under the CSP: no remote images, fonts, scripts or fetches. People photos are `data:` URLs.
+- Tested in headless Chromium only (fonts load, 0 requests, Save gives 1080x1920). Safari not tested in this session.
