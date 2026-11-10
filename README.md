@@ -9,7 +9,7 @@ Spotify Wrapped for your texts. See who you text most, how fast you reply, who t
 Paste this into Claude Code or Codex on your Mac:
 
 ```
-Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py. Before running it, do a quick check: search it for network calls, file writes or deletes, and commands it runs, then tell me in 3 short bullets what it reads, what it writes, and whether it sends anything anywhere. It should only read my iMessage and WhatsApp data on this Mac. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
+Make my Wrapped 2026. Download https://wrap2026.com/combined_wrapped.py. Before running it, do a quick check: search it for network calls, file writes or deletes, and commands it runs, then tell me in 3 short bullets what it reads, what it writes, and whether it sends anything anywhere. It should only read my Messages, WhatsApp, call history and Contacts data on this Mac (Contacts is for names), and make no network requests, in the script or in the page it writes. If it checks out, run it with python3. If it can't get access, tell me how to turn on Full Disk Access for this app. Don't open my messages or the wrap file yourself.
 ```
 
 Or run it yourself. First turn on Full Disk Access for your terminal app (System Settings > Privacy & Security > Full Disk Access), then:
@@ -37,7 +37,8 @@ Needs macOS and the `python3` it ships with (3.9 or newer). No packages to insta
 - The scripts read the message and call databases already on your Mac, write one HTML file, and open it. They make no network calls.
 - They read who, when and how many. Word and emoji totals are counted inside SQLite; message text is never printed, saved or sent.
 - Progress lines show counts only, so an agent running the script never sees names or messages.
-- Opening the wrap loads two Google Fonts, nothing else. Tapping Share loads an image-saving library, pinned to one exact version with an integrity hash. No analytics.
+- The wrap is one self-contained file: fonts and the image-saving code are inside it, and its content security policy tells the browser to block every network request. No analytics.
+- Contacts is read only to turn phone numbers into names.
 - The wrap file has your contacts' names. Share slides, not the file. You can turn Full Disk Access off again when you're done.
 - The exception: `people_wrapped.py` reads message text so Claude Code can write about it, in your own Claude Code session.
 
@@ -61,15 +62,17 @@ The scripts are single files on purpose: users download one with `curl`. Shared 
 
 - `template_shell.py`: the wrap page's CSS and JS (`TEMPLATE`), embedded in every script.
 - `template_imessage.py`: iMessage `gen_html`, embedded in `imessage_wrapped.py`.
+- `dev/vendor/`: the fonts and the image-saving library. `dev/embed_assets.py` writes them into `template_shell.py`, so a wrap loads nothing from the network.
 
 ```bash
+python3 dev/embed_assets.py               # only after changing dev/vendor: embed fonts and library into template_shell.py
 python3 dev/sync_template.py              # copy shared sources into the scripts
 python3 dev/fixture.py imessage out.html  # render a wrap from made-up data (also fixture_whatsapp/combined/call/people)
 dev/shots.sh out.html shots/              # contact sheet of every slide
 bin/check                                 # the gate: run before every PR
 ```
 
-`bin/check` compiles and renders everything with `/usr/bin/python3` (3.9), lints with ruff, and checks that the scripts and `demo.html` are in sync. Known traps are in `docs/solutions/` and `implementation-notes.md`.
+`bin/check` compiles and renders everything with `/usr/bin/python3` (3.9), lints with ruff, checks that the scripts and `demo.html` are in sync, and that a rendered wrap has no external URL. Known traps are in `docs/solutions/` and `implementation-notes.md`.
 
 The site (`index.html`, `demo.html`, `img/`) and the scripts are deployed to Vercel as static files.
 
